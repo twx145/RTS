@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>现代战争 - 剧情对话</title>
+    <link rel="stylesheet" href="css/dialogue.css">
+</head>
+<body>
+    <!-- 背景容器 -->
+    <div id="background-container"></div>
+    
+    <!-- 人物立绘容器 -->
+    <div id="character-container">
+        <div class="character" id="character-left"></div>
+        <div class="character" id="character-center"></div>
+        <div class="character" id="character-right"></div>
+    </div>
+    
+    <!-- 对话框容器 -->
+    <div id="dialog-container" class="visible">
+        <div id="dialog-box">
+            <div id="character-name">角色名</div>
+            <div id="dialog-text"></div>
+        </div>
+        
+        <!-- 功能按钮 -->
+        <div id="function-buttons">
+            <button id="btn-save" class="func-btn" title="保存游戏">💾</button>
+            <button id="btn-load" class="func-btn" title="读取存档">📂</button>
+            <button id="btn-auto" class="func-btn" title="自动播放">▶️</button>
+            <button id="btn-fast-forward" class="func-btn" title="快进">⏩</button>
+            <button id="btn-toggle-dialog" class="func-btn" title="显示/隐藏对话框">📝</button>
+            <button id="btn-menu" class="func-btn" title="返回主菜单">🏠</button>
+        </div>
+    </div>
+    
+    <!-- 存档选择模态框 -->
+    <div id="save-load-modal" class="modal">
+        <div class="modal-content">
+            <h2 id="modal-title">选择存档</h2>
+            <div id="save-slots"></div>
+            <div class="modal-buttons">
+                <button id="modal-cancel">取消</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 音频元素 -->
+    <audio id="bgm" loop></audio>
+    <audio id="voice"></audio>
+    
+    <script src="js/saveManager.js"></script>
+    <script src="js/dialogue.js"></script>
+</body>
+</html>

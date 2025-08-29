@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>现代战争-主菜单</title>
+    <link rel="stylesheet" href="./css/start_style.css">
+</head>
+<body>
+    <div class="container">
+        <h1>现代战争</h1>
+        <!-- 主菜单按钮 -->
+        <!-- 将原来的链接改为跳转到加载页面 -->
+        <a class="menu-btn" href="loading.html?target=dialogue.html&new=true">开始新游戏</a>
+        <a class="menu-btn" href="load_game.html">读取存档</a>
+        <a class="menu-btn" href="achievements.html">成就</a>
+        <a class="menu-btn" href="settings.html">设置</a>
+        <a class="menu-btn" href="credits.html">开发组成员</a>
+        <a class="menu-btn" id="btnExit">退出游戏</a>
+    </div>
+
+    <script>
+        // 退出游戏按钮
+        document.getElementById('btnExit').addEventListener('click', () => {
+            // 清除会话
+            sessionStorage.removeItem('currentUser');
+            // 返回登录页
+            window.location.href = './login.html';
+        });
+
+        // 防止未登录直接访问
+        window.addEventListener('DOMContentLoaded', () => {
+            if (!sessionStorage.getItem('currentUser')) {
+                window.location.href = './login.html';
+            }
+        });
+    </script>
+</body>
+</html>

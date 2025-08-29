@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>加载中 - 现代战争</title>
+    <link rel="stylesheet" href="css/loading.css">
+</head>
+<body>
+    <!-- 背景容器 -->
+    <div id="background-container"></div>
+    
+    <!-- 加载内容预览 -->
+    <div id="preview-container">
+        <div id="scene-preview"></div>
+        <div id="preview-info">
+            <h3 id="preview-title">加载中...</h3>
+            <p id="preview-description">正在准备游戏内容，请稍候</p>
+        </div>
+    </div>
+    
+    <!-- 加载进度条 -->
+    <div id="loading-container">
+        <div id="loading-bar">
+            <div id="loading-progress"></div>
+        </div>
+        <div id="loading-text">0%</div>
+        <div id="loading-tip">小提示: 在战斗中合理分配兵力可以获得优势</div>
+    </div>
+    
+    <!-- 跳过按钮 (可选) -->
+    <button id="skip-button" style="display: none;">跳过</button>
+    
+    <script src="js/loading.js"></script>
+</body>
+</html>

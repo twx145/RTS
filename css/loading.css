@@ -1,0 +1,176 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+body {
+    height: 100vh;
+    width: 100vw;
+    overflow: hidden;
+    position: relative;
+}
+
+#background-container {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(135deg, #0c2461, #1e3799, #4a69bd);
+    background-size: cover;
+    background-position: center;
+    z-index: 1;
+    transition: background-image 1s ease;
+}
+
+/* 内容预览区域 */
+#preview-container {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 80%;
+    max-width: 800px;
+    height: 60%;
+    background: rgba(0, 0, 0, 0.7);
+    border-radius: 15px;
+    border: 2px solid rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(10px);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    z-index: 2;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+}
+
+#scene-preview {
+    flex: 1;
+    background-size: cover;
+    background-position: center;
+    opacity: 0.8;
+    transition: opacity 0.5s ease;
+}
+
+#preview-info {
+    padding: 20px;
+    color: white;
+    text-align: center;
+}
+
+#preview-title {
+    font-size: 1.8rem;
+    margin-bottom: 10px;
+    color: #ff9d00;
+    text-shadow: 0 0 5px rgba(0, 0, 0, 0.5);
+}
+
+#preview-description {
+    font-size: 1rem;
+    opacity: 0.8;
+}
+
+/* 加载进度区域 */
+#loading-container {
+    position: absolute;
+    bottom: 50px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 80%;
+    max-width: 600px;
+    z-index: 3;
+}
+
+#loading-bar {
+    width: 100%;
+    height: 20px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 10px;
+    overflow: hidden;
+    margin-bottom: 15px;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+#loading-progress {
+    width: 0%;
+    height: 100%;
+    background: linear-gradient(90deg, #ff9d00, #ff6b6b);
+    border-radius: 10px;
+    transition: width 0.3s ease;
+}
+
+#loading-text {
+    text-align: center;
+    color: white;
+    font-size: 1.2rem;
+    margin-bottom: 10px;
+    text-shadow: 0 0 5px rgba(0, 0, 0, 0.5);
+}
+
+#loading-tip {
+    text-align: center;
+    color: rgba(255, 255, 255, 0.7);
+    font-size: 0.9rem;
+    font-style: italic;
+}
+
+/* 跳过按钮 */
+#skip-button {
+    position: absolute;
+    bottom: 20px;
+    right: 20px;
+    padding: 8px 16px;
+    background: rgba(255, 157, 0, 0.7);
+    border: none;
+    border-radius: 4px;
+    color: white;
+    cursor: pointer;
+    z-index: 4;
+    transition: background 0.3s ease;
+}
+
+#skip-button:hover {
+    background: rgba(255, 157, 0, 0.9);
+}
+
+/* 响应式设计 */
+@media (max-width: 768px) {
+    #preview-container {
+        width: 90%;
+        height: 50%;
+    }
+    
+    #preview-title {
+        font-size: 1.5rem;
+    }
+    
+    #preview-description {
+        font-size: 0.9rem;
+    }
+    
+    #loading-container {
+        width: 90%;
+    }
+}
+
+@media (max-width: 480px) {
+    #preview-container {
+        width: 95%;
+        height: 45%;
+    }
+    
+    #preview-title {
+        font-size: 1.3rem;
+    }
+    
+    #loading-container {
+        width: 95%;
+    }
+    
+    #loading-text {
+        font-size: 1rem;
+    }
+    
+    #loading-tip {
+        font-size: 0.8rem;
+    }
+}

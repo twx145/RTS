@@ -1,0 +1,901 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>开发团队展示</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background: linear-gradient(135deg, #1a2a6c, #b21f1f, #fdbb2d);
+            position: relative;
+            padding: 20px;
+        }
+        .container {
+            width: 100%;
+            max-width: 1400px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 30px;
+            padding: 20px;
+        }
+        header {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        
+        h1 {
+            font-size: 3rem;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+            color: white;
+        }
+        
+        .subtitle {
+            font-size: 1.2rem;
+            opacity: 0.9;
+            color: white;
+        }
+        
+        .slider-container {
+            width: 85%;
+            height: 70vh;
+            max-height: 600px;
+            position: relative;
+            overflow: hidden;
+            border-radius: 20px;
+            box-shadow: 0 15px 50px rgba(0, 0, 0, 0.5);
+            background: rgba(0, 0, 0, 0.2);
+            backdrop-filter: blur(10px);
+        }
+        
+        .slider {
+            display: flex;
+            width: 100%;
+            height: 100%;
+            transition: transform 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+        }
+        
+        .slide {
+            flex: 0 0 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 40px;
+            position: relative;
+        }
+        
+        .profile-img {
+            width: 220px;
+            height: 220px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 5px solid rgba(255, 255, 255, 0.2);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+            margin-bottom: 25px;
+            transition: transform 0.3s;
+        }
+        
+        .slide:hover .profile-img {
+            transform: scale(1.05);
+        }
+        
+        .profile-name {
+            font-size: 2.2rem;
+            margin-bottom: 10px;
+            color: #ffcc00;
+        }
+        
+        .profile-role {
+            font-size: 1.4rem;
+            margin-bottom: 20px;
+            opacity: 0.9;
+            color: white;
+        }
+        
+        .profile-desc {
+            text-align: center;
+            max-width: 600px;
+            font-size: 1.1rem;
+            line-height: 1.6;
+            opacity: 0.8;
+            color: white;
+        }
+        
+        .nav-btn {
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            color: white;
+            font-size: 1.5rem;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s;
+            z-index: 10;
+        }
+        
+        .nav-btn:hover {
+            background: rgba(255, 255, 255, 0.2);
+            transform: translateY(-50%) scale(1.1);
+        }
+        
+        .prev {
+            left: 20px;
+        }
+        
+        .next {
+            right: 20px;
+        }
+        
+        .dots {
+            display: flex;
+            gap: 15px;
+            margin-top: 20px;
+        }
+        
+        .dot {
+            width: 15px;
+            height: 15px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.3);
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .dot.active {
+            background: white;
+            transform: scale(1.2);
+        }
+        
+        .detail-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.95);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.4s;
+            z-index: 100;
+            padding: 20px;
+            overflow-y: auto;
+        }
+        
+        .detail-modal.active {
+            opacity: 1;
+            visibility: visible;
+        }
+        
+        .modal-content {
+            width: 90%;
+            max-width: 1100px;
+            max-height: 90vh;
+            background: linear-gradient(to right, #2c3e50, #4ca1af);
+            border-radius: 20px;
+            padding: 40px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            position: relative;
+            overflow-y: auto;
+            box-shadow: 0 15px 50px rgba(0, 0, 0, 0.5);
+        }
+        
+        .close-btn {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            color: white;
+            font-size: 1.5rem;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s;
+            z-index: 101;
+        }
+        
+        .close-btn:hover {
+            background: rgba(255, 0, 0, 0.5);
+            transform: scale(1.1);
+        }
+        
+        .modal-header {
+            display: flex;
+            align-items: center;
+            gap: 30px;
+            margin-bottom: 30px;
+            width: 100%;
+        }
+        
+        .modal-img {
+            width: 200px;
+            height: 200px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 5px solid rgba(255, 255, 255, 0.2);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+        }
+        
+        .modal-header-info {
+            flex: 1;
+        }
+        
+        .modal-name {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            color: #ffcc00;
+        }
+        
+        .modal-role {
+            font-size: 1.6rem;
+            margin-bottom: 15px;
+            opacity: 0.9;
+            color: white;
+        }
+        
+        .modal-contact {
+            display: flex;
+            gap: 15px;
+            margin-top: 20px;
+        }
+        
+        .contact-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background: rgba(255, 255, 255, 0.1);
+            padding: 8px 15px;
+            border-radius: 20px;
+            font-size: 0.9rem;
+        }
+        
+        .modal-details {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 25px;
+            width: 100%;
+            margin-top: 20px;
+        }
+        
+        .detail-card {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+        }
+        
+        .detail-card h3 {
+            font-size: 1.4rem;
+            margin-bottom: 15px;
+            color: #ffcc00;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .detail-card h3 i {
+            font-size: 1.2rem;
+        }
+        
+        .detail-card p {
+            font-size: 1.1rem;
+            line-height: 1.6;
+            color: white;
+            margin-bottom: 15px;
+        }
+        
+        .skill-bar {
+            margin-top: 15px;
+        }
+        
+        .skill-name {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 8px;
+            color: white;
+        }
+        
+        .skill-progress {
+            height: 8px;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 4px;
+            overflow: hidden;
+        }
+        
+        .skill-progress-bar {
+            height: 100%;
+            background: #ffcc00;
+            border-radius: 4px;
+        }
+        
+        .project-list {
+            list-style: none;
+        }
+        
+        .project-list li {
+            margin-bottom: 12px;
+            padding-left: 20px;
+            position: relative;
+            color: white;
+        }
+        
+        .project-list li:before {
+            content: "•";
+            color: #ffcc00;
+            font-size: 1.5rem;
+            position: absolute;
+            left: 0;
+            top: -5px;
+        }
+        
+        .action-buttons {
+            display: flex;
+            gap: 20px;
+            margin-top: 30px;
+        }
+        
+        .btn {
+            padding: 12px 30px;
+            border-radius: 50px;
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            color: white;
+            font-size: 1.1rem;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .btn:hover {
+            background: rgba(255, 255, 255, 0.2);
+            transform: translateY(-3px);
+        }
+        
+        .btn-main {
+            background: linear-gradient(to right, #ff416c, #ff4b2b);
+        }
+        
+        .btn-main:hover {
+            background: linear-gradient(to right, #ff4b2b, #ff416c);
+        }
+        
+        @media (max-width: 900px) {
+            .slider-container {
+                width: 95%;
+                height: 65vh;
+            }
+            
+            .profile-img {
+                width: 180px;
+                height: 180px;
+            }
+            
+            .profile-name {
+                font-size: 1.8rem;
+            }
+            
+            .profile-role {
+                font-size: 1.2rem;
+            }
+            
+            .modal-content {
+                padding: 30px 20px;
+            }
+            
+            .modal-header {
+                flex-direction: column;
+                text-align: center;
+            }
+            
+            .modal-contact {
+                justify-content: center;
+            }
+            
+            .modal-img {
+                width: 180px;
+                height: 180px;
+            }
+            
+            .modal-name {
+                font-size: 2rem;
+            }
+            
+            .modal-role {
+                font-size: 1.4rem;
+            }
+            
+            .modal-details {
+                grid-template-columns: 1fr;
+            }
+        }
+        
+        @media (max-width: 600px) {
+            h1 {
+                font-size: 2.2rem;
+            }
+            
+            .slider-container {
+                height: 60vh;
+            }
+            
+            .profile-img {
+                width: 150px;
+                height: 150px;
+            }
+            
+            .profile-name {
+                font-size: 1.6rem;
+            }
+            
+            .nav-btn {
+                width: 50px;
+                height: 50px;
+                font-size: 1.2rem;
+            }
+            
+            .modal-name {
+                font-size: 1.8rem;
+            }
+            
+            .modal-role {
+                font-size: 1.3rem;
+            }
+            
+            .action-buttons {
+                flex-direction: column;
+                gap: 15px;
+            }
+            
+            .btn {
+                width: 100%;
+                justify-content: center;
+            }
+            
+            .modal-contact {
+                flex-wrap: wrap;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>我们的开发团队</h1>
+            <p class="subtitle">才华横溢的开发者们，共同创造卓越产品</p>
+        </header>
+        
+        <div class="slider-container">
+            <div class="slider">
+                <div class="slide" data-index="0">
+                    <img src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=774&q=80" alt="张三" class="profile-img">
+                    <h2 class="profile-name">张三</h2>
+                    <p class="profile-role">主程 / 架构师</p>
+                    <p class="profile-desc">拥有10年全栈开发经验，精通多种编程语言和框架。负责系统架构设计和核心技术实现。</p>
+                </div>
+                
+                <div class="slide" data-index="1">
+                    <img src="https://images.unsplash.com/photo-1554151228-14d9def656e4?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=772&q=80" alt="李四" class="profile-img">
+                    <h2 class="profile-name">李四</h2>
+                    <p class="profile-role">主美 / 原画师</p>
+                    <p class="profile-desc">艺术设计专业出身，擅长UI/UX设计和原画创作。致力于打造美观且用户友好的界面体验。</p>
+                </div>
+                
+                <div class="slide" data-index="2">
+                    <img src="https://images.unsplash.com/photo-1560250097-0b93528c311a?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=774&q=80" alt="王五" class="profile-img">
+                    <h2 class="profile-name">王五</h2>
+                    <p class="profile-role">策划 / 数值设计</p>
+                    <p class="profile-desc">游戏策划专家，擅长系统设计和数值平衡。能够将创意转化为可执行的游戏设计方案。</p>
+                </div>
+                
+                <div class="slide" data-index="3">
+                    <img src="https://images.unsplash.com/photo-1580489944761-15a19d654956?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=761&q=80" alt="赵六" class="profile-img">
+                    <h2 class="profile-name">赵六</h2>
+                    <p class="profile-role">音效 / 配乐</p>
+                    <p class="profile-desc">音乐制作人，精通多种乐器和音频软件。为项目创作了多首令人印象深刻的背景音乐和音效。</p>
+                </div>
+                
+                <div class="slide" data-index="4">
+                    <img src="https://images.unsplash.com/photo-1544005313-94ddf0286df2?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=776&q=80" alt="钱七" class="profile-img">
+                    <h2 class="profile-name">钱七</h2>
+                    <p class="profile-role">测试 / 运营</p>
+                    <p class="profile-desc">质量保证专家，擅长发现和解决问题。确保产品稳定运行并提供优质的用户支持服务。</p>
+                </div>
+            </div>
+            
+            <button class="nav-btn prev">
+                <i class="fas fa-chevron-left"></i>
+            </button>
+            <button class="nav-btn next">
+                <i class="fas fa-chevron-right"></i>
+            </button>
+        </div>
+        
+        <div class="dots">
+            <div class="dot active"></div>
+            <div class="dot"></div>
+            <div class="dot"></div>
+            <div class="dot"></div>
+            <div class="dot"></div>
+        </div>
+        
+        <div class="action-buttons">
+            <button class="btn" id="viewDetailsBtn">
+                <i class="fas fa-info-circle"></i>查看详细信息
+            </button>
+            <button class="btn btn-main" id="backToMainBtn">
+                <i class="fas fa-home"></i>返回主菜单
+            </button>
+        </div>
+    </div>
+    
+    <div class="detail-modal" id="detailModal">
+        <div class="modal-content">
+            <button class="close-btn" id="closeModal">
+                <i class="fas fa-times"></i>
+            </button>
+            
+            <div class="modal-header">
+                <img src="" alt="" class="modal-img" id="modalImg">
+                <div class="modal-header-info">
+                    <h2 class="modal-name" id="modalName"></h2>
+                    <p class="modal-role" id="modalRole"></p>
+                    <p class="modal-desc" id="modalDesc"></p>
+                    <div class="modal-contact">
+                        <div class="contact-item">
+                            <i class="fas fa-envelope"></i>
+                            <span id="modalEmail"></span>
+                        </div>
+                        <div class="contact-item">
+                            <i class="fas fa-phone"></i>
+                            <span id="modalPhone"></span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="modal-details" id="modalDetails">
+                <!-- 详细信息将通过JS动态生成 -->
+            </div>
+        </div>
+    </div>
+    
+
+    <script>
+        // 团队成员详细信息
+        const teamDetails = [
+            {
+                name: "张三",
+                role: "主程 / 架构师",
+                desc: "拥有10年全栈开发经验，精通多种编程语言和框架。负责系统架构设计和核心技术实现。",
+                email: "zhangsan@example.com",
+                phone: "+86 138 0010 8001",
+                skills: [
+                    {name: "JavaScript", level: 90},
+                    {name: "Python", level: 85},
+                    {name: "Node.js", level: 95},
+                    {name: "React", level: 88},
+                    {name: "Vue", level: 82},
+                    {name: "架构设计", level: 95}
+                ],
+                education: "清华大学计算机科学与技术硕士",
+                experience: "10年开发经验，曾任职于多家知名互联网公司，主导过多个大型项目开发",
+                projects: [
+                    "主导开发了公司核心产品的微服务架构",
+                    "设计了高性能分布式数据库系统",
+                    "开发了自动化部署和监控平台"
+                ],
+                achievements: [
+                    "获得2020年度最佳技术贡献奖",
+                    "拥有3项技术发明专利",
+                    "在顶级技术会议发表过多篇论文"
+                ]
+            },
+            {
+                name: "李四",
+                role: "主美 / 原画师",
+                desc: "艺术设计专业出身，擅长UI/UX设计和原画创作。致力于打造美观且用户友好的界面体验。",
+                email: "lisi@example.com",
+                phone: "+86 138 0010 8002",
+                skills: [
+                    {name: "UI/UX设计", level: 95},
+                    {name: "原画创作", level: 90},
+                    {name: "Adobe Photoshop", level: 92},
+                    {name: "Illustrator", level: 88},
+                    {name: "Figma", level: 85},
+                    {name: "3D建模", level: 75}
+                ],
+                education: "中央美术学院视觉传达设计学士",
+                experience: "8年设计经验，曾参与多个知名游戏和应用的界面设计",
+                projects: [
+                    "主导设计了公司产品的整体视觉风格",
+                    "创作了游戏主要角色和场景原画",
+                    "优化了用户界面交互体验"
+                ],
+                achievements: [
+                    "作品入选国际数字艺术展",
+                    "获得2021年度最佳设计奖",
+                    "设计的图标集被多家公司采用"
+                ]
+            },
+            {
+                name: "王五",
+                role: "策划 / 数值设计",
+                desc: "游戏策划专家，擅长系统设计和数值平衡。能够将创意转化为可执行的游戏设计方案。",
+                email: "wangwu@example.com",
+                phone: "+86 138 0010 8003",
+                skills: [
+                    {name: "游戏系统设计", level: 92},
+                    {name: "数值平衡", level: 95},
+                    {name: "市场分析", level: 85},
+                    {name: "项目管理", level: 80},
+                    {name: "用户研究", level: 82},
+                    {name: "剧情设计", level: 78}
+                ],
+                education: "北京大学心理学硕士",
+                experience: "9年游戏策划经验，参与过多款成功游戏的策划工作",
+                projects: [
+                    "设计了游戏的战斗和经济系统",
+                    "平衡了游戏角色和装备的数值",
+                    "策划了多个受欢迎的游戏活动"
+                ],
+                achievements: [
+                    "主导策划的游戏获得年度最佳游戏奖",
+                    "提出的游戏机制被行业广泛采用",
+                    "培养了多名优秀的游戏策划人才"
+                ]
+            },
+            {
+                name: "赵六",
+                role: "音效 / 配乐",
+                desc: "音乐制作人，精通多种乐器和音频软件。为项目创作了多首令人印象深刻的背景音乐和音效。",
+                email: "zhaoliu@example.com",
+                phone: "+86 138 0010 8004",
+                skills: [
+                    {name: "作曲编曲", level: 90},
+                    {name: "音效设计", level: 88},
+                    {name: "钢琴", level: 85},
+                    {name: "吉他", level: 80},
+                    {name: "Pro Tools", level: 87},
+                    {name: "Logic Pro", level: 90}
+                ],
+                education: "中国音乐学院音乐制作专业学士",
+                experience: "7年音效设计经验，为多款游戏和影视作品创作配乐",
+                projects: [
+                    "创作了游戏的主题音乐和场景配乐",
+                    "设计了游戏的战斗音效和界面音效",
+                    "录制了真实乐器的音效库"
+                ],
+                achievements: [
+                    "配乐作品获得游戏音频大奖",
+                    "创作的背景音乐在流媒体平台获得百万播放",
+                    "开发的音效插件被业内广泛使用"
+                ]
+            },
+            {
+                name: "钱七",
+                role: "测试 / 运营",
+                desc: "质量保证专家，擅长发现和解决问题。确保产品稳定运行并提供优质的用户支持服务。",
+                email: "qianqi@example.com",
+                phone: "+86 138 0010 8005",
+                skills: [
+                    {name: "测试用例设计", level: 90},
+                    {name: "自动化测试", level: 85},
+                    {name: "性能测试", level: 82},
+                    {name: "用户支持", level: 88},
+                    {name: "数据分析", level: 80},
+                    {name: "问题排查", level: 92}
+                ],
+                education: "浙江大学计算机科学学士",
+                experience: "6年测试和运营经验，保障了多个大型项目的顺利上线",
+                projects: [
+                    "建立了完整的自动化测试体系",
+                    "优化了用户反馈处理流程",
+                    "设计了产品的数据监控方案"
+                ],
+                achievements: [
+                    "将产品崩溃率降低了90%",
+                    "提高了用户满意度评分至4.8/5",
+                    "培养了一支高效的测试团队"
+                ]
+            }
+        ];
+
+        document.addEventListener('DOMContentLoaded', function() {
+            const slider = document.querySelector('.slider');
+            const slides = document.querySelectorAll('.slide');
+            const dots = document.querySelectorAll('.dot');
+            const prevBtn = document.querySelector('.prev');
+            const nextBtn = document.querySelector('.next');
+            const viewDetailsBtn = document.getElementById('viewDetailsBtn');
+            const backToMainBtn = document.getElementById('backToMainBtn');
+            const detailModal = document.getElementById('detailModal');
+            const closeModal = document.getElementById('closeModal');
+            const modalImg = document.getElementById('modalImg');
+            const modalName = document.getElementById('modalName');
+            const modalRole = document.getElementById('modalRole');
+            const modalDesc = document.getElementById('modalDesc');
+            const modalEmail = document.getElementById('modalEmail');
+            const modalPhone = document.getElementById('modalPhone');
+            const modalDetails = document.getElementById('modalDetails');
+            
+            let currentSlide = 0;
+            const slideCount = slides.length;
+            
+            // 更新幻灯片位置
+            function updateSlide() {
+                slider.style.transform = `translateX(-${currentSlide * 100}%)`;
+                
+                // 更新指示点
+                dots.forEach((dot, index) => {
+                    dot.classList.toggle('active', index === currentSlide);
+                });
+            }
+            
+            // 下一张幻灯片
+            function nextSlide() {
+                currentSlide = (currentSlide + 1) % slideCount;
+                updateSlide();
+            }
+            
+            // 上一张幻灯片
+            function prevSlide() {
+                currentSlide = (currentSlide - 1 + slideCount) % slideCount;
+                updateSlide();
+            }
+            
+            // 显示详情模态框
+            function showDetails() {
+                const member = teamDetails[currentSlide];
+                modalImg.src = slides[currentSlide].querySelector('.profile-img').src;
+                modalName.textContent = member.name;
+                modalRole.textContent = member.role;
+                modalDesc.textContent = member.desc;
+                modalEmail.textContent = member.email;
+                modalPhone.textContent = member.phone;
+                
+                // 生成详细信息
+                modalDetails.innerHTML = `
+                    <div class="detail-card">
+                        <h3><i class="fas fa-code"></i>专业技能</h3>
+                        ${member.skills.map(skill => `
+                            <div class="skill-bar">
+                                <div class="skill-name">
+                                    <span>${skill.name}</span>
+                                    <span>${skill.level}%</span>
+                                </div>
+                                <div class="skill-progress">
+                                    <div class="skill-progress-bar" style="width: ${skill.level}%"></div>
+                                </div>
+                            </div>
+                        `).join('')}
+                    </div>
+                    
+                    <div class="detail-card">
+                        <h3><i class="fas fa-graduation-cap"></i>教育背景</h3>
+                        <p>${member.education}</p>
+                    </div>
+                    
+                    <div class="detail-card">
+                        <h3><i class="fas fa-briefcase"></i>工作经验</h3>
+                        <p>${member.experience}</p>
+                    </div>
+                    
+                    <div class="detail-card">
+                        <h3><i class="fas fa-tasks"></i>主要项目</h3>
+                        <ul class="project-list">
+                            ${member.projects.map(project => `<li>${project}</li>`).join('')}
+                        </ul>
+                    </div>
+                    
+                    <div class="detail-card">
+                        <h3><i class="fas fa-trophy"></i>个人成就</h3>
+                        <ul class="project-list">
+                            ${member.achievements.map(achievement => `<li>${achievement}</li>`).join('')}
+                        </ul>
+                    </div>
+                `;
+                
+                detailModal.classList.add('active');
+            }
+            
+            // 事件监听
+            prevBtn.addEventListener('click', prevSlide);
+            nextBtn.addEventListener('click', nextSlide);
+            
+            viewDetailsBtn.addEventListener('click', showDetails);
+            closeModal.addEventListener('click', () => {
+                detailModal.classList.remove('active');
+            });
+            
+            backToMainBtn.addEventListener('click', () => {
+                window.location.href = 'start.html';
+            });
+            
+            // 点按指示点切换幻灯片
+            dots.forEach((dot, index) => {
+                dot.addEventListener('click', () => {
+                    currentSlide = index;
+                    updateSlide();
+                });
+            });
+            
+            // 键盘导航
+            document.addEventListener('keydown', (e) => {
+                if (e.key === 'ArrowLeft') {
+                    prevSlide();
+                } else if (e.key === 'ArrowRight') {
+                    nextSlide();
+                } else if (e.key === 'Escape' && detailModal.classList.contains('active')) {
+                    detailModal.classList.remove('active');
+                }
+            });
+            
+            // 触摸滑动支持
+            let touchStartX = 0;
+            let touchEndX = 0;
+            
+            slider.addEventListener('touchstart', e => {
+                touchStartX = e.changedTouches[0].screenX;
+            }, false);
+            
+            slider.addEventListener('touchend', e => {
+                touchEndX = e.changedTouches[0].screenX;
+                handleSwipe();
+            }, false);
+            
+            function handleSwipe() {
+                const minSwipeDistance = 50;
+                
+                if (touchStartX - touchEndX > minSwipeDistance) {
+                    nextSlide();
+                } else if (touchEndX - touchStartX > minSwipeDistance) {
+                    prevSlide();
+                }
+            }
+            
+            // 自动播放
+            let autoPlayInterval = setInterval(nextSlide, 5000);
+            
+            // 鼠标悬停时暂停自动播放
+            slider.addEventListener('mouseenter', () => {
+                clearInterval(autoPlayInterval);
+            });
+            
+            slider.addEventListener('mouseleave', () => {
+                autoPlayInterval = setInterval(nextSlide, 5000);
+            });
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>现代战争 - 读取存档</title>
+    <link rel="stylesheet" href="css/load_game.css">
+</head>
+<body>
+    <!-- 背景容器 -->
+    <div id="background-container"></div>
+    
+    <!-- 标题和顶部区域 -->
+    <div id="top-section">
+        <h1 id="page-title">读取存档</h1>
+        <div id="user-info">
+            <span id="username">玩家: 未登录</span>
+            <button id="btn-logout" class="small-btn">退出</button>
+        </div>
+    </div>
+    
+    <!-- 存档容器 -->
+    <div id="save-slots-container">
+        <div class="save-slots-grid">
+            <!-- 9个存档位置 -->
+            <div class="save-slot" data-slot="1">
+                <div class="save-content">
+                    <div class="save-thumbnail"></div>
+                    <div class="save-info">
+                        <div class="save-chapter">空存档</div>
+                        <div class="save-date">-</div>
+                        <div class="save-dialog">-</div>
+                    </div>
+                </div>
+                <button class="delete-slot-btn" style="display: none;">✕</button>
+            </div>
+            <div class="save-slot" data-slot="2">
+                <div class="save-content">
+                    <div class="save-thumbnail"></div>
+                    <div class="save-info">
+                        <div class="save-chapter">空存档</div>
+                        <div class="save-date">-</div>
+                        <div class="save-dialog">-</div>
+                    </div>
+                </div>
+                <button class="delete-slot-btn" style="display: none;">✕</button>
+            </div>
+            <div class="save-slot" data-slot="3">
+                <div class="save-content">
+                    <div class="save-thumbnail"></div>
+                    <div class="save-info">
+                        <div class="save-chapter">空存档</div>
+                        <div class="save-date">-</div>
+                        <div class="save-dialog">-</div>
+                    </div>
+                </div>
+                <button class="delete-slot-btn" style="display: none;">✕</button>
+            </div>
+            <div class="save-slot" data-slot="4">
+                <div class="save-content">
+                    <div class="save-thumbnail"></div>
+                    <div class="save-info">
+                        <div class="save-chapter">空存档</div>
+                        <div class="save-date">-</div>
+                        <div class="save-dialog">-</div>
+                    </div>
+                </div>
+                <button class="delete-slot-btn" style="display: none;">✕</button>
+            </div>
+            <div class="save-slot" data-slot="5">
+                <div class="save-content">
+                    <div class="save-thumbnail"></div>
+                    <div class="save-info">
+                        <div class="save-chapter">空存档</div>
+                        <div class="save-date">-</div>
+                        <div class="save-dialog">-</div>
+                    </div>
+                </div>
+                <button class="delete-slot-btn" style="display: none;">✕</button>
+            </div>
+            <div class="save-slot" data-slot="6">
+                <div class="save-content">
+                    <div class="save-thumbnail"></div>
+                    <div class="save-info">
+                        <div class="save-chapter">空存档</div>
+                        <div class="save-date">-</div>
+                        <div class="save-dialog">-</div>
+                    </div>
+                </div>
+                <button class="delete-slot-btn" style="display: none;">✕</button>
+            </div>
+            <div class="save-slot" data-slot="7">
+                <div class="save-content">
+                    <div class="save-thumbnail"></div>
+                    <div class="save-info">
+                        <div class="save-chapter">空存档</div>
+                        <div class="save-date">-</div>
+                        <div class="save-dialog">-</div>
+                    </div>
+                </div>
+                <button class="delete-slot-btn" style="display: none;">✕</button>
+            </div>
+            <div class="save-slot" data-slot="8">
+                <div class="save-content">
+                    <div class="save-thumbnail"></div>
+                    <div class="save-info">
+                        <div class="save-chapter">空存档</div>
+                        <div class="save-date">-</div>
+                        <div class="save-dialog">-</div>
+                    </div>
+                </div>
+                <button class="delete-slot-btn" style="display: none;">✕</button>
+            </div>
+            <div class="save-slot" data-slot="9">
+                <div class="save-content">
+                    <div class="save-thumbnail"></div>
+                    <div class="save-info">
+                        <div class="save-chapter">空存档</div>
+                        <div class="save-date">-</div>
+                        <div class="save-dialog">-</div>
+                    </div>
+                </div>
+                <button class="delete-slot-btn" style="display: none;">✕</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 底部按钮 -->
+    <div id="bottom-buttons">
+        <button id="btn-back" class="bottom-btn">返回主菜单</button>
+        <button id="btn-delete-all" class="bottom-btn">删除所有存档</button>
+    </div>
+    
+    <!-- 确认删除模态框 -->
+    <div id="delete-modal" class="modal">
+        <div class="modal-content">
+            <h2>确认删除</h2>
+            <p id="delete-message">确定要删除所有存档吗？此操作不可撤销。</p>
+            <div class="modal-buttons">
+                <button id="delete-cancel" class="modal-btn">取消</button>
+                <button id="delete-confirm" class="modal-btn confirm">确认删除</button>
+            </div>
+        </div>
+    </div>
+    
+    <script src="js/load_game.js"></script>
+</body>
+</html>
