@@ -25,7 +25,7 @@ export class Unit {
         this.path = [];
         this.currentPathIndex = 0;
         this.moveTargetPos = null;
-        this.angle = 0//Math.random() * Math.PI * 2; // 初始随机角度
+        this.angle = Math.random() * Math.PI * 2; // 初始随机角度
         this.targetAngle = this.angle;
         this.rotationSpeed = Math.PI * 2.0; // 略微降低转向速度，使其更平滑
 
