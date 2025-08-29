@@ -38,14 +38,14 @@ export const UNIT_TYPES = {
     anti_tank_trooper: {
         unitClass: '步兵', icon: '🚀', name: '反坦克兵',
         cost: 2, hp: 90, attack: 25, defense: 5, range: 5 * TILE_SIZE, speed: 1.3 * TILE_SIZE, attackSpeed: 2.5, visionRange: 6 * TILE_SIZE,
-        moveType: 'ground', canTarget: ['ground'], imageSrc: 'assets/pics/anti_tank_trooper.jpg', drawScale: 1.5,
+        moveType: 'ground', canTarget: ['ground'], imageSrc: 'assets/pics/anti_tank_trooper.png', drawScale: 1.5,
         ammoType: 'shell', ammoSpeed: 12 * TILE_SIZE, ammoSplashRadius: 0.5 * TILE_SIZE, counters: { armor: 1.8 },
         description: '携带火箭筒，能有效对抗敌方装甲单位。'
     },
     main_battle_tank: {
         unitClass: '装甲', icon: 'T', name: '主战坦克',
         cost: 5, hp: 400, attack: 50, defense: 35, range: 6 * TILE_SIZE, speed: 1.1 * TILE_SIZE, attackSpeed: 2.2, visionRange: 7 * TILE_SIZE,
-        moveType: 'ground', unitType: 'armor', canTarget: ['ground'], imageSrc: 'assets/pics/main_battle_tank.jpg', drawScale: 3,
+        moveType: 'ground', unitType: 'armor', canTarget: ['ground'], imageSrc: 'assets/pics/main_battle_tank.png', drawScale: 3,
         ammoType: 'shell', ammoSpeed: 8 * TILE_SIZE, ammoSplashRadius: 1.5 * TILE_SIZE,
         description: '战场中坚，攻防兼备，是地面推进的核心力量。'
     },
