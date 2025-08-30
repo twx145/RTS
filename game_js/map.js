@@ -103,8 +103,8 @@ export class GameMap {
      */
     _drawBlendPattern(ctx, x, y, direction, blendColor) {
         ctx.fillStyle = blendColor;
-        const subTileCount = 8; // 将瓦片边缘分为4个小块
-        const subTileSize = TILE_SIZE / subTileCount + 2; 
+        const subTileCount = 4; // 将瓦片边缘分为4个小块
+        const subTileSize = TILE_SIZE / subTileCount; 
         const pixelX = x * TILE_SIZE;
         const pixelY = y * TILE_SIZE;
 
@@ -144,7 +144,7 @@ export class GameMap {
                         rectH = subTileSize;
                         break;
                 }
-                 ctx.fillRect(rectX, rectY, rectW, rectH);
+                 ctx.fillRect(rectX, rectY, rectW + 1, rectH + 1);
             }
         }
     }
