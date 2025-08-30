@@ -1,81 +1,39 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>现代战争 - 实时战略游戏</title>
-    <link rel="icon" href="data:,">
-    <link rel="stylesheet" href="css/style.css">
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>现代战争-主菜单</title>
+    <link rel="stylesheet" href="./css/start_style.css">
 </head>
 <body>
-    <div id="game-wrapper">
-        <div id="game-container">
-            <canvas id="game-canvas" width="1600" height="900"></canvas>
-            <aside id="sidebar">
-                <h2>控制面板</h2>
-                <div id="player-info">
-                    <div id="player-base-hp-display" style="display:none;">
-                        <strong>我方基地HP:</strong>
-                        <div class="hp-bar-container"><div id="player-base-hp-bar" class="hp-bar"></div></div>
-                    </div>
-                    <div id="ai-base-hp-display" style="display:none;">
-                        <strong>敌方基地HP:</strong>
-                        <div class="hp-bar-container"><div id="ai-base-hp-bar" class="hp-bar"></div></div>
-                    </div>
-                    <h3>我方兵力: <span id="player-manpower">100</span></h3>
-                </div>
-                <div id="unit-selection"></div>
-                <div id="game-controls">
-                    <button id="start-battle-btn">开始战斗</button>
-                    <p id="game-status">状态: 部署阶段</p>
-                </div>
-                 <div id="selected-unit-info">
-                    <h4>选中单位信息</h4><p>无</p>
-                </div>
-            </aside>
-        </div>
+    <div class="container">
+        <h1>现代战争</h1>
+        <!-- 主菜单按钮 -->
+        <!-- 将原来的链接改为跳转到加载页面 -->
+        <a class="menu-btn" href="loading.html?target=dialogue.html&new=true">开始新游戏</a>
+        <a class="menu-btn" href="load_game.html">读取存档</a>
+        <a class="menu-btn" href="achievements.html">成就</a>
+        <a class="menu-btn" href="settings.html">设置</a>
+        <a class="menu-btn" href="credits.html">开发组成员</a>
+        <a class="menu-btn" id="btnExit">退出游戏</a>
     </div>
 
-    <div id="setup-screen" class="modal-overlay">
-        <div class="modal-content">
-            <h1>游戏设置</h1>
-            <div class="form-group">
-                <label for="game-mode-select">游戏模式:</label>
-                <select id="game-mode-select">
-                    <option value="annihilation" selected>对攻模式</option>
-                    <option value="attack">进攻模式</option>
-                    <option value="defend">防守模式</option>
-                </select>
-            </div>
-            <div class="form-group">
-                <label for="map-select">选择地图:</label>
-                <select id="map-select"></select>
-            </div>
-            <div class="form-group">
-                <label for="game-speed-select">游戏速度:</label>
-                <select id="game-speed-select">
-                    <option value="0.5">慢速 (0.5x)</option>
-                    <option value="1" selected>正常 (1x)</option>
-                    <option value="1.5">快速 (1.5x)</option>
-                </select>
-            </div>
-            <div class="form-group">
-                <label for="ai-difficulty-select">AI难度:</label>
-                <select id="ai-difficulty-select">
-                    <option value="simple">简单</option>
-                    <option value="medium" selected>中等</option>
-                    <option value="hard">困难</option>
-                    <option value="hell">地狱</option>
-                </select>
-            </div>
-            <div class="form-group checkbox-group">
-                <input type="checkbox" id="show-details-checkbox">
-                <label for="show-details-checkbox">游戏中显示详细信息 (射程/路径)</label>
-            </div>
-            <button id="start-new-game-btn">创建游戏</button>
-        </div>
-    </div>
-    
-    <script type="module" src="game_js/main.js"></script>
+    <script>
+        // 退出游戏按钮
+        document.getElementById('btnExit').addEventListener('click', () => {
+            // 清除会话
+            sessionStorage.removeItem('currentUser');
+            // 返回登录页
+            window.location.href = './login.html';
+        });
+
+        // 防止未登录直接访问
+        window.addEventListener('DOMContentLoaded', () => {
+            if (!sessionStorage.getItem('currentUser')) {
+                window.location.href = './login.html';
+            }
+        });
+    </script>
 </body>
 </html>

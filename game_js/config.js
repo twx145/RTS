@@ -9,12 +9,12 @@ export const GAME_SPEEDS = {
 };
 
 export const TERRAIN_TYPES = {
-    grass: { name: '草地', color: '#7CFC00', traversableBy: ['ground', 'amphibious'] },
-    forest: { name: '森林', color: '#228B22', defenseBonus: 0.2, traversableBy: ['ground', 'amphibious'] },
-    road: { name: '马路', color: '#696969', traversableBy: ['ground', 'amphibious'] },
-    water: { name: '海洋', color: '#1E90FF', traversableBy: ['air', 'sea', 'amphibious'] },
-    building: { name: '建筑', color: '#A9A9A9', defenseBonus: 0.3, traversableBy: [] },
-    base: { name: '基地', color: '#FFD700', defenseBonus: 0.1, traversableBy: ['ground', 'amphibious', 'air'] }
+    grass: { name: '草地', color: '#7CFC00', traversableBy: ['ground', 'amphibious'], priority: 1 },
+    forest: { name: '森林', color: '#228B22', defenseBonus: 0.2, traversableBy: ['ground', 'amphibious'], priority: 2 },
+    road: { name: '马路', color: '#696969', traversableBy: ['ground', 'amphibious'], priority: 4 },
+    water: { name: '海洋', color: '#1E90FF', traversableBy: ['air', 'sea', 'amphibious'], priority: 3 },
+    building: { name: '建筑', color: '#A9A9A9', defenseBonus: 0.3, traversableBy: [], priority: 0 },
+    base: { name: '基地', color: '#FFD700', defenseBonus: 0.1, traversableBy: ['ground', 'amphibious', 'air'], priority: 0 }
 };
 
 // --- 单位定义，增加了 visionRange ---

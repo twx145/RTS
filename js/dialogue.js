@@ -270,7 +270,7 @@ function handleAction(action) {
             
             localStorage.setItem(`modernWarfare_temp_progress_${currentUser}`, JSON.stringify(tempProgress));
             // 跳转到游戏页面
-            window.location.href = `loading.html?target=index.html&fromDialogue=true`;
+            window.location.href = `loading.html?target=game.html&fromDialogue=true`;
             break;
             
         case 'jump_to_chapter':
