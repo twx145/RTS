@@ -62,11 +62,19 @@ body {
     width: 100%;
     padding: 20px;
     z-index: 3;
-    transition: transform 0.3s ease;
+    /* 修改 */
+    opacity: 1;
+    visibility: visible;
+    transition: opacity 0.3s ease, visibility 0.3s ease;
 }
 
-#dialog-container.hidden {
+/* #dialog-container.hidden {
     transform: translateY(100%);
+} 修改对话框隐藏时的样式 */
+#dialog-container.hidden {
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.3s ease, visibility 0.3s ease;
 }
 
 #dialog-box {

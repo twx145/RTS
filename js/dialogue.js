@@ -55,7 +55,7 @@ async function initGame() {
     const urlParams = new URLSearchParams(window.location.search);
     const isNewGame = urlParams.get('new') === 'true';
     const loadSlot = urlParams.get('load');
-    returnFromGame = urlParams.get('returnFromGame') === 'true';
+    returnFromGame = urlParams.get('returnFromGame') !== null;
     
     // 如果是新游戏，清除自动存档
     if (isNewGame) {
@@ -141,6 +141,12 @@ function handleClick(e) {
     // 如果点击的是功能按钮区域或模态框，不处理对话继续
     if (e.target.closest('#function-buttons') || e.target.closest('.modal')) return;
     
+    //修改 如果对话框是隐藏状态，先显示对话框
+    if (domElements.dialogContainer.classList.contains('hidden')) {
+        domElements.dialogContainer.classList.remove('hidden');
+        return; // 显示对话框后立即返回，不执行后续操作
+    }
+
     // 如果当前正在显示文字，立即完成显示
     if (isTyping) {
         completeTextDisplay();
@@ -189,7 +195,10 @@ function playScene(sceneIndex, dialogIndex = 0) {
     gameState.currentDialog = dialogIndex;
     
     // 设置背景
-    domElements.backgroundContainer.style.backgroundImage = `url('assets/backgrounds/${scene.background}')`;
+    // domElements.backgroundContainer.style.backgroundImage = `url('assets/backgrounds/${scene.background}')`;
+    // 背景没找全,先用bg.png
+
+    domElements.backgroundContainer.style.backgroundImage = `url('assets/backgrounds/bg.png')`;
     
     // 播放背景音乐
     if (scene.bgm) {
@@ -259,25 +268,22 @@ function playDialog(sceneIndex, dialogIndex) {
 
 // 处理特殊动作
 function handleAction(action) {
+    // 保存当前进度
+    const currentUser = sessionStorage.getItem('currentUser');
+    const tempProgress = {
+        chapter: gameState.currentChapter,
+        scene: gameState.currentScene,
+        dialog: gameState.currentDialog,
+        timestamp: new Date().getTime()
+    };
+    localStorage.setItem(`modernWarfare_temp_progress_${currentUser}`, JSON.stringify(tempProgress));
     switch (action.type) {
-        case 'jump_to_game'://修改
-            // 保存当前进度
-            const currentUser = sessionStorage.getItem('currentUser');
-            const tempProgress = {
-                chapter: gameState.currentChapter,
-                scene: gameState.currentScene,
-                dialog: gameState.currentDialog,
-                timestamp: new Date().getTime()
-            };
-            
-            localStorage.setItem(`modernWarfare_temp_progress_${currentUser}`, JSON.stringify(tempProgress));
-            // 跳转到游戏页面
+        case 'jump_to_game'://修改 跳转到游戏页面
             window.location.href = `loading.html?target=game.html&fromDialogue=true`;
             break;
             
-        case 'jump_to_chapter':
-            // 跳转到指定章节'
-            playChapter(action.chapter, action.scene || 0, action.dialog || 0);
+        case 'jump_to_chapter':// 跳转到指定章节' 修改
+            window.location.href = `loading.html?target=dialogue.html&returnFromGame=false&user=${JSON.parse(currentUser).username}`;
             break;
             
         case 'change_background':
@@ -486,6 +492,9 @@ function toggleFastForward() {
 // 切换对话框可见性
 function toggleDialogVisibility() {
     domElements.dialogContainer.classList.toggle('hidden');
+    //修改 更新按钮状态提示
+    const isHidden = domElements.dialogContainer.classList.contains('hidden');
+    domElements.btnToggleDialog.title = isHidden ? '显示对话框' : '隐藏对话框';
 }
 
 // 返回主菜单

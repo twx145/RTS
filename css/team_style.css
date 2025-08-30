@@ -1,0 +1,201 @@
+/* 基础样式重置 */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+body {
+    min-height: 100vh;
+    background: url('../assets/backgrounds/bg.png') no-repeat center center fixed;
+    background-size: cover;
+    color: #fff;
+    position: relative;
+    overflow: auto;
+    padding: 20px;
+}
+
+body::before {
+    content: '';
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, .5);
+    z-index: -1;
+}
+
+/* 主容器 */
+.container {
+    width: 90%;
+    max-width: 1000px;
+    padding: 40px;
+    background: rgba(0, 0, 0, .4);
+    backdrop-filter: blur(12px);
+    border-radius: 20px;
+    box-shadow: 0 15px 35px rgba(0, 0, 0, .5);
+    border: 1px solid rgba(255, 255, 255, .15);
+    text-align: center;
+    margin: 40px auto;
+}
+
+h1 {
+    font-size: 36px;
+    margin-bottom: 30px;
+    letter-spacing: 2px;
+    color: #fff;
+    text-shadow: 0 0 10px rgba(255, 75, 43, 0.7);
+}
+
+/* 返回按钮 */
+.back-btn {
+    display: inline-block;
+    margin-top:30px;
+    /* margin-bottom: 30px; */
+    padding: 12px 30px;
+    background: rgba(255, 255, 255, .1);
+    border: 1px solid rgba(255, 255, 255, .2);
+    border-radius: 10px;
+    color: #fff;
+    font-size: 18px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all .3s ease;
+    text-decoration: none;
+}
+
+.back-btn:hover {
+    background: rgba(255, 255, 255, .2);
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px rgba(0, 0, 0, .3);
+}
+
+/* 团队成员网格 */
+.team-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+    gap: 25px;
+    margin-top: 20px;
+}
+
+.member-card {
+    background: rgba(255, 255, 255, .1);
+    border-radius: 15px;
+    padding: 25px;
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
+    border: 1px solid rgba(255, 255, 255, .1);
+    transition: all 0.3s ease;
+    text-align: center;
+}
+
+.member-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 12px 30px rgba(0, 0, 0, 0.4);
+    background: rgba(255, 255, 255, .15);
+}
+
+.member-photo {
+    width: 120px;
+    height: 120px;
+    border-radius: 50%;
+    object-fit: cover;
+    margin-bottom: 15px;
+    border: 3px solid rgba(255, 255, 255, 0.2);
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+}
+
+.member-name {
+    font-size: 20px;
+    margin-bottom: 8px;
+    color: #fff;
+}
+
+.member-role {
+    color: #ff4b2b;
+    font-weight: 600;
+    margin-bottom: 15px;
+    font-size: 16px;
+}
+
+.member-desc {
+    color: rgba(255, 255, 255, 0.8);
+    font-size: 14px;
+    line-height: 1.5;
+    margin-bottom: 15px;
+}
+
+.member-link {
+    display: inline-block;
+    padding: 8px 20px;
+    background: rgba(255, 75, 43, 0.3);
+    border: 1px solid rgba(255, 75, 43, 0.5);
+    border-radius: 20px;
+    color: #fff;
+    text-decoration: none;
+    font-size: 14px;
+    transition: all 0.3s ease;
+}
+
+.member-link:hover {
+    background: rgba(255, 75, 43, 0.5);
+    transform: translateY(-2px);
+}
+
+/* 响应式设计 */
+@media (max-width: 768px) {
+    .container {
+        width: 95%;
+        padding: 30px 20px;
+    }
+    
+    h1 {
+        font-size: 28px;
+    }
+    
+    .team-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .member-card {
+        padding: 20px;
+    }
+}
+
+/* 小组介绍部分 */
+.team-intro {
+    background: rgba(255, 255, 255, .1);
+    border-radius: 15px;
+    padding: 30px;
+    margin-bottom: 40px;
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
+    border: 1px solid rgba(255, 255, 255, .1);
+    text-align: left;
+}
+
+.team-intro h2 {
+    color: #ff4b2b;
+    margin-bottom: 20px;
+    padding-bottom: 10px;
+    border-bottom: 2px solid rgba(255, 75, 43, 0.5);
+    font-size: 24px;
+}
+
+.team-intro p {
+    margin-bottom: 15px;
+    line-height: 1.6;
+    color: rgba(255, 255, 255, 0.9);
+}
+
+/* 响应式调整 */
+@media (max-width: 768px) {
+    .team-stats {
+        flex-direction: column;
+        gap: 20px;
+    }
+    
+    .team-intro {
+        padding: 20px;
+    }
+}

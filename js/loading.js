@@ -36,7 +36,6 @@ class LoadingManager {
     parseUrlParams() {
         const urlParams = new URLSearchParams(window.location.search);
         this.targetPage = urlParams.get('target') || 'dialogue.html';
-        
         // 收集所有参数
         this.loadingParams = {};
         for (const [key, value] of urlParams.entries()) {
@@ -99,14 +98,29 @@ class LoadingManager {
             } 
             // 如果是从游戏返回，加载之前场景的资源
             else if (this.loadingParams.returnFromGame === 'true') {
-                this.setPreviewInfo('剧情加载中', '正在准备剧情内容');
-                // 这里需要根据保存的进度确定要加载的资源
+                // 这里需要根据保存的进度确定要加载的资源 修改
                 const currentUser = sessionStorage.getItem('currentUser');
                 const tempProgress = localStorage.getItem(`modernWarfare_temp_progress_${currentUser}`);
                 if (tempProgress) {
                     try {
                         const progress = JSON.parse(tempProgress);
                         // 根据进度信息加载相应资源
+                        this.loadResourcesForProgress(progress);
+                    } catch (e) {
+                        console.error('解析进度信息失败', e);
+                        this.loadDefaultResources();
+                    }
+                } else {
+                    this.loadDefaultResources();
+                }
+            }else if (this.loadingParams.returnFromGame === 'false') {//修改，新增false
+                // 这里需要根据保存的进度确定要加载的资源 修改
+                const currentUser = sessionStorage.getItem('currentUser');
+                const tempProgress = localStorage.getItem(`modernWarfare_temp_progress_${currentUser}`);
+                if (tempProgress) {
+                    try {
+                        var progress = JSON.parse(tempProgress);
+                        progress.chapter += 1;progress.scene = progress.dialog = 0;
                         this.loadResourcesForProgress(progress);
                     } catch (e) {
                         console.error('解析进度信息失败', e);
@@ -139,52 +153,30 @@ class LoadingManager {
     }
     
     loadResourcesForProgress(progress) {
-        // 根据进度信息加载相应的资源
+        // 根据进度信息加载相应的资源 修改
         // 这里需要根据您的脚本结构来确定需要加载哪些资源
-        fetch('data/script.js')
-            .then(response => response.json())
-            .then(scriptData => {
-                const chapter = scriptData.chapters[progress.chapter];
-                if (chapter) {
-                    const scene = chapter.scenes[progress.scene];
-                    if (scene) {
-                        this.setPreviewInfo(chapter.title, scene.name);
-                        
-                        // 加载场景背景
-                        this.resourcesToLoad.push({
-                            type: 'image', 
-                            url: `assets/backgrounds/${scene.background}`
-                        });
-                        
-                        // 加载当前对话的角色立绘
-                        const dialog = scene.dialogs[progress.dialog];
-                        if (dialog) {
-                            if (dialog.characterLeft) {
-                                this.resourcesToLoad.push({
-                                    type: 'image', 
-                                    url: `assets/characters/${dialog.characterLeft.image}`
-                                });
-                            }
-                            if (dialog.characterCenter) {
-                                this.resourcesToLoad.push({
-                                    type: 'image', 
-                                    url: `assets/characters/${dialog.characterCenter.image}`
-                                });
-                            }
-                            if (dialog.characterRight) {
-                                this.resourcesToLoad.push({
-                                    type: 'image', 
-                                    url: `assets/characters/${dialog.characterRight.image}`
-                                });
-                            }
-                        }
+        const chapter = window.scriptData.chapters[progress.chapter];
+        if (chapter) {
+            const scene = chapter.scenes[progress.scene];
+            if (scene) {
+                this.setPreviewInfo(chapter.title,'剧情加载中');
+                // 加载场景背景
+                this.resourcesToLoad.push({type: 'image', url: `assets/backgrounds/${scene.background}`});
+                // 加载当前对话的角色立绘
+                const dialog = scene.dialogs[progress.dialog];
+                if (dialog) {
+                    if (dialog.characterLeft) {
+                        this.resourcesToLoad.push({type: 'image',url: `assets/characters/${dialog.characterLeft.image}`});
+                    }
+                    if (dialog.characterCenter) {
+                        this.resourcesToLoad.push({type: 'image',url: `assets/characters/${dialog.characterCenter.image}`});
+                    }
+                    if (dialog.characterRight) {
+                        this.resourcesToLoad.push({type: 'image',url: `assets/characters/${dialog.characterRight.image}`});
                     }
                 }
-            })
-            .catch(error => {
-                console.error('加载脚本数据失败', error);
-                this.loadDefaultResources();
-            });
+            }
+        }
     }
     
     loadDefaultResources() {
@@ -200,39 +192,26 @@ class LoadingManager {
     // 新增：为存档加载资源  修改
     loadResourcesForSave(saveData) {
         // 根据存档信息加载相应的资源
-        fetch('data/script.js')
-            .then(response => response.json())
-            .then(scriptData => {
-                const chapter = scriptData.chapters[saveData.chapter];
-                if (chapter) {
-                    const scene = chapter.scenes[saveData.scene];
-                    if (scene) {
-                        // 加载场景背景
-                        this.resourcesToLoad.push({
-                            type: 'image', 
-                            url: `assets/backgrounds/${scene.background}`
-                        });
-                        
-                        // 设置预览背景
-                        document.getElementById('scene-preview').style.backgroundImage = `url('assets/backgrounds/${scene.background}')`;
-                    }
-                }
-                
-                // 加载游戏资源
-                this.resourcesToLoad.push(
-                    { type: 'image', url: 'assets/backgrounds/battlefield.jpg' },
-                    { type: 'image', url: 'assets/units/infantry.png' },
-                    { type: 'image', url: 'assets/units/tank.png' },
-                    { type: 'image', url: 'assets/units/artillery.png' },
-                    { type: 'script', url: 'js/game.js' },
-                    { type: 'script', url: 'js/map.js' },
-                    { type: 'script', url: 'js/unit.js' }
-                );
-            })
-            .catch(error => {
-                console.error('加载脚本数据失败', error);
-                this.loadDefaultResources();
-            });
+        const chapter = window.scriptData.chapters[saveData.chapter];
+        if (chapter) {
+            const scene = chapter.scenes[saveData.scene];
+            if (scene) {
+                // 加载场景背景
+                this.resourcesToLoad.push({type: 'image', url: `assets/backgrounds/${scene.background}`});
+                // 设置预览背景
+                document.getElementById('scene-preview').style.backgroundImage = `url('assets/backgrounds/${scene.background}')`;
+            }
+        }
+        // 加载游戏资源
+        this.resourcesToLoad.push(
+            { type: 'image', url: 'assets/backgrounds/bg.png' },
+            { type: 'image', url: 'assets/units/infantry.png' },
+            { type: 'image', url: 'assets/units/tank.png' },
+            { type: 'image', url: 'assets/units/artillery.png' },
+            { type: 'script', url: 'js/game.js' },
+            { type: 'script', url: 'js/map.js' },
+            { type: 'script', url: 'js/unit.js' }
+        );
     }
     
     setPreviewInfo(title, description) {
