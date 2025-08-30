@@ -22,14 +22,14 @@ export const UNIT_TYPES = {
     // --- 步兵 ---
     assault_infantry: {
         unitClass: '步兵', icon: '👨‍✈️', name: '突击步兵',
-        cost: 1, hp: 100, attack: 15, defense: 5, range: 4 * TILE_SIZE, speed: 1.5 * TILE_SIZE, attackSpeed: 1.2, visionRange: range * 1.5,
+        cost: 1, hp: 100, attack: 15, defense: 5, range: 4 * TILE_SIZE, speed: 1.5 * TILE_SIZE, attackSpeed: 1.2, visionRange: 4 * TILE_SIZE * 1.5,
         moveType: 'ground', canTarget: ['ground','amphibious','sea'], imageSrc: 'assets/pics/assault_infantry.png', drawScale: 1.5,
         ammoType: 'bullet', ammoSpeed: 20 * TILE_SIZE, ammoSplashRadius: 0,
         description: '基础作战单位，廉价且灵活。'
     },
     sniper: {
         unitClass: '步兵', icon: '🎯', name: '狙击手',
-        cost: 3, hp: 70, attack: 50, defense: 0, range: 9 * TILE_SIZE, speed: 1.2 * TILE_SIZE, attackSpeed: 4.0, visionRange: range * 1.5,
+        cost: 3, hp: 70, attack: 50, defense: 0, range: 9 * TILE_SIZE, speed: 1.2 * TILE_SIZE, attackSpeed: 4.0, visionRange: 9 * TILE_SIZE * 1.5,
         moveType: 'ground', canTarget: ['ground','amphibious','sea'], imageSrc: 'assets/pics/sniper.png', drawScale: 1.5,
         ammoType: 'bullet', ammoSpeed: 30 * TILE_SIZE, ammoSplashRadius: 0, special: 'SETUP_TO_FIRE', 
         description: '超远射程，对步兵单位造成巨大威胁，但自身脆弱。'
@@ -37,77 +37,77 @@ export const UNIT_TYPES = {
     // ... 为所有单位添加 visionRange 属性 ...
     anti_tank_trooper: {
         unitClass: '步兵', icon: '🚀', name: '反坦克兵',
-        cost: 2, hp: 90, attack: 25, defense: 5, range: 5 * TILE_SIZE, speed: 1.3 * TILE_SIZE, attackSpeed: 2.5, visionRange: range * 1.5,
+        cost: 2, hp: 90, attack: 25, defense: 5, range: 5 * TILE_SIZE, speed: 1.3 * TILE_SIZE, attackSpeed: 2.5, visionRange: 5 * TILE_SIZE * 1.5,
         moveType: 'ground', canTarget: ['ground','amphibious','sea'], imageSrc: 'assets/pics/anti_tank_trooper.png', drawScale: 1.5,
         ammoType: 'shell', ammoSpeed: 12 * TILE_SIZE, ammoSplashRadius: 0.5 * TILE_SIZE, counters: { armor: 1.8 },
         description: '携带火箭筒，能有效对抗敌方装甲单位。'
     },
     main_battle_tank: {
         unitClass: '装甲', icon: 'T', name: '主战坦克',
-        cost: 5, hp: 400, attack: 50, defense: 35, range: 6 * TILE_SIZE, speed: 1.1 * TILE_SIZE, attackSpeed: 2.2, visionRange: range * 1.5,
+        cost: 5, hp: 400, attack: 50, defense: 35, range: 6 * TILE_SIZE, speed: 1.1 * TILE_SIZE, attackSpeed: 2.2, visionRange: 6 * TILE_SIZE * 1.5,
         moveType: 'ground', unitType: 'armor', canTarget: ['ground','amphibious','sea'], imageSrc: 'assets/pics/main_battle_tank.png', drawScale: 3,
         ammoType: 'shell', ammoSpeed: 8 * TILE_SIZE, ammoSplashRadius: 1.5 * TILE_SIZE,
         description: '战场中坚，攻防兼备，是地面推进的核心力量。'
     },
     light_tank: {
         unitClass: '装甲', icon: 't', name: '轻型坦克',
-        cost: 3, hp: 250, attack: 30, defense: 20, range: 5 * TILE_SIZE, speed: 1.8 * TILE_SIZE, attackSpeed: 1.8, visionRange: range * 1.5,
+        cost: 3, hp: 250, attack: 30, defense: 20, range: 5 * TILE_SIZE, speed: 1.8 * TILE_SIZE, attackSpeed: 1.8, visionRange: 5 * TILE_SIZE * 1.5,
         moveType: 'ground', unitType: 'armor', canTarget: ['ground','amphibious','sea'], imageSrc: 'assets/pics/light_tank.png', drawScale: 3,
         ammoType: 'missile', ammoSpeed: 15 * TILE_SIZE, ammoSplashRadius: 0,
         description: '机动性更强，适合侦察和快速穿插。'
     },
     amphibious_tank: {
         unitClass: '装甲', icon: 'A', name: '两栖坦克',
-        cost: 4, hp: 300, attack: 35, defense: 25, range: 5 * TILE_SIZE, speed: 1.2 * TILE_SIZE, attackSpeed: 2.0, visionRange: range * 1.5,
+        cost: 4, hp: 300, attack: 35, defense: 25, range: 5 * TILE_SIZE, speed: 1.2 * TILE_SIZE, attackSpeed: 2.0, visionRange: 5 * TILE_SIZE * 1.5,
         moveType: 'amphibious', unitType: 'armor', canTarget: ['ground', 'sea','amphibious','sea'], imageSrc: 'assets/pics/amphibious_tank.png', drawScale: 3,
         ammoType: 'missile', ammoSpeed: 15 * TILE_SIZE, ammoSplashRadius: 0,
         description: '可以穿越水域和陆地，用于登陆作战。'
     },
     fighter_jet: {
         unitClass: '飞行', icon: '✈️', name: '战斗机',
-        cost: 6, hp: 200, attack: 60, defense: 10, range: 8 * TILE_SIZE, speed: 5.0 * TILE_SIZE, attackSpeed: 2.0, visionRange: range * 1.5,
+        cost: 6, hp: 200, attack: 60, defense: 10, range: 8 * TILE_SIZE, speed: 5.0 * TILE_SIZE, attackSpeed: 2.0, visionRange: 8 * TILE_SIZE * 1.5,
         moveType: 'air', canTarget: ['air','sea'], imageSrc: 'assets/assault_infantry.jpeg', drawScale: 1.5,
         ammoType: 'missile', ammoSpeed: 15 * TILE_SIZE, ammoSplashRadius: 0, counters: { air: 1.8 },
         description: '夺取制空权的王者，专门猎杀敌方飞行单位。'
     },
     attack_helicopter: {
         unitClass: '飞行', icon: '🚁', name: '攻击直升机',
-        cost: 5, hp: 250, attack: 40, defense: 15, range: 7 * TILE_SIZE, speed: 3.0 * TILE_SIZE, attackSpeed: 1.8, visionRange: range * 1.5,
+        cost: 5, hp: 250, attack: 40, defense: 15, range: 7 * TILE_SIZE, speed: 3.0 * TILE_SIZE, attackSpeed: 1.8, visionRange: 7 * TILE_SIZE * 1.5,
         moveType: 'air', unitType: 'air', canTarget: ['ground', 'sea','amphibious'], imageSrc: 'assets/assault_infantry.jpeg', drawScale: 1.5,
         ammoType: 'missile', ammoSpeed: 15 * TILE_SIZE, ammoSplashRadius: 0, counters: { armor: 1.4 },
         description: '低空盘旋的坦克杀手，为地面部队提供火力支援。'
     },
     recon_drone: {
         unitClass: '飞行', icon: '🛰️', name: '无人侦察机',
-        cost: 2, hp: 50, attack: 0, defense: 0, range: 0, speed: 4.0 * TILE_SIZE, attackSpeed: 99, visionRange: range * 1.5,
+        cost: 2, hp: 50, attack: 0, defense: 0, range: 0, speed: 4.0 * TILE_SIZE, attackSpeed: 99, visionRange: 0,
         moveType: 'air', unitType: 'air', canTarget: [], imageSrc: 'assets/assault_infantry.jpeg', drawScale: 1.5,
         ammoType: null, ammoSpeed: 0, ammoSplashRadius: 0,
         description: '廉价的空中侦察单位，移动速度快，视野范围广。'
     },
     howitzer: {
         unitClass: '炮兵', icon: '💣', name: '榴弹炮',
-        cost: 6, hp: 120, attack: 100, defense: 5, range: 12 * TILE_SIZE, speed: 0.8 * TILE_SIZE, attackSpeed: 5.0, visionRange: range * 1.5,
+        cost: 6, hp: 120, attack: 100, defense: 5, range: 12 * TILE_SIZE, speed: 0.8 * TILE_SIZE, attackSpeed: 5.0, visionRange: 12 * TILE_SIZE * 1.5,
         moveType: 'ground', special: 'SETUP_TO_FIRE', canTarget: ['ground','amphibious','sea'], imageSrc: 'assets/pics/howitzer.png', drawScale: 4,
         ammoType: 'shell', ammoSpeed: 15 * TILE_SIZE, ammoSplashRadius: 1.5 * TILE_SIZE,
         description: '超远程地面压制火力，但需要部署才能开火。'
     },
     sam_launcher: {
         unitClass: '炮兵', icon: '🗼', name: '防空炮',
-        cost: 5, hp: 150, attack: 80, defense: 10, range: 10 * TILE_SIZE, speed: 1.0 * TILE_SIZE, attackSpeed: 0.4, visionRange: range * 1.5,
+        cost: 5, hp: 150, attack: 80, defense: 10, range: 10 * TILE_SIZE, speed: 1.0 * TILE_SIZE, attackSpeed: 0.4, visionRange: 10 * TILE_SIZE * 1.5,
         moveType: 'ground', special: 'SETUP_TO_FIRE', canTarget: ['air'], imageSrc: 'assets/assault_infantry.jpeg', drawScale: 1.5,
         ammoType: 'shell', ammoSpeed: 20 * TILE_SIZE, ammoSplashRadius: 0.5 * TILE_SIZE,
         description: '远程防空武器，对战斗机和轰炸机是致命威胁。'
     },
     destroyer: {
         unitClass: '海军', icon: '🚢', name: '驱逐舰',
-        cost: 8, hp: 600, attack: 70, defense: 30, range: 9 * TILE_SIZE, speed: 1.5 * TILE_SIZE, attackSpeed: 2.8, visionRange: range * 1.5,
+        cost: 8, hp: 600, attack: 70, defense: 30, range: 9 * TILE_SIZE, speed: 1.5 * TILE_SIZE, attackSpeed: 2.8, visionRange: 9 * TILE_SIZE * 1.5,
         moveType: 'sea', canTarget: ['ground', 'sea', 'air'], imageSrc: 'assets/assault_infantry.jpeg', drawScale: 1.5,
         ammoType: 'missile', ammoSpeed: 30 * TILE_SIZE, ammoSplashRadius: 1.5 * TILE_SIZE,
         description: '功能全面的主力战舰，可以攻击来自海陆空的任何敌人。'
     },
     submarine: {
         unitClass: '海军', icon: '🌊', name: '潜艇',
-        cost: 7, hp: 400, attack: 90, defense: 15, range: 8 * TILE_SIZE, speed: 1.8 * TILE_SIZE, attackSpeed: 3.5, visionRange: range * 1.5,
+        cost: 7, hp: 400, attack: 90, defense: 15, range: 8 * TILE_SIZE, speed: 1.8 * TILE_SIZE, attackSpeed: 3.5, visionRange: 8 * TILE_SIZE * 1.5,
         moveType: 'undersea', canTarget: ['sea'], imageSrc: 'assets/assault_infantry.jpeg', drawScale: 1.5,
         ammoType: 'missile', ammoSpeed: 20 * TILE_SIZE, ammoSplashRadius: 0,
         description: '水下杀手，擅长对敌方潜艇和潜水船进行攻击。'
