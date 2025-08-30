@@ -87,15 +87,15 @@ export const UNIT_TYPES = {
     howitzer: {
         unitClass: '炮兵', icon: '💣', name: '榴弹炮',
         cost: 6, hp: 120, attack: 100, defense: 5, range: 12 * TILE_SIZE, speed: 0.8 * TILE_SIZE, attackSpeed: 5.0, visionRange: 8 * TILE_SIZE,
-        moveType: 'ground', special: 'SETUP_TO_FIRE', canTarget: ['ground'], imageSrc: 'assets/pics/howitzer.png', drawScale: 3,
+        moveType: 'ground', special: 'SETUP_TO_FIRE', canTarget: ['ground'], imageSrc: 'assets/pics/howitzer.png', drawScale: 4,
         ammoType: 'shell', ammoSpeed: 15 * TILE_SIZE, ammoSplashRadius: 1.5 * TILE_SIZE,
         description: '超远程地面压制火力，但需要部署才能开火。'
     },
     sam_launcher: {
         unitClass: '炮兵', icon: '🗼', name: '防空导弹',
         cost: 5, hp: 150, attack: 80, defense: 10, range: 10 * TILE_SIZE, speed: 1.0 * TILE_SIZE, attackSpeed: 4.0, visionRange: 11 * TILE_SIZE,
-        moveType: 'ground', canTarget: ['air'], imageSrc: 'assets/assault_infantry.jpeg', drawScale: 1.5,
-        ammoType: 'shell', ammoSpeed: 15 * TILE_SIZE, ammoSplashRadius: 0.5 * TILE_SIZE,
+        moveType: 'ground', special: 'SETUP_TO_FIRE', canTarget: ['air'], imageSrc: 'assets/assault_infantry.jpeg', drawScale: 1.5,
+        ammoType: 'missile', ammoSpeed: 15 * TILE_SIZE, ammoSplashRadius: 0.5 * TILE_SIZE,
         description: '远程防空武器，对战斗机和轰炸机是致命威胁。'
     },
     destroyer: {
