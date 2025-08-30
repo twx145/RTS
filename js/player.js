@@ -1,3 +1,4 @@
+// js/player.js
 import { AIController } from './ai.js';
 
 export class Player {
@@ -16,15 +17,16 @@ export class Player {
     }
 
     /**
-     * 核心修复：确保AI的update函数被正确调用并传递所需参数
+     * 核心修复：增加 spatialGrid 参数，并将其传递给 AI 控制器
      * @param {number} deltaTime 
      * @param {Player} enemyPlayer 
      * @param {GameMap} map 
+     * @param {SpatialGrid} spatialGrid // <-- 新增参数
      */
-    update(deltaTime, enemyPlayer, map) {
+    update(deltaTime, enemyPlayer, map, spatialGrid) { // <-- 新增参数
         if (this.isAI) {
-            // 将 deltaTime, enemyPlayer, map 参数正确地传递给 AI 控制器
-            this.aiController.update(this.units, enemyPlayer.units, map, deltaTime);
+            // 将 spatialGrid 正确地传递给 AI 控制器
+            this.aiController.update(this.units, enemyPlayer.units, map, deltaTime, spatialGrid); // <-- 新增参数
         }
     }
     

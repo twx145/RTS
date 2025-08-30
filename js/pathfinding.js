@@ -105,7 +105,7 @@ export function findPath(map, start, end, moveType) {
  * 检查两点之间是否有地形障碍（用于路径平滑）
  */
 export function isLineOfSightClear(startPos, endPos, map, moveType) {
-    // 核心修复: 空中单位永远视野清晰，无视地形
+    // 核心修复: 空中单位永远视野清晰，无视地形 (性能提升)
     if (moveType === 'air') {
         return true;
     }

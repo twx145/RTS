@@ -9,6 +9,7 @@ import { getDistance } from './utils.js';
 import { Projectile, Explosion } from './projectile.js';
 import { findPath } from './pathfinding.js';
 import { FogOfWar } from './fog-of-war.js';
+import { SpatialGrid } from './spatial-grid.js'; // <-- 引入空间网格
 
 export class Game {
     constructor(canvas) {
@@ -17,7 +18,7 @@ export class Game {
         
         this.gameState = 'setup';
         this.gameMode = 'annihilation';
-        this.showDetails = false; // 新增：用于控制是否显示详细信息
+        this.showDetails = false;
         this.lastTime = 0;
         this.gameSpeedModifier = 1;
         this.map = null;
@@ -26,6 +27,7 @@ export class Game {
         this.playerBase = null;
         this.aiBase = null;
         this.fogOfWar = null;
+        this.spatialGrid = null; // <-- 性能优化核心
         this.projectiles = [];
         this.explosions = [];
         this.selectedUnits = [];
@@ -33,7 +35,7 @@ export class Game {
         this.dragStart = { x: 0, y: 0 };
         this.dragEnd = { x: 0, y: 0 };
         this.mousePos = { x: 0, y: 0 };
-        this.globalMousePos = { x: 0, y: 0 }; // 新增：相对于窗口的鼠标位置
+        this.globalMousePos = { x: 0, y: 0 };
         this.camera = { x: 0, y: 0, zoom: 1, minZoom: 0.5, maxZoom: 2.5 };
         this.isDraggingMap = false;
         this.lastDragPos = { x: 0, y: 0 };
@@ -45,13 +47,22 @@ export class Game {
 
     init(settings) {
         this.gameMode = settings.gameMode;
-        this.showDetails = settings.showDetails; // 保存设置
+        this.showDetails = settings.showDetails;
         this.fromDialogue = settings.fromDialogue || false;
         this.user = settings.user || null;
         const selectedMapData = MAP_DEFINITIONS.find(m => m.id === settings.mapId);
         this.map = new GameMap();
         this.map.load(selectedMapData);
-        this.fogOfWar = new FogOfWar(this.map.width * TILE_SIZE, this.map.height * TILE_SIZE);
+
+        const mapWidthPixels = this.map.width * TILE_SIZE;
+        const mapHeightPixels = this.map.height * TILE_SIZE;
+        
+        // --- 性能优化：初始化空间网格 ---
+        // 单元格大小通常是最大单位视野或射程的2倍左右，以确保一次查询就能覆盖所需范围
+        const gridCellSize = TILE_SIZE * 15; 
+        this.spatialGrid = new SpatialGrid(mapWidthPixels, mapHeightPixels, gridCellSize);
+
+        this.fogOfWar = new FogOfWar(mapWidthPixels, mapHeightPixels);
         
         const baseGridY = Math.floor(this.map.height / 2) - 1; 
         if (this.gameMode === 'annihilation' || this.gameMode === 'defend') {
@@ -107,20 +118,26 @@ export class Game {
         if (this.gameState === 'gameover' || this.gameState === 'setup') return;
         this.handleEdgeScrolling(deltaTime);
         this.constrainCamera();
+
+        const allPlayerUnits = [...this.player.units];
+        const allAiUnits = [...this.ai.units];
+        const allUnits = [...allPlayerUnits, ...allAiUnits];
+        
+        // --- 性能优化：每帧更新空间网格 ---
+        this.spatialGrid.clear();
+        allUnits.forEach(unit => this.spatialGrid.insert(unit));
         
         if (this.gameState === 'playing' || this.gameState === 'deployment') {
-            const allPlayerUnits = [...this.player.units];
-            const allAiUnits = [...this.ai.units];
-            
-            allPlayerUnits.forEach(unit => unit.update(deltaTime, allAiUnits, this.map, this.aiBase, this));
-            allAiUnits.forEach(unit => unit.update(deltaTime, allPlayerUnits, this.map, this.playerBase, this));
+            // 将空间网格传入，用于高效索敌
+            allPlayerUnits.forEach(unit => unit.update(deltaTime, allAiUnits, this.map, this.aiBase, this, this.spatialGrid));
+            allAiUnits.forEach(unit => unit.update(deltaTime, allPlayerUnits, this.map, this.playerBase, this, this.spatialGrid));
             
             if (this.gameState === 'playing') {
                  this.ai.update(deltaTime, this.player, this.map);
             }
         }
         
-        this.updatePhysics(deltaTime);
+        this.updatePhysics(deltaTime, allUnits); // <-- 传入所有单位
 
         const remainingProjectiles = [];
         for (const p of this.projectiles) {
@@ -153,25 +170,45 @@ export class Game {
         this.ctx.scale(this.camera.zoom, this.camera.zoom);
         this.ctx.translate(-this.camera.x, -this.camera.y);
 
+        // --- 性能优化：计算镜头可见范围 ---
+        const viewBounds = {
+            left: this.camera.x,
+            top: this.camera.y,
+            right: this.camera.x + this.canvas.width / this.camera.zoom,
+            bottom: this.camera.y + this.canvas.height / this.camera.zoom
+        };
+
         this.map.draw(this.ctx, this.camera);
         
         if (this.playerBase) this.playerBase.draw(this.ctx, this.camera.zoom);
         if (this.aiBase) this.aiBase.draw(this.ctx, this.camera.zoom);
 
-        // --- 核心修复 (需求 #4): 分层绘制单位 ---
         const allUnits = [...this.player.units, ...this.ai.units];
         const groundSeaUnits = allUnits.filter(u => u.stats.moveType !== 'air');
         const airUnits = allUnits.filter(u => u.stats.moveType === 'air');
 
-        // 1. 绘制地面和海上单位
-        groundSeaUnits.forEach(unit => unit.draw(this.ctx, this.selectedUnits.includes(unit), this.camera.zoom, this.showDetails));
+        const isVisible = (entity, padding = TILE_SIZE * 2) => {
+            return entity.x > viewBounds.left - padding && entity.x < viewBounds.right + padding &&
+                   entity.y > viewBounds.top - padding && entity.y < viewBounds.bottom + padding;
+        };
+
+        // 1. 绘制地面和海上单位 (只绘制可见的)
+        groundSeaUnits.forEach(unit => {
+            if (isVisible(unit)) {
+                unit.draw(this.ctx, this.selectedUnits.includes(unit), this.camera.zoom, this.showDetails)
+            }
+        });
         
-        // 2. 绘制弹道和爆炸
-        this.projectiles.forEach(p => p.draw(this.ctx));
-        this.explosions.forEach(e => e.draw(this.ctx));
+        // 2. 绘制弹道和爆炸 (只绘制可见的)
+        this.projectiles.forEach(p => { if(isVisible(p)) p.draw(this.ctx) });
+        this.explosions.forEach(e => { if(isVisible(e)) e.draw(this.ctx) });
         
-        // 3. 绘制空中单位
-        airUnits.forEach(unit => unit.draw(this.ctx, this.selectedUnits.includes(unit), this.camera.zoom, this.showDetails));
+        // 3. 绘制空中单位 (只绘制可见的)
+        airUnits.forEach(unit => {
+             if (isVisible(unit)) {
+                unit.draw(this.ctx, this.selectedUnits.includes(unit), this.camera.zoom, this.showDetails)
+            }
+        });
 
         this.fogOfWar.draw(this.ctx);
 
@@ -184,173 +221,80 @@ export class Game {
         }
     }
 
+    /**
+     * 核心重构 (性能革命): 使用空间网格进行物理碰撞检测
+     * @param {number} deltaTime
+     * @param {Array<Unit>} allUnits
+     */
+    updatePhysics(deltaTime, allUnits) {
+        const PUSH_FORCE = 30;
+        const processedPairs = new Set(); // 防止A-B和B-A重复计算
+
+        for (const unitA of allUnits) {
+            // 从空间网格获取附近的单位，而不是遍历所有单位
+            const nearbyUnits = this.spatialGrid.getNearby(unitA);
+            
+            for (const unitB of nearbyUnits) {
+                if (unitA.id === unitB.id) continue;
+
+                // 使用ID组合来唯一标识一对单位，避免重复
+                const pairKey = unitA.id < unitB.id ? `${unitA.id}-${unitB.id}` : `${unitB.id}-${unitA.id}`;
+                if (processedPairs.has(pairKey)) continue;
+                processedPairs.add(pairKey);
+
+                // 如果一个是空中单位，另一个不是，则跳过碰撞
+                const isAirA = unitA.stats.moveType === 'air';
+                const isAirB = unitB.stats.moveType === 'air';
+                if (isAirA !== isAirB) {
+                    continue;
+                }
+
+                const distance = getDistance(unitA, unitB);
+                const collisionRadius = (unitA.stats.drawScale + unitB.stats.drawScale) / 2 * (TILE_SIZE / 2); // 半径更精确
+                
+                if (distance > 0 && distance < collisionRadius) {
+                    const overlap = collisionRadius - distance;
+                    const angle = Math.atan2(unitB.y - unitA.y, unitB.x - unitA.x);
+                    const pushAmount = overlap * PUSH_FORCE * deltaTime;
+                    const pushX = Math.cos(angle) * pushAmount;
+                    const pushY = Math.sin(angle) * pushAmount;
+                    
+                    // 各推开一半
+                    unitA.x -= pushX * 0.5;
+                    unitA.y -= pushY * 0.5;
+                    unitB.x += pushX * 0.5;
+                    unitB.y += pushY * 0.5;
+                }
+            }
+        }
+    }
+
+    // --- 以下方法与之前版本类似，为保持完整性而保留 ---
     addEventListeners() {
-        // --- 核心修复 (需求 #1): 监听整个窗口的mousemove ---
         window.addEventListener('mousemove', (e) => this.handleMouseMove(e));
         this.canvas.addEventListener('mousedown', (e) => this.handleMouseDown(e));
         this.canvas.addEventListener('mouseup', (e) => this.handleMouseUp(e));
         this.canvas.addEventListener('wheel', (e) => this.handleWheel(e), { passive: false });
         this.canvas.addEventListener('contextmenu', (e) => e.preventDefault());
-        
-        window.addEventListener('keydown', (e) => {
-            if (e.key === 'Escape') {
-                this.selectedUnits = [];
-                this.ui.clearDeploymentSelection();
-            }
-        });
-
+        window.addEventListener('keydown', (e) => { if (e.key === 'Escape') { this.selectedUnits = []; this.ui.clearDeploymentSelection(); } });
         this.canvas.addEventListener('touchstart', (e) => this.handleTouchStart(e), { passive: false });
         this.canvas.addEventListener('touchmove', (e) => this.handleTouchMove(e), { passive: false });
         this.canvas.addEventListener('touchend', (e) => this.handleTouchEnd(e));
         this.canvas.addEventListener('touchcancel', (e) => this.handleTouchEnd(e));
     }
-
-    handleMouseDown(e) {
-        const pos = this.getMousePos(e);
-        if (e.button === 0) {
-            if (e.ctrlKey) {
-                this.isDraggingMap = true;
-                this.lastDragPos = { x: e.clientX, y: e.clientY };
-                this.canvas.style.cursor = 'grabbing';
-            } else {
-                this.isDragging = true;
-                this.dragStart = pos;
-                this.dragEnd = pos;
-            }
-        } else if (e.button === 1) {
-             this.isDraggingMap = true;
-             this.lastDragPos = { x: e.clientX, y: e.clientY };
-             this.canvas.style.cursor = 'grabbing';
-        }
-    }
-
-    handleMouseMove(e) {
-        this.mousePos = this.getMousePos(e);
-        this.globalMousePos = { x: e.clientX, y: e.clientY }; // 存储全局坐标
-
-        if (this.isDraggingMap) {
-            const dx = e.clientX - this.lastDragPos.x;
-            const dy = e.clientY - this.lastDragPos.y;
-            this.camera.x -= dx / this.camera.zoom;
-            this.camera.y -= dy / this.camera.zoom;
-            this.lastDragPos = { x: e.clientX, y: e.clientY };
-        } else if (this.isDragging) {
-            this.dragEnd = this.mousePos;
-        }
-    }
-
-    handleMouseUp(e) {
-         if (e.button === 2) {
-            const pos = this.getMousePos(e);
-            this.handleRightClick(pos.x, pos.y);
-            return;
-        }
-        if (this.isDraggingMap) {
-            this.isDraggingMap = false;
-            this.canvas.style.cursor = 'default';
-        } else if (this.isDragging) {
-            this.isDragging = false;
-            const pos = this.getMousePos(e);
-            if (getDistance(this.dragStart, pos) < 10) {
-                this.handleLeftClick(pos.x, pos.y);
-            } else {
-                this.handleBoxSelection();
-            }
-        }
-    }
-
-    handleLeftClick(x, y) {
-        const worldPos = this.screenToWorld(x, y);
-        if (this.ui.selectedUnitToDeploy) {
-            this.tryDeployUnit(worldPos, this.ui.selectedUnitToDeploy);
-            return;
-        }
-        if (this.selectedUnits.length > 0) {
-            this.issueCommandForSelectedUnits(worldPos);
-            return;
-        }
-        const clickedUnit = this.player.units.find(unit => getDistance(worldPos, unit) < TILE_SIZE / 2);
-        this.selectedUnits = clickedUnit ? [clickedUnit] : [];
-    }
-    
-    handleRightClick(x, y) {
-        if (this.selectedUnits.length > 0) {
-            const worldPos = this.screenToWorld(x, y);
-            this.issueCommandForSelectedUnits(worldPos);
-        }
-    }
-
-    issueCommandForSelectedUnits(worldPos) {
-        let targetEnemy = null;
-        const allEnemies = [...this.ai.units, this.aiBase].filter(Boolean);
-        for (const enemy of allEnemies) {
-            const enemyPos = { x: enemy.pixelX || enemy.x, y: enemy.pixelY || enemy.y };
-            const clickRadius = (enemy instanceof Base) ? (enemy.width * TILE_SIZE / 2) : (TILE_SIZE / 2);
-            if (getDistance(worldPos, enemyPos) < clickRadius) {
-                targetEnemy = enemy;
-                break;
-            }
-        }
-        if (targetEnemy) {
-            this.selectedUnits.forEach(unit => unit.target = targetEnemy);
-        } else {
-            this.selectedUnits.forEach(unit => unit.target = null);
-            if (this.selectedUnits.length === 1) {
-                this.selectedUnits[0].issueMoveCommand(worldPos, this.map);
-            } else {
-                this.issueGroupMoveCommand(worldPos, this.map);
-            }
-        }
-    }
-
-    tryDeployUnit(worldPos, unitType) {
-        const cost = UNIT_TYPES[unitType].cost;
-        if (this.player.canAfford(cost) && worldPos.x < (this.map.width * TILE_SIZE) / 3) {
-            const gridX = Math.floor(worldPos.x / TILE_SIZE);
-            const gridY = Math.floor(worldPos.y / TILE_SIZE);
-            const tile = this.map.getTile(gridX, gridY);
-            const unitStats = UNIT_TYPES[unitType];
-            if (unitStats.moveType === 'air' || (tile && TERRAIN_TYPES[tile.type].traversableBy.includes(unitStats.moveType))) {
-                this.player.units.push(new Unit(unitType, 'player', worldPos.x, worldPos.y));
-                this.player.deductManpower(cost);
-                this.ui.update();
-            } else { this.ui.showGameMessage("该单位无法部署在此地形上！"); }
-        } else {
-            if(!this.player.canAfford(cost)) { this.ui.showGameMessage("资源不足！"); }
-            else { this.ui.showGameMessage("只能在左侧1/3区域部署！"); }
-        }
-    }
-
-    handleBoxSelection() {
-        this.ui.clearDeploymentSelection();
-        this.selectedUnits = [];
-        const rect = { x: Math.min(this.dragStart.x, this.dragEnd.x), y: Math.min(this.dragStart.y, this.dragEnd.y), w: Math.abs(this.dragStart.x - this.dragEnd.x), h: Math.abs(this.dragStart.y - this.dragEnd.y) };
-        this.player.units.forEach(unit => {
-            const screenPos = this.worldToScreen(unit.x, unit.y);
-            if (screenPos.x > rect.x && screenPos.x < rect.x + rect.w && screenPos.y > rect.y && screenPos.y < rect.y + rect.h) {
-                this.selectedUnits.push(unit);
-            }
-        });
-    }
-
-    issueGroupMoveCommand(targetPos, map) {
-        if (this.selectedUnits.length === 0) return;
-        const centroid = this.selectedUnits.reduce((acc, unit) => ({ x: acc.x + unit.x, y: acc.y + unit.y }), { x: 0, y: 0 });
-        centroid.x /= this.selectedUnits.length;
-        centroid.y /= this.selectedUnits.length;
-        const offsets = this.selectedUnits.map(unit => ({ dx: unit.x - centroid.x, dy: unit.y - centroid.y }));
-        this.selectedUnits.forEach((unit, index) => {
-            const unitTargetPos = { x: targetPos.x + offsets[index].dx, y: targetPos.y + offsets[index].dy };
-            unit.issueMoveCommand(unitTargetPos, map);
-        });
-    }
-
+    handleMouseDown(e) { const pos = this.getMousePos(e); if (e.button === 0) { if (e.ctrlKey) { this.isDraggingMap = true; this.lastDragPos = { x: e.clientX, y: e.clientY }; this.canvas.style.cursor = 'grabbing'; } else { this.isDragging = true; this.dragStart = pos; this.dragEnd = pos; } } else if (e.button === 1) { this.isDraggingMap = true; this.lastDragPos = { x: e.clientX, y: e.clientY }; this.canvas.style.cursor = 'grabbing'; } }
+    handleMouseMove(e) { this.mousePos = this.getMousePos(e); this.globalMousePos = { x: e.clientX, y: e.clientY }; if (this.isDraggingMap) { const dx = e.clientX - this.lastDragPos.x; const dy = e.clientY - this.lastDragPos.y; this.camera.x -= dx / this.camera.zoom; this.camera.y -= dy / this.camera.zoom; this.lastDragPos = { x: e.clientX, y: e.clientY }; } else if (this.isDragging) { this.dragEnd = this.mousePos; } }
+    handleMouseUp(e) { if (e.button === 2) { const pos = this.getMousePos(e); this.handleRightClick(pos.x, pos.y); return; } if (this.isDraggingMap) { this.isDraggingMap = false; this.canvas.style.cursor = 'default'; } else if (this.isDragging) { this.isDragging = false; const pos = this.getMousePos(e); if (getDistance(this.dragStart, pos) < 10) { this.handleLeftClick(pos.x, pos.y); } else { this.handleBoxSelection(); } } }
+    handleLeftClick(x, y) { const worldPos = this.screenToWorld(x, y); if (this.ui.selectedUnitToDeploy) { this.tryDeployUnit(worldPos, this.ui.selectedUnitToDeploy); return; } if (this.selectedUnits.length > 0) { this.issueCommandForSelectedUnits(worldPos); return; } const clickedUnit = this.player.units.find(unit => getDistance(worldPos, unit) < TILE_SIZE / 2); this.selectedUnits = clickedUnit ? [clickedUnit] : []; }
+    handleRightClick(x, y) { if (this.selectedUnits.length > 0) { const worldPos = this.screenToWorld(x, y); this.issueCommandForSelectedUnits(worldPos); } }
+    issueCommandForSelectedUnits(worldPos) { let targetEnemy = null; const allEnemies = [...this.ai.units, this.aiBase].filter(Boolean); for (const enemy of allEnemies) { const enemyPos = { x: enemy.pixelX || enemy.x, y: enemy.pixelY || enemy.y }; const clickRadius = (enemy instanceof Base) ? (enemy.width * TILE_SIZE / 2) : (TILE_SIZE / 2); if (getDistance(worldPos, enemyPos) < clickRadius) { targetEnemy = enemy; break; } } if (targetEnemy) { this.selectedUnits.forEach(unit => unit.target = targetEnemy); } else { this.selectedUnits.forEach(unit => unit.target = null); if (this.selectedUnits.length === 1) { this.selectedUnits[0].issueMoveCommand(worldPos, this.map); } else { this.issueGroupMoveCommand(worldPos, this.map); } } }
+    tryDeployUnit(worldPos, unitType) { const cost = UNIT_TYPES[unitType].cost; if (this.player.canAfford(cost) && worldPos.x < (this.map.width * TILE_SIZE) / 3) { const gridX = Math.floor(worldPos.x / TILE_SIZE); const gridY = Math.floor(worldPos.y / TILE_SIZE); const tile = this.map.getTile(gridX, gridY); const unitStats = UNIT_TYPES[unitType]; if (unitStats.moveType === 'air' || (tile && TERRAIN_TYPES[tile.type].traversableBy.includes(unitStats.moveType))) { this.player.units.push(new Unit(unitType, 'player', worldPos.x, worldPos.y)); this.player.deductManpower(cost); this.ui.update(); } else { this.ui.showGameMessage("该单位无法部署在此地形上！"); } } else { if (!this.player.canAfford(cost)) { this.ui.showGameMessage("资源不足！"); } else { this.ui.showGameMessage("只能在左侧1/3区域部署！"); } } }
+    handleBoxSelection() { this.ui.clearDeploymentSelection(); this.selectedUnits = []; const rect = { x: Math.min(this.dragStart.x, this.dragEnd.x), y: Math.min(this.dragStart.y, this.dragEnd.y), w: Math.abs(this.dragStart.x - this.dragEnd.x), h: Math.abs(this.dragStart.y - this.dragEnd.y) }; this.player.units.forEach(unit => { const screenPos = this.worldToScreen(unit.x, unit.y); if (screenPos.x > rect.x && screenPos.x < rect.x + rect.w && screenPos.y > rect.y && screenPos.y < rect.y + rect.h) { this.selectedUnits.push(unit); } }); }
+    issueGroupMoveCommand(targetPos, map) { if (this.selectedUnits.length === 0) return; const centroid = this.selectedUnits.reduce((acc, unit) => ({ x: acc.x + unit.x, y: acc.y + unit.y }), { x: 0, y: 0 }); centroid.x /= this.selectedUnits.length; centroid.y /= this.selectedUnits.length; const offsets = this.selectedUnits.map(unit => ({ dx: unit.x - centroid.x, dy: unit.y - centroid.y })); this.selectedUnits.forEach((unit, index) => { const unitTargetPos = { x: targetPos.x + offsets[index].dx, y: targetPos.y + offsets[index].dy }; unit.issueMoveCommand(unitTargetPos, map); }); }
     getMousePos(e) { const rect = this.canvas.getBoundingClientRect(); const scaleX = this.canvas.width / rect.width; const scaleY = this.canvas.height / rect.height; return { x: (e.clientX - rect.left) * scaleX, y: (e.clientY - rect.top) * scaleY }; }
     worldToScreen(worldX, worldY) { return { x: (worldX - this.camera.x) * this.camera.zoom, y: (worldY - this.camera.y) * this.camera.zoom }; }
     screenToWorld(screenX, screenY) { return { x: screenX / this.camera.zoom + this.camera.x, y: screenY / this.camera.zoom + this.camera.y }; }
     constrainCamera() { if (!this.map) return; const mapWidthPixels = this.map.width * TILE_SIZE; const mapHeightPixels = this.map.height * TILE_SIZE; const viewWidth = this.canvas.width / this.camera.zoom; const viewHeight = this.canvas.height / this.camera.zoom; this.camera.x = Math.max(0, Math.min(this.camera.x, mapWidthPixels - viewWidth)); this.camera.y = Math.max(0, Math.min(this.camera.y, mapHeightPixels - viewHeight)); }
-    
-    // --- Touch and Wheel events unchanged ---
     handleWheel(e) { e.preventDefault(); const zoomFactor = e.deltaY > 0 ? 1.05 : 0.95; this.zoomAtPoint(zoomFactor, this.getMousePos(e)); }
     zoomAtPoint(factor, point) { const oldZoom = this.camera.zoom; const newZoom = Math.max(this.camera.minZoom, Math.min(this.camera.maxZoom, oldZoom / factor)); if (newZoom === oldZoom) return; const worldMouseX = point.x / oldZoom + this.camera.x; const worldMouseY = point.y / oldZoom + this.camera.y; this.camera.zoom = newZoom; this.camera.x = worldMouseX - point.x / newZoom; this.camera.y = worldMouseY - point.y / newZoom; }
     handleTouchStart(e) { e.preventDefault(); for (const touch of e.changedTouches) { this.activeTouches.set(touch.identifier, this.getTouchPos(touch)); } this.updateTouchState(); }
@@ -358,86 +302,11 @@ export class Game {
     handleTouchMove(e) { e.preventDefault(); for (const touch of e.changedTouches) { this.activeTouches.set(touch.identifier, this.getTouchPos(touch)); } const touches = Array.from(this.activeTouches.values()); if (touches.length === 2) { const currentCenter = { x: (touches[0].x + touches[1].x) / 2, y: (touches[0].y + touches[1].y) / 2 }; const currentDistance = getDistance(touches[0], touches[1]); if (this.lastTouchCenter) { const dx = currentCenter.x - this.lastTouchCenter.x; const dy = currentCenter.y - this.lastTouchCenter.y; this.camera.x -= dx / this.camera.zoom; this.camera.y -= dy / this.camera.zoom; } if (this.lastTouchDistance > 0) { const zoomFactor = this.lastTouchDistance / currentDistance; this.zoomAtPoint(zoomFactor, currentCenter); } this.lastTouchCenter = currentCenter; this.lastTouchDistance = currentDistance; } }
     handleTouchEnd(e) { for (const touch of e.changedTouches) { this.activeTouches.delete(touch.identifier); } this.updateTouchState(); }
     updateTouchState() { if (this.activeTouches.size < 2) { this.lastTouchDistance = 0; this.lastTouchCenter = null; } }
-
-
-    /**
-     * 核心修复 (需求 #1): 使用全局鼠标坐标判断窗口边缘滚动
-     */
-    handleEdgeScrolling(deltaTime) {
-        if (this.isDraggingMap || this.isDragging || this.activeTouches.size > 0) return;
-        
-        const edgeMargin = 20;
-        const scrollSpeed = 600 / this.camera.zoom;
-        
-        if (this.globalMousePos.x < edgeMargin) this.camera.x -= scrollSpeed * deltaTime;
-        if (this.globalMousePos.x > window.innerWidth - edgeMargin) this.camera.x += scrollSpeed * deltaTime;
-        if (this.globalMousePos.y < edgeMargin) this.camera.y -= scrollSpeed * deltaTime;
-        if (this.globalMousePos.y > window.innerHeight - edgeMargin) this.camera.y += scrollSpeed * deltaTime;
-    }
-
-    /**
-     * 核心修复 (需求 #4): 更新物理碰撞，忽略空对地单位
-     */
-    updatePhysics(deltaTime) {
-        const allUnits = [...this.player.units, ...this.ai.units];
-        const PUSH_FORCE = 30;
-        for (let i = 0; i < allUnits.length; i++) {
-            for (let j = i + 1; j < allUnits.length; j++) {
-                const unitA = allUnits[i];
-                const unitB = allUnits[j];
-
-                // 如果一个是空中单位，另一个不是，则跳过碰撞
-                const isAirA = unitA.stats.moveType === 'air';
-                const isAirB = unitB.stats.moveType === 'air';
-                if ((isAirA && !isAirB) || (!isAirA && isAirB)) {
-                    continue;
-                }
-
-                const distance = getDistance(unitA, unitB);
-                const collisionRadius = (unitA.stats.drawScale + unitB.stats.drawScale) / 2 * TILE_SIZE;
-                if (distance > 0 && distance < collisionRadius) {
-                    const overlap = collisionRadius - distance;
-                    const angle = Math.atan2(unitB.y - unitA.y, unitB.x - unitA.x);
-                    const pushX = Math.cos(angle) * overlap * PUSH_FORCE * deltaTime;
-                    const pushY = Math.sin(angle) * overlap * PUSH_FORCE * deltaTime;
-                    unitA.x -= pushX;
-                    unitA.y -= pushY;
-                    unitB.x += pushX;
-                    unitB.y += pushY;
-                }
-            }
-        }
-    }
-    
-    // --- Unchanged methods below ---
+    handleEdgeScrolling(deltaTime) { if (this.isDraggingMap || this.isDragging || this.activeTouches.size > 0) return; const edgeMargin = 20; const scrollSpeed = 600 / this.camera.zoom; if (this.globalMousePos.x < edgeMargin) this.camera.x -= scrollSpeed * deltaTime; if (this.globalMousePos.x > window.innerWidth - edgeMargin) this.camera.x += scrollSpeed * deltaTime; if (this.globalMousePos.y < edgeMargin) this.camera.y -= scrollSpeed * deltaTime; if (this.globalMousePos.y > window.innerHeight - edgeMargin) this.camera.y += scrollSpeed * deltaTime; }
     handleProjectileHit(p) { this.explosions.push(new Explosion(p.x, p.y, p.stats.splashRadius || 10)); if (p.target.hp > 0) p.target.takeDamage(p.stats.damage); if (p.stats.splashRadius > 0) { const allTargets = [...this.player.units, ...this.ai.units, this.playerBase, this.aiBase].filter(Boolean); allTargets.forEach(entity => { if (entity.owner !== p.owner && entity.id !== p.target.id && entity.hp > 0) { const entityPos = { x: entity.pixelX || entity.x, y: entity.pixelY || entity.y }; const distance = getDistance(entityPos, p); if (distance < p.stats.splashRadius) { const splashDamage = p.stats.damage * (1 - distance / p.stats.splashRadius); entity.takeDamage(splashDamage); } } }); } }
     startGame() { if (this.gameState === 'deployment') this.gameState = 'playing'; }
     checkWinConditions() { if (this.gameState !== 'playing') return; const pCanDeploy = this.player.manpower >= Math.min(...Object.values(UNIT_TYPES).map(u => u.cost)); const pOutOfForces = this.player.units.length === 0 && !pCanDeploy; switch (this.gameMode) { case 'annihilation': if (this.playerBase?.hp <= 0) this.endGame(this.ai); else if (this.aiBase?.hp <= 0) this.endGame(this.player); break; case 'attack': if (this.aiBase?.hp <= 0) this.endGame(this.player); else if (pOutOfForces) this.endGame(this.ai); break; case 'defend': if (this.playerBase?.hp <= 0) this.endGame(this.ai); else if (this.ai.units.length === 0 && this.ai.manpower < 2) this.endGame(this.player); break; } }
-    endGame(winner) {
-        if (this.gameState === 'gameover') return; // 防止重复调用
-        this.gameState = 'gameover';
-        
-        // 如果不是从对话系统跳转而来，显示正常结束界面
-        console.log(`${winner.name} 获胜!`);
-        this.ui.showWinner(winner.name);
-
-        // 尝试返回对话系统
-        if (this.returnToDialogue()) {
-            return;
-        }     
-    }
-    // 添加返回对话系统的方法
-    returnToDialogue() {
-        const urlParams = new URLSearchParams(window.location.search);
-        const fromDialogue = urlParams.get('fromDialogue');
-        const user = urlParams.get('user');
-        this.ui.showWinner(fromDialogue);
-        if (fromDialogue === 'true') {
-            // 返回对话系统
-            window.location.href = `./loading.html?target=dialogue.html&returnFromGame=true&user=${currentUser}`;
-            return true;
-        }
-        return false;
-    }
+    endGame(winner) { if (this.gameState === 'gameover') return; this.gameState = 'gameover'; console.log(`${winner.name} 获胜!`); this.ui.showWinner(winner.name); if (this.returnToDialogue()) { return; } }
+    returnToDialogue() { const urlParams = new URLSearchParams(window.location.search); const fromDialogue = urlParams.get('fromDialogue'); const user = urlParams.get('user'); this.ui.showWinner(fromDialogue); if (fromDialogue === 'true') { window.location.href = `./loading.html?target=dialogue.html&returnFromGame=true&user=${currentUser}`; return true; } return false; }
     placeBaseOnMap(base) { for (let y = 0; y < base.height; y++) { for (let x = 0; x < base.width; x++) { this.map.setTileType(base.gridX + x, base.gridY + y, 'base'); } } }
 }
