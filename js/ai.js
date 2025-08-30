@@ -1,3 +1,4 @@
+// js/ai.js
 import { UNIT_TYPES } from './config.js';
 import { Unit } from './unit.js';
 import { getDistance } from './utils.js';
@@ -18,6 +19,7 @@ export class AIController {
     }
 
     deployUnits(mapWidth, mapHeight, TILE_SIZE) {
+        // ... 此函数无变化 ...
         const deployableUnits = Object.keys(UNIT_TYPES);
         let manpowerToSpend = this.player.manpower;
 
@@ -48,14 +50,19 @@ export class AIController {
         }
     }
 
-    update(aiUnits, playerUnits, map, deltaTime) {
+    /**
+     * 核心修复：接收并使用 spatialGrid
+     * @param {SpatialGrid} spatialGrid // <-- 新增参数
+     */
+    update(aiUnits, playerUnits, map, deltaTime, spatialGrid) { // <-- 新增参数
         if (playerUnits.length === 0 && (!this.playerBase || this.playerBase.hp <= 0)) return;
 
         this.macroTimer += deltaTime;
         this.microTimer += deltaTime;
 
         // 单位级的微操（所有难度都需要）
-        this.runSimpleLogic(aiUnits, playerUnits);
+        // 将 spatialGrid 传递下去，用于高效索敌
+        this.runSimpleLogic(aiUnits, spatialGrid); // <-- 修改参数
 
         // 宏观决策（按难度和频率执行）
         if (this.macroTimer >= this.macroInterval) {
@@ -78,13 +85,17 @@ export class AIController {
     }
 
     /**
-     * 单位级的自主行为逻辑 (所有难度通用)
+     * 核心修复：使用 spatialGrid 调用新的 findTarget 方法
+     * @param {Array<Unit>} aiUnits
+     * @param {SpatialGrid} spatialGrid
      */
-    runSimpleLogic(aiUnits, playerUnits) {
+    runSimpleLogic(aiUnits, spatialGrid) {
         aiUnits.forEach(unit => {
-            // 如果单位没有目标，也没有移动路径，就让它自己寻找最近的敌人
-            if (!unit.target && unit.path.length === 0) {
-                unit.findTarget(playerUnits, this.playerBase);
+            // 如果单位空闲，就让它自己寻找最近的敌人
+            // 注意：这里不再需要 playerUnits 列表，因为索敌将通过空间网格完成
+            if (!unit.target && unit.path.length === 0 && unit.findTargetCooldown <= 0) {
+                 // 使用新的索敌函数签名
+                unit.findTarget(this.playerBase, spatialGrid);
             }
         });
     }
@@ -93,6 +104,7 @@ export class AIController {
      * 中等难度：组织波次进攻玩家基地
      */
     runMediumLogic(aiUnits, playerUnits, map) {
+        // ... 此函数无变化 ...
         if (!this.playerBase || this.playerBase.hp <= 0) return;
 
         const livingAttackWave = this.attackWave.filter(u => u.hp > 0);
@@ -104,7 +116,6 @@ export class AIController {
         const targetPoint = { x: this.playerBase.pixelX, y: this.playerBase.pixelY };
         this.attackWave.forEach(unit => {
             if (unit.hp > 0 && !unit.target && unit.path.length === 0) {
-                 // --- 关键BUG修复: 确保 map 参数被正确传递，否则AI单位无法寻路 ---
                  unit.issueMoveCommand(targetPoint, map); 
             }
         });
@@ -114,6 +125,7 @@ export class AIController {
      * 困难难度：优先攻击高价值目标，其次攻击基地
      */
     runHardLogic(aiUnits, playerUnits, map) {
+        // ... 此函数无变化 ...
         let priorityTarget = null;
         
         const targetPriorities = ['howitzer', 'sniper', 'sam_launcher', 'destroyer'];
@@ -134,7 +146,6 @@ export class AIController {
 
             this.attackWave.forEach(unit => {
                 if (unit.hp > 0) {
-                    // 直接设置目标，让单位自行决定是移动还是攻击
                     unit.target = priorityTarget;
                 }
             });
@@ -145,6 +156,7 @@ export class AIController {
      * 地狱难度：完美的集火微操
      */
     runHellMicro(aiUnits, playerUnits) {
+        // ... 此函数无变化 ...
         if (playerUnits.length === 0) return;
 
         const weakestPlayerUnit = playerUnits.reduce((weakest, unit) => {
@@ -154,7 +166,6 @@ export class AIController {
         if (weakestPlayerUnit) {
             aiUnits.forEach(aiUnit => {
                 const dist = getDistance(aiUnit, weakestPlayerUnit);
-                // 仅命令在射程内的单位集火，避免不必要的移动
                 if (dist <= aiUnit.stats.range) {
                     aiUnit.target = weakestPlayerUnit;
                 }
