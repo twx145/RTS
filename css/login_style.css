@@ -11,7 +11,7 @@ body {
     align-items: center;
     min-height: 100vh;
     /* 背景图片位置 - 在这里替换为您的背景图片URL */
-    background: url('../开始背景.png') no-repeat center center fixed;
+    background: url('../assets/backgrounds/bg.png') no-repeat center center fixed;
     background-size: cover;
     position: relative;
 }
@@ -176,8 +176,9 @@ h2 {
 .logo span {
     font-size: 36px;
     font-weight: bold;
-    color: #ff416c;
-    text-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+    background: linear-gradient(45deg, #ff416c, #ff4b2b);
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
 }
 
 /* 加载动画样式 */

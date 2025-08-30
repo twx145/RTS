@@ -76,8 +76,6 @@ async function initGame() {
             try {
                 saveData = JSON.parse(tempProgress);
                 localStorage.removeItem(`modernWarfare_temp_progress_${currentUser}`);
-
-                saveData.dialog += 1;
             } catch (e) {
                 console.error("读取临时进度失败", e);
             }
@@ -86,7 +84,8 @@ async function initGame() {
     
     if (saveData) {
         // 加载存档
-        loadGameState(saveData);
+        playChapter(saveData.chapter, saveData.scene, saveData.dialog + returnFromGame);
+        // loadGameState(saveData);
     } else {
         // 开始新游戏
         playChapter(0, 0, 0);
@@ -100,7 +99,6 @@ async function initGame() {
 function getSaveDataFromURL() {
     const urlParams = new URLSearchParams(window.location.search);
     const saveSlot = urlParams.get('load');
-    
     if (saveSlot) {
         return loadSave(saveSlot);
     }
@@ -111,8 +109,7 @@ function getSaveDataFromURL() {
 // 加载对话脚本
 async function loadScript() {
     try {
-        const response = await fetch('data/script.json');
-        gameState.scriptData = await response.json();
+        gameState.scriptData = window.scriptData;
     } catch (error) {
         console.error('加载对话脚本失败:', error);
         alert('无法加载游戏数据，请刷新页面重试。');
@@ -230,11 +227,11 @@ function playDialog(sceneIndex, dialogIndex) {
     gameState.currentScene = sceneIndex;
     gameState.currentDialog = dialogIndex;
     
-    // 检查是否有特殊动作
-    if (dialog.action) {
-        handleAction(dialog.action);
-        return;
-    }
+    // // 检查是否有特殊动作 修改
+    // if (dialog.action) {
+    //     handleAction(dialog.action);
+    //     return;
+    // }
     
     // 设置角色名称
     domElements.characterName.textContent = dialog.character;
@@ -253,12 +250,17 @@ function playDialog(sceneIndex, dialogIndex) {
     
     // 自动保存
     autoSave();
+
+    if (dialog.action) {//修改
+        handleAction(dialog.action);
+        return;
+    }
 }
 
 // 处理特殊动作
 function handleAction(action) {
     switch (action.type) {
-        case 'jump_to_game':
+        case 'jump_to_game'://修改
             // 保存当前进度
             const currentUser = sessionStorage.getItem('currentUser');
             const tempProgress = {
@@ -274,7 +276,7 @@ function handleAction(action) {
             break;
             
         case 'jump_to_chapter':
-            // 跳转到指定章节
+            // 跳转到指定章节'
             playChapter(action.chapter, action.scene || 0, action.dialog || 0);
             break;
             
@@ -346,6 +348,7 @@ function displayText(text) {
             }
         }
     }, speed);
+    
 }
 
 // 立即完成文字显示
@@ -488,7 +491,7 @@ function toggleDialogVisibility() {
 // 返回主菜单
 function goToMainMenu() {
     if (confirm("确定要返回主菜单吗？未保存的进度将会丢失。")) {
-        window.location.href = 'start.html';
+        window.location.href = 'index.html';
     }
 }
 
@@ -501,7 +504,7 @@ function onVoiceEnded() {
 function showEnding() {
     // 根据游戏进度显示不同的结局
     alert("游戏结束！感谢您的游玩。");
-    window.location.href = 'start.html';
+    window.location.href = 'index.html';
 }
 
 // 初始化游戏

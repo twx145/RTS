@@ -31,8 +31,8 @@ async function initLoadGame() {
 // 加载脚本数据
 async function loadScriptData() {
     try {
-        const response = await fetch('data/script.json');
-        scriptData = await response.json();
+        // const response = await fetch('data/script.js');
+        scriptData = window.scriptData;
     } catch (error) {
         console.error('加载脚本数据失败:', error);
         // 即使脚本加载失败，也继续显示存档页面
@@ -189,10 +189,20 @@ function loadGame(slot) {
     // 获取存档数据
     const userSaves = getUserSaves();
     const saveData = userSaves[slot];
-    
+    if (saveData) {
+        // 保存存档信息到临时存储，供加载页面使用
+        const currentUser = sessionStorage.getItem('currentUser');
+        localStorage.setItem(`modernWarfare_load_save_${currentUser}`, JSON.stringify({
+            slot: slot,
+            saveData: saveData
+        }));
+        
+        // 跳转到加载页面，然后到游戏页面
+        window.location.href = `loading.html?target=game.html&fromSave=true&user=${JSON.parse(currentUser).username}`;
+    }
     if (saveData) {
         // 跳转到对话页面并加载存档
-        window.location.href = `dialogue.html?load=${slot}&user=${currentUser}`;
+        window.location.href = `dialogue.html?load=${slot}&user=${JSON.parse(currentUser).username}`;
     }
 }
 
@@ -200,7 +210,7 @@ function loadGame(slot) {
 function bindEvents() {
     // 返回主菜单按钮
     document.getElementById('btn-back').addEventListener('click', () => {
-        window.location.href = 'start.html';
+        window.location.href = 'index.html';
     });
     
     // 删除所有存档按钮

@@ -21,16 +21,12 @@ class LoadingManager {
     init() {
         // 解析URL参数
         this.parseUrlParams();
-        
         // 设置随机提示
         this.setRandomTip();
-        
         // 根据目标页面确定要加载的资源
         this.determineResources();
-        
         // 开始加载
         this.startLoading();
-        
         // 绑定跳过按钮事件
         document.getElementById('skip-button').addEventListener('click', () => {
             this.skipLoading();
@@ -55,27 +51,58 @@ class LoadingManager {
         document.getElementById('loading-tip').textContent = randomTip;
     }
     
-    determineResources() {
+    determineResources() {//修改
         // 根据目标页面确定需要加载的资源
-        if (this.targetPage.includes('dialogue.html')) {
-            // 对话页面需要加载的资源
-            this.setPreviewInfo('剧情加载中', '正在准备下一段剧情内容');
+        const urlParams = new URLSearchParams(window.location.search);
+        const fromSave = urlParams.get('fromSave');
+        if (fromSave === 'true') {
+            // 从存档加载游戏
+            this.setPreviewInfo('加载存档', '正在恢复游戏进度');
+            // 获取存档信息
+            const currentUser = sessionStorage.getItem('currentUser');
+            const saveInfo = localStorage.getItem(`modernWarfare_load_save_${currentUser}`);
             
+            if (saveInfo) {
+                try {
+                    const { saveData } = JSON.parse(saveInfo);
+                    
+                    // 根据存档信息设置预览
+                    this.setPreviewInfo(
+                        `第${saveData.chapter + 1}章`, 
+                        this.getSceneName(saveData.chapter, saveData.scene)
+                    );
+                    
+                    // 加载存档相关的资源
+                    this.loadResourcesForSave(saveData);
+                    
+                    // 清理临时存储
+                    localStorage.removeItem(`modernWarfare_load_save_${currentUser}`);
+                } catch (e) {
+                    console.error('解析存档信息失败', e);
+                    this.loadDefaultResources();
+                }
+            } else {
+                this.loadDefaultResources();
+            }
+        } 
+        else if (this.targetPage.includes('dialogue.html')) {
+            // 对话页面需要加载的资源
             // 如果是新游戏，加载第一章第一场景的资源
             if (this.loadingParams.new === 'true') {
+                this.setPreviewInfo('剧情加载中', '正在准备第一章剧情内容');
                 this.resourcesToLoad = [
-                    { type: 'script', url: 'data/script.json' },
+                    { type: 'script', url: 'data/script.js' },
                     { type: 'image', url: 'assets/backgrounds/bg.png' },
-                    { type: 'image', url: 'assets/characters/commander_normal.png' },
-                    { type: 'image', url: 'assets/characters/player_normal.png' }
+                    { type: 'image', url: 'assets/characters/commander.jpg' },
+                    { type: 'image', url: 'assets/characters/player.jpg' }
                 ];
             } 
             // 如果是从游戏返回，加载之前场景的资源
             else if (this.loadingParams.returnFromGame === 'true') {
+                this.setPreviewInfo('剧情加载中', '正在准备剧情内容');
                 // 这里需要根据保存的进度确定要加载的资源
                 const currentUser = sessionStorage.getItem('currentUser');
                 const tempProgress = localStorage.getItem(`modernWarfare_temp_progress_${currentUser}`);
-                
                 if (tempProgress) {
                     try {
                         const progress = JSON.parse(tempProgress);
@@ -94,11 +121,11 @@ class LoadingManager {
                 this.loadDefaultResources();
             }
         } 
-        else if (this.targetPage.includes('index.html')) {
+        else if (this.targetPage.includes('game.html')) {
             // 游戏页面需要加载的资源
             this.setPreviewInfo('游戏加载中', '正在准备战场环境');
             this.resourcesToLoad = [
-                { type: 'image', url: 'assets/backgrounds/bg.jpg' },
+                { type: 'image', url: 'assets/backgrounds/bg.png' },
                 // { type: 'image', url: 'assets/units/infantry.png' },
                 // { type: 'image', url: 'assets/units/tank.png' },
                 // { type: 'image', url: 'assets/units/artillery.png' },
@@ -114,7 +141,7 @@ class LoadingManager {
     loadResourcesForProgress(progress) {
         // 根据进度信息加载相应的资源
         // 这里需要根据您的脚本结构来确定需要加载哪些资源
-        fetch('data/script.json')
+        fetch('data/script.js')
             .then(response => response.json())
             .then(scriptData => {
                 const chapter = scriptData.chapters[progress.chapter];
@@ -162,12 +189,50 @@ class LoadingManager {
     
     loadDefaultResources() {
         // 加载默认资源
-        this.setPreviewInfo('剧情加载中', '正在准备游戏内容');
+        this.setPreviewInfo('剧情加载中', '正在准备剧情内容');
         this.resourcesToLoad = [
-            { type: 'script', url: 'data/script.json' },
-            { type: 'image', url: 'assets/backgrounds/bg.jpg' },
+            { type: 'script', url: 'data/script.js' },
+            { type: 'image', url: 'assets/backgrounds/bg.png' },
             { type: 'image', url: 'assets/characters/commander_normal.png' }
         ];
+    }
+
+    // 新增：为存档加载资源  修改
+    loadResourcesForSave(saveData) {
+        // 根据存档信息加载相应的资源
+        fetch('data/script.js')
+            .then(response => response.json())
+            .then(scriptData => {
+                const chapter = scriptData.chapters[saveData.chapter];
+                if (chapter) {
+                    const scene = chapter.scenes[saveData.scene];
+                    if (scene) {
+                        // 加载场景背景
+                        this.resourcesToLoad.push({
+                            type: 'image', 
+                            url: `assets/backgrounds/${scene.background}`
+                        });
+                        
+                        // 设置预览背景
+                        document.getElementById('scene-preview').style.backgroundImage = `url('assets/backgrounds/${scene.background}')`;
+                    }
+                }
+                
+                // 加载游戏资源
+                this.resourcesToLoad.push(
+                    { type: 'image', url: 'assets/backgrounds/battlefield.jpg' },
+                    { type: 'image', url: 'assets/units/infantry.png' },
+                    { type: 'image', url: 'assets/units/tank.png' },
+                    { type: 'image', url: 'assets/units/artillery.png' },
+                    { type: 'script', url: 'js/game.js' },
+                    { type: 'script', url: 'js/map.js' },
+                    { type: 'script', url: 'js/unit.js' }
+                );
+            })
+            .catch(error => {
+                console.error('加载脚本数据失败', error);
+                this.loadDefaultResources();
+            });
     }
     
     setPreviewInfo(title, description) {
@@ -265,7 +330,7 @@ class LoadingManager {
         }
     }
     
-    completeLoading() {
+    completeLoading() {//修改
         // 确保进度显示为100%
         document.getElementById('loading-progress').style.width = '100%';
         document.getElementById('loading-text').textContent = '100%';
@@ -276,10 +341,27 @@ class LoadingManager {
         
         // 延迟一下让用户看到加载完成
         setTimeout(() => {
+            // 如果是从存档加载，需要传递存档信息
+            if (this.loadingParams.fromSave === 'true') {
+                const currentUser = sessionStorage.getItem('currentUser');
+                const saveInfo = localStorage.getItem(`modernWarfare_load_save_${currentUser}`);
+                
+                if (saveInfo) {
+                    try {
+                        const { slot } = JSON.parse(saveInfo);
+                        window.location.href = `${targetUrl}&load=${slot}`;
+                        return;
+                    } catch (e) {
+                        console.error('解析存档信息失败', e);
+                    }
+                }
+            }
+            
+            // 普通跳转
             window.location.href = targetUrl;
         }, 1000);
     }
-    
+
     skipLoading() {
         // 跳过加载，直接跳转
         const params = new URLSearchParams(this.loadingParams);

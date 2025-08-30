@@ -13,7 +13,7 @@ body{
     display:flex;
     justify-content:center;
     align-items:center;
-    background:url('../开始背景.png') no-repeat center center fixed;
+    background:url('../assets/backgrounds/bg.png') no-repeat center center fixed;
     background-size:cover;
     color:#fff;
     position:relative;
@@ -43,18 +43,18 @@ body::before{
 }
 
 h1{
-    font-size:36px;
+    font-size:50px;
     margin-bottom:40px;
-    background:linear-gradient(45deg,#ff416c,#ff4b2b);
+    /* background:linear-gradient(45deg,#ff416c,#ff4b2b); */
     background-clip:text;
-    -webkit-text-fill-color:transparent;
+    -webkit-text-fill-color:white;
     letter-spacing:2px;
 }
 
-/* 3. 菜单按钮（宽度保持，长度×2） */
+/* 3. 菜单按钮 */
 .menu-btn{
     display:block;
-    width:100%;                 /* 长度拉伸到原来的 2 倍 */
+    width:100%;
     margin:16px 0;
     padding:14px 0;
     background:rgba(255,255,255,.1);

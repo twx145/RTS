@@ -1,4 +1,4 @@
-{
+window.scriptData={//修改
   "title": "现代战争",
   "chapters": [
     {
@@ -16,7 +16,7 @@
               "text": "士兵，欢迎加入我们的特别行动小队。我是你的指挥官。",
               "voice": "commander_intro.mp3",
               "characterLeft": {
-                "image": "commander_normal.png",
+                "image": "commander.jpg",
                 "expression": "normal"
               }
             },
@@ -25,7 +25,7 @@
               "text": "长官，我很荣幸能加入。任务目标是什么？",
               "voice": "player_response.mp3",
               "characterCenter": {
-                "image": "player_normal.png",
+                "image": "player.jpg",
                 "expression": "normal"
               }
             },
@@ -34,7 +34,7 @@
               "text": "我们收到情报，敌方正在边境地区策划一次大规模袭击。你的任务是潜入敌方基地，获取详细计划。",
               "voice": "commander_mission.mp3",
               "characterLeft": {
-                "image": "commander_serious.png",
+                "image": "commander.jpg",
                 "expression": "serious"
               }
             },
@@ -43,7 +43,38 @@
               "text": "首先，你需要完成基础训练。点击下方按钮开始训练任务。",
               "voice": "commander_training.mp3",
               "characterLeft": {
-                "image": "commander_smile.png",
+                "image": "commander.jpg",
+                "expression": "smile"
+              },
+              "action": {
+                "type": "jump_to_game",
+                "description": "跳转到训练任务"
+              }
+            },
+            {
+              "character": "玩家",
+              "text": "长官，我很荣幸能加入。任务目标是什么？",
+              "voice": "player_response.mp3",
+              "characterCenter": {
+                "image": "player.jpg",
+                "expression": "normal"
+              }
+            },
+            {
+              "character": "指挥官",
+              "text": "我们收到情报，敌方正在边境地区策划一次大规模袭击。你的任务是潜入敌方基地，获取详细计划。",
+              "voice": "commander_mission.mp3",
+              "characterLeft": {
+                "image": "commander.jpg",
+                "expression": "serious"
+              }
+            },
+            {
+              "character": "指挥官",
+              "text": "首先，你需要完成基础训练。点击下方按钮开始训练任务。",
+              "voice": "commander_training.mp3",
+              "characterLeft": {
+                "image": "commander.jpg",
                 "expression": "smile"
               },
               "action": {
@@ -64,7 +95,7 @@
               "text": "很好，你完成了训练任务。现在你已准备好执行真正的任务了。",
               "voice": "instructor_complete.mp3",
               "characterRight": {
-                "image": "instructor_smile.png",
+                "image": "commander.jpg",
                 "expression": "smile"
               }
             },
@@ -73,8 +104,13 @@
               "text": "明白。我已经准备好执行任务。",
               "voice": "player_ready.mp3",
               "characterCenter": {
-                "image": "player_confident.png",
+                "image": "player.jpg",
                 "expression": "confident"
+              },
+              "action": {
+                "type": "jump_to_chapter",
+                "chapter":1,
+                "description": "跳转到下一章节"
               }
             }
           ]
@@ -96,7 +132,7 @@
               "text": "注意，你已经进入敌方警戒区域。保持隐蔽，按计划行动。",
               "voice": "commander_stealth.mp3",
               "characterLeft": {
-                "image": "commander_serious.png",
+                "image": "commander.jpg",
                 "expression": "serious"
               }
             },
@@ -105,7 +141,7 @@
               "text": "收到。已发现目标建筑，正在接近。",
               "voice": "player_stealth.mp3",
               "characterCenter": {
-                "image": "player_stealth.png",
+                "image": "player.jpg",
                 "expression": "stealth"
               }
             },
@@ -114,7 +150,7 @@
               "text": "注意，前方有敌方巡逻队。你需要消灭他们才能继续前进。",
               "voice": "commander_alert.mp3",
               "characterLeft": {
-                "image": "commander_alert.png",
+                "image": "commander.jpg",
                 "expression": "alert"
               },
               "action": {

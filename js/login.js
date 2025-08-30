@@ -61,7 +61,7 @@ function showLoadingAnimation() {
             clearInterval(interval);
             // 跳转到首页
             setTimeout(() => {
-                window.location.href = 'start.html';
+                window.location.href = 'index.html';
             }, 200);
         }
     }, 100);
@@ -160,6 +160,6 @@ loginForm.addEventListener('submit', (e) => {
 window.addEventListener('DOMContentLoaded', () => {
     const currentUser = sessionStorage.getItem('currentUser');
     if (currentUser) {
-        window.location.href = '../start.html';
+        window.location.href = 'index.html';
     }
 });

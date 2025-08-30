@@ -2,13 +2,10 @@
 
 // 获取当前用户
 function getCurrentUser() {
-    // 从URL参数获取用户
-    const urlParams = new URLSearchParams(window.location.search);
-    const user = urlParams.get('user');
-    
-    if (user) {
-        return user;
-    }
+    // 从URL参数获取用户 修改
+    // const urlParams = new URLSearchParams(window.location.search);
+    // const user = urlParams.get('user');
+    // if (user) return user;
     
     // 从sessionStorage获取用户
     return sessionStorage.getItem('currentUser');
@@ -30,6 +27,7 @@ function getUserSaves() {
             return JSON.parse(savesJson);
         } catch (e) {
             console.error("读取用户存档失败", e);
+            alert("读取用户存档失败");
             return {};
         }
     }
@@ -44,7 +42,7 @@ function saveUserSaves(saves) {
 }
 
 // 保存游戏
-function saveGame(slot) {
+function saveGame(slot) {//修改
     const userSaves = getUserSaves();
     const existingSave = userSaves[slot];
     
@@ -57,7 +55,18 @@ function saveGame(slot) {
         chapter: gameState.currentChapter,
         scene: gameState.currentScene,
         dialog: gameState.currentDialog,
-        timestamp: new Date().getTime()
+        timestamp: new Date().getTime(),
+        // 新增：保存游戏状态
+        gameState: {
+            currentChapter: gameState.currentChapter,
+            currentScene: gameState.currentScene,
+            currentDialog: gameState.currentDialog
+        },
+        // 新增：保存游戏设置
+        gameMode: window.game?.gameMode,
+        mapId: window.game?.map?.id,
+        gameSpeed: window.game?.gameSpeedModifier,
+        aiDifficulty: window.game?.ai?.difficulty
     };
     
     // 更新用户存档
@@ -71,6 +80,7 @@ function saveGame(slot) {
 
 // 加载存档
 function loadSave(slot) {
+    slot = Number(slot);
     const userSaves = getUserSaves();
     return userSaves[slot] || null;
 }
@@ -113,7 +123,7 @@ function loadGameState(saveData) {
             const chapter = gameState.scriptData.chapters[saveData.chapter];
             if (saveData.scene >= 0 && saveData.scene < chapter.scenes.length) {
                 const scene = chapter.scenes[saveData.scene];
-                if (saveData.dialog >= 0){ //&& saveData.dialog < scene.dialogs.length) {
+                if (saveData.dialog >= 0 && saveData.dialog < scene.dialogs.length) {
                     // 存档有效，加载游戏
                     playChapter(saveData.chapter, saveData.scene, saveData.dialog);
                     return;
