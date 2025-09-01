@@ -1,7 +1,6 @@
-// js/player.js
-import { AIController } from './ai.js';
+// const AIController = window.AIController;//ai.js
 
-export class Player {
+class Player {
     constructor(id, name, manpower, isAI = false, baseArea, aiDifficulty = 'medium') {
         this.id = id;
         this.name = name;

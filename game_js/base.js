@@ -1,14 +1,10 @@
-// js/base.js
-import { TILE_SIZE } from './config.js';
-
-export class Base {
+class Base {
     constructor(owner, gridX, gridY) {
         this.owner = owner; // 'player' or 'ai'
         this.gridX = gridX; // 大本营左上角的格子X坐标
-        this.gridY = gridY; // 大本營左上角的格子Y坐标
+        this.gridY = gridY; // 大本营左上角的格子Y坐标
         this.width = 3; // 3个格子宽
         this.height = 3; // 3个格子高
-        
         this.maxHp = 2500;
         this.hp = this.maxHp;
 

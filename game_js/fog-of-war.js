@@ -1,10 +1,5 @@
-// js/fog-of-war.js
-import { TILE_SIZE } from './config.js';
-
-/**
- * Manages the rendering of Fog of War using an offscreen canvas for performance.
- */
-export class FogOfWar {
+// Manages the rendering of Fog of War using an offscreen canvas for performance.
+class FogOfWar {
     constructor(mapWidth, mapHeight) {
         this.mapWidth = mapWidth;
         this.mapHeight = mapHeight;

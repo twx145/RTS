@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>现代战争 - 实时战略游戏</title>
+    <title>神盾计划 - 实时战略游戏</title>
     <link rel="icon" href="data:,">
     <link rel="stylesheet" href="css/game_style.css">
 </head>
@@ -36,7 +36,7 @@
         </div>
     </div>
 
-    <div id="setup-screen" class="modal-overlay">
+    <div id="setup-screen" class="modal-overlay" style="display: none;">
         <div class="modal-content">
             <h1>游戏设置</h1>
             <div class="form-group">
@@ -75,7 +75,147 @@
             <button id="start-new-game-btn">创建游戏</button>
         </div>
     </div>
+
+    <!-- 修改 增加新手教程 -->
+    <div id="tutorial-modal" class="modal-overlay" style="display: none;">
+        <div class="modal-content tutorial-content">
+            <h1>神盾计划 - 新手教程</h1>
+            <div id="tutorial-steps">
+                <div class="tutorial-step" data-step="1">
+                    <h2>欢迎来到神盾计划</h2>
+                    <p>这是一款实时战略游戏，您需要部署单位、指挥战斗并击败对手。</p>
+                    <div class="tutorial-image-container">
+                        <div class="tutorial-image-placeholder large">游戏主界面示意图</div>
+                    </div>
+                    <div class="tutorial-tip">
+                        <strong>提示:</strong> 教程结束后，您可以在游戏设置中重新查看教程。
+                    </div>
+                </div>
+                <div class="tutorial-step" data-step="2" style="display: none;">
+                    <h2>部署阶段</h2>
+                    <p>在游戏开始时，您处于部署阶段：</p>
+                    <ul>
+                        <li>从右侧面板选择单位类型</li>
+                        <li>点击地图左侧1/3区域部署单位</li>
+                        <li>不同单位有不同的成本和能力</li>
+                        <li>合理分配资源，组建均衡的部队</li>
+                    </ul>
+                    <div class="tutorial-image-container">
+                        <div class="tutorial-image-placeholder large">单位选择与部署示意图</div>
+                    </div>
+                </div>
+                <div class="tutorial-step" data-step="3" style="display: none;">
+                    <h2>视角控制</h2>
+                    <p>您可以控制游戏视角来观察战场：</p>
+                    <ul>
+                        <li>使用鼠标中键或Ctrl+左键拖拽移动视角</li>
+                        <li>使用鼠标滚轮缩放视角</li>
+                        <li>鼠标移动到屏幕边缘可自动滚动视角</li>
+                        <li>按ESC键可以取消当前选择</li>
+                    </ul>
+                    <div class="tutorial-image-container">
+                        <div class="tutorial-image-placeholder large">视角控制示意图</div>
+                    </div>
+                </div>
+                <div class="tutorial-step" data-step="4" style="display: none;">
+                    <h2>单位选择与指挥</h2>
+                    <p>战斗开始后，您需要指挥您的部队：</p>
+                    <ul>
+                        <li>左键点击选择单个单位</li>
+                        <li>拖拽框选多个单位</li>
+                        <li>右键点击地面移动选中单位</li>
+                        <li>右键点击敌方单位进行攻击</li>
+                        <li>不同单位有各自的优势和劣势</li>
+                    </ul>
+                    <div class="tutorial-image-container">
+                        <div class="tutorial-image-placeholder large">单位指挥示意图</div>
+                    </div>
+                </div>
+                <div class="tutorial-step" data-step="5" style="display: none;">
+                    <h2>游戏模式与胜利条件</h2>
+                    <p>根据游戏模式不同，胜利条件也不同：</p>
+                    <ul>
+                        <li><strong>对攻模式</strong>: 摧毁敌方基地，同时保护自己的基地</li>
+                        <li><strong>进攻模式</strong>: 摧毁敌方基地</li>
+                        <li><strong>防守模式</strong>: 保护我方基地不被摧毁</li>
+                    </ul>
+                    <div class="tutorial-image-container">
+                        <div class="tutorial-image-placeholder large">胜利条件示意图</div>
+                    </div>
+                    <div class="tutorial-tip">
+                        <strong>提示:</strong> 合理利用地形优势，制定合适的战略是取胜的关键。
+                    </div>
+                </div>
+            </div>
+            <div class="tutorial-progress">
+                <div class="progress-bar">
+                    <div class="progress-fill" style="width: 20%;"></div>
+                </div>
+                <div class="progress-text">步骤 1/5</div>
+            </div>
+            <div class="tutorial-controls">
+                <button id="tutorial-prev" class="tutorial-btn" disabled>上一步</button>
+                <button id="tutorial-next" class="tutorial-btn">下一步</button>
+                <button id="tutorial-skip" class="tutorial-btn skip-btn">跳过教程</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 修改 增加设置按钮 -->
+    <div id="settings-button" class="settings-button">    ⚙️</div>
+
+    <!-- 设置菜单 -->
+    <div id="settings-menu" class="settings-menu">
+        <h3>游戏设置</h3>
+        
+        <div class="settings-section">
+            <h4>音量控制</h4>
+            <div class="volume-control">
+                <label>背景音乐:</label>
+                <input type="range" min="0" max="100" value="50" class="volume-slider" id="bgm-volume">
+                <span id="bgm-volume-value">50%</span>
+            </div>
+            <div class="volume-control">
+                <label>游戏音效:</label>
+                <input type="range" min="0" max="100" value="70" class="volume-slider" id="sfx-volume">
+                <span id="sfx-volume-value">70%</span>
+            </div>
+        </div>
+        
+        <div class="settings-section">
+            <h4>游戏选项</h4>
+            <button id="show-tutorial" class="menu-button">查看教程</button>
+            <button id="save-game" class="menu-button">保存游戏</button>
+            <button id="load-game" class="menu-button">读取存档</button>
+            <button id="skip-scenario" class="menu-button">跳过当前关卡</button>
+        </div>
+        
+        <div class="settings-section">
+            <h4>系统</h4>
+            <button id="return-main" class="menu-button warning">返回主菜单</button>
+            <button id="exit-game" class="menu-button danger">退出游戏</button>
+        </div>
+        
+        <div class="settings-footer">
+            <button id="close-settings" class="menu-button">关闭</button>
+        </div>
+    </div>
     
-    <script type="module" src="game_js/main.js"></script>
+    <script src="game_js/config.js"></script>
+    <script src="game_js/spatial-grid.js"></script>
+    <script src="game_js/maps-data.js"></script>
+    <script src="game_js/utils.js"></script>
+    <script src="game_js/pathfinding.js"></script>
+    <script src="game_js/projectile.js"></script>
+    <script src="game_js/base.js"></script>
+    <script src="game_js/unit.js"></script>
+    <script src="game_js/map.js"></script>
+    <script src="game_js/fog-of-war.js"></script>
+    <script src="js/saveGame.js"></script><!-- 修改 引入saveGame -->
+    <script src="game_js/ui.js"></script>
+    <script src="game_js/ai.js"></script>
+    <script src="game_js/player.js"></script>
+    <script src="game_js/game.js"></script>
+    <script src="game_js/main.js"></script>
 </body>
 </html>

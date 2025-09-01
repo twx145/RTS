@@ -1,13 +1,6 @@
-// js/unit.js
-import { TILE_SIZE, UNIT_TYPES } from './config.js';
-import { getDistance } from './utils.js';
-import { Base } from './base.js';
-import { Projectile } from './projectile.js';
-import { findPath, isLineOfSightClear } from './pathfinding.js';
-
 let nextUnitId = 0;
 
-export class Unit {
+class Unit {
     constructor(type, owner, x, y) {
         this.id = nextUnitId++;
         this.type = type;
@@ -26,10 +19,11 @@ export class Unit {
         this.path = [];
         this.currentPathIndex = 0;
         this.moveTargetPos = null;
-        this.angle = Math.random() * Math.PI * 2;
+        this.angle = Math.random() * Math.PI * 2; // 初始随机角度
         this.targetAngle = this.angle;
         this.rotationSpeed = Math.PI * 2.0;
 
+        // Loitering / Strafing
         this.isLoitering = false;
         this.loiterCenter = null;
         this.loiterRadius = TILE_SIZE * 5;
@@ -78,6 +72,7 @@ export class Unit {
         const distanceToTarget = getDistance(this, targetPos);
         const engageRange = this.stats.range * 0.9;
 
+        // 飞机攻击盘旋逻辑
         if (this.stats.moveType === 'air' && this.stats.speed > 0) {
             let desiredMoveTarget;
             if (distanceToTarget > this.stats.range * 0.9) {
@@ -93,10 +88,11 @@ export class Unit {
             this.setTargetAngle(desiredMoveTarget);
             this.move(game.lastTime > 0 ? (performance.now() - game.lastTime) / 1000 : 0);
         } 
+        // --- 核心修改 (需求 #3): 地面/海上单位的截击逻辑 ---
         else {
             if (distanceToTarget > engageRange) {
                 if (!this.path.length && !this.moveTargetPos) {
-                    this.issueMoveCommand(targetPos, game.map, true);
+                    this.issueMoveCommand(targetPos, game.map, true); // true表示这是一个自主攻击移动
                 }
             } else {
                 this.path = [];
@@ -104,6 +100,7 @@ export class Unit {
             }
         }
         
+        // 统一开火逻辑
         this.setTargetAngle(targetPos);
         if (distanceToTarget <= this.stats.range) {
             let angleDiff = Math.abs(this.angle - this.targetAngle);
@@ -138,6 +135,7 @@ export class Unit {
         }
     }
 
+    //优化飞机巡逻逻辑
     handleLoitering(deltaTime) {
         if (!this.isLoitering) {
             this.isLoitering = true;
@@ -145,7 +143,7 @@ export class Unit {
             this.loiterAngle = Math.atan2(this.y - this.loiterCenter.y, this.x - this.loiterCenter.x);
         }
         
-        this.loiterAngle += 0.8 * deltaTime;
+        this.loiterAngle += 0.8 * deltaTime; // 控制盘旋速度
         
         const targetX = this.loiterCenter.x + Math.cos(this.loiterAngle) * this.loiterRadius;
         const targetY = this.loiterCenter.y + Math.sin(this.loiterAngle) * this.loiterRadius;
@@ -160,7 +158,11 @@ export class Unit {
         this.y += Math.sin(this.angle) * speed;
     }
 
+    /**
+     * 核心修改 (需求 #3): 增加 isEngaging 参数，用于区分玩家指令和自主攻击
+     */
     issueMoveCommand(targetPos, map, isEngaging = false) {
+        // 如果是玩家的明确指令，则清除AI目标
         if (!isEngaging) {
             this.target = null;
         }
@@ -168,9 +170,11 @@ export class Unit {
         this.isSettingUp = false;
         this.moveTargetPos = null;
         
+        // --- 核心修改 (需求 #3): 计算截击点和阵型 ---
         let finalTargetPos = { ...targetPos };
         if (isEngaging && this.target instanceof Unit && this.target.stats.speed > 0) {
             finalTargetPos = this.calculateInterceptPoint(this.target);
+            // 阵型分散
             const spread = TILE_SIZE * 2;
             finalTargetPos.x += (Math.random() - 0.5) * spread;
             finalTargetPos.y += (Math.random() - 0.5) * spread;
@@ -188,16 +192,26 @@ export class Unit {
         }
     }
 
+    /**
+     * 核心新增 (需求 #3): 预测截击点算法
+     * @param {Unit} target - The moving target unit.
+     * @returns {object} - The predicted {x, y} intercept point.
+     */
     calculateInterceptPoint(target) {
         const distance = getDistance(this, target);
+        // 如果自己比目标慢，或目标基本不动，直接返回目标当前位置
         if (this.stats.speed <= target.stats.speed || target.stats.speed < TILE_SIZE * 0.1) {
             return { x: target.x, y: target.y };
         }
+
         const timeToIntercept = distance / (this.stats.speed - target.stats.speed);
+        
+        // 预测目标在 timeToIntercept 秒后的位置
         const targetSpeed = target.stats.speed;
-        const targetAngle = target.angle;
+        const targetAngle = target.angle; // 假设目标会沿当前方向前进
         const predictedX = target.x + Math.cos(targetAngle) * targetSpeed * timeToIntercept;
         const predictedY = target.y + Math.sin(targetAngle) * targetSpeed * timeToIntercept;
+
         return { x: predictedX, y: predictedY };
     }
 
@@ -205,6 +219,7 @@ export class Unit {
         let diff = this.targetAngle - this.angle;
         while (diff <= -Math.PI) diff += 2 * Math.PI;
         while (diff > Math.PI) diff -= 2 * Math.PI;
+        
         const turnStep = this.rotationSpeed * deltaTime;
         if (Math.abs(diff) < turnStep) {
             this.angle = this.targetAngle;
@@ -218,16 +233,22 @@ export class Unit {
         this.targetAngle = Math.atan2(targetPos.y - this.y, targetPos.x - this.x);
     }
 
+    /**
+     * 核心修复 (需求 #1): 移除图像翻转，直接旋转
+     */
     draw(ctx, isSelected, zoom = 1, showDetails = false) {
         ctx.save();
         ctx.translate(this.x, this.y);
+        // 直接旋转到单位的角度
         ctx.rotate(this.angle + Math.PI / 2);
-        const size = TILE_SIZE * (this.stats.drawScale ); 
+        const size = TILE_SIZE * this.stats.drawScale;
         if (this.image) {
+            // 绘制图像时，让它的"头"朝向正右方(0度角的方向)
             ctx.drawImage(this.image, -size / 2, -size / 2, size, size);
         }
         ctx.restore();
 
+        // HP Bar 和选中效果绘制逻辑保持不变，因为它们是在世界坐标系下绘制的，不受旋转影响
         if (isSelected) {
             ctx.strokeStyle = this.owner === 'player' ? 'yellow' : 'orange';
             ctx.lineWidth = 2 / zoom;
@@ -235,18 +256,31 @@ export class Unit {
             ctx.arc(this.x, this.y, TILE_SIZE * this.stats.drawScale/2, 0, Math.PI * 2);
             ctx.stroke();
             if (showDetails) {
-                if (this.stats.range > 0) { ctx.strokeStyle = 'rgba(255, 100, 100, 0.5)'; ctx.lineWidth = 1 / zoom; ctx.beginPath(); ctx.arc(this.x, this.y, this.stats.range, 0, Math.PI * 2); ctx.stroke(); }
-                if (this.path && this.path.length > 0) { const endNode = this.path[this.path.length - 1]; const destX = endNode.x * TILE_SIZE + TILE_SIZE / 2; const destY = endNode.y * TILE_SIZE + TILE_SIZE / 2; ctx.beginPath(); ctx.moveTo(this.x, this.y); ctx.lineTo(destX, destY); ctx.strokeStyle = this.target ? 'rgba(255, 50, 50, 0.7)' : 'rgba(255, 255, 255, 0.7)'; ctx.lineWidth = 2 / zoom; ctx.setLineDash([5 / zoom, 3 / zoom]); ctx.stroke(); ctx.setLineDash([]); }
+                if (this.stats.range > 0) { 
+                    ctx.strokeStyle = 'rgba(255, 100, 100, 0.5)'; ctx.lineWidth = 1 / zoom; 
+                    ctx.beginPath(); ctx.arc(this.x, this.y, this.stats.range, 0, Math.PI * 2); 
+                    ctx.setLineDash([4 / zoom, 2 / zoom]); ctx.stroke(); ctx.setLineDash([]);//修改 将攻击范围线改为虚线
+                }
+                if (this.path && this.path.length > 0) { 
+                    const endNode = this.path[this.path.length - 1]; 
+                    const destX = endNode.x * TILE_SIZE + TILE_SIZE / 2; 
+                    const destY = endNode.y * TILE_SIZE + TILE_SIZE / 2; 
+                    ctx.beginPath(); ctx.moveTo(this.x, this.y); ctx.lineTo(destX, destY); 
+                    ctx.strokeStyle = this.target ? 'rgba(255, 50, 50, 0.7)' : 'rgba(255, 255, 255, 0.7)'; 
+                    ctx.lineWidth = 2 / zoom; ctx.setLineDash([5 / zoom, 3 / zoom]); 
+                    ctx.stroke(); ctx.setLineDash([]); 
+                }
             }
         }
-        const hpBarWidth = TILE_SIZE; const hpBarHeight = 5 / zoom; const hpBarYOffset = TILE_SIZE * 0.8; ctx.fillStyle = '#333'; ctx.fillRect(this.x - hpBarWidth / 2, this.y - hpBarYOffset, hpBarWidth, hpBarHeight); ctx.fillStyle = this.owner === 'player' ? 'green' : '#c0392b'; ctx.fillRect(this.x - hpBarWidth / 2, this.y - hpBarYOffset, hpBarWidth * (this.hp / this.stats.hp), hpBarHeight);
+        const hpBarWidth = TILE_SIZE * this.stats.hp / UNIT_TYPES.assault_infantry.hp * 0.9; //修改 相对于步兵血量伸缩血量条
+        const hpBarHeight = 5 / zoom; 
+        const hpBarYOffset = TILE_SIZE * this.stats.drawScale / 2; //修改 根据单位大小改变血条位置
+        ctx.fillStyle = '#333'; 
+        ctx.fillRect(this.x - hpBarWidth / 2, this.y - hpBarYOffset, hpBarWidth, hpBarHeight);
+        ctx.fillStyle = this.owner === 'player' ? 'green' : '#c0392b'; 
+        ctx.fillRect(this.x - hpBarWidth / 2, this.y - hpBarYOffset, hpBarWidth * (this.hp / this.stats.hp), hpBarHeight);
     }
     
-    /**
-     * 核心重构 (性能优化): 使用空间网格进行高效索敌
-     * @param {Base} enemyBase
-     * @param {SpatialGrid} spatialGrid
-     */
     findTarget(enemyBase, spatialGrid) {
         let closestTarget = null;
         let minDistance = this.stats.visionRange; // 只在视野范围内搜索
@@ -282,7 +316,23 @@ export class Unit {
         this.target = closestTarget;
     }
     
-    attack(game) { if (!this.target || !this.stats.ammoType) return; const pStats = { damage: this.stats.attack, ammoType: this.stats.ammoType, ammoSpeed: this.stats.ammoSpeed, splashRadius: this.stats.ammoSplashRadius, }; const proj = new Projectile(this.owner, { x: this.x, y: this.y }, this.target, pStats); game.projectiles.push(proj); this.attackCooldown = this.stats.attackSpeed; }
+    // --- Unchanged methods below ---
+    attack(game) { if (!this.target || !this.stats.ammoType) return; 
+        const pStats = { damage: this.stats.attack, ammoType: this.stats.ammoType, ammoSpeed: this.stats.ammoSpeed, splashRadius: this.stats.ammoSplashRadius, };
+        const proj = new Projectile(this.owner, { x: this.x, y: this.y }, this.target, pStats); 
+        game.projectiles.push(proj); this.attackCooldown = this.stats.attackSpeed; 
+    }
     takeDamage(amount) { this.hp -= amount; if (this.hp <= 0) this.hp = 0; }
-    findSmoothedPathTarget(map) { if (!this.path || this.path.length === 0 || this.currentPathIndex >= this.path.length) return; for (let i = this.path.length - 1; i > this.currentPathIndex; i--) { const node = this.path[i]; const targetPos = { x: node.x * TILE_SIZE + TILE_SIZE / 2, y: node.y * TILE_SIZE + TILE_SIZE / 2 }; if (isLineOfSightClear(this, targetPos, map, this.stats.moveType)) { this.moveTargetPos = targetPos; this.currentPathIndex = i; return; } } const nextNode = this.path[this.currentPathIndex]; if (nextNode) { this.moveTargetPos = { x: nextNode.x * TILE_SIZE + TILE_SIZE / 2, y: nextNode.y * TILE_SIZE + TILE_SIZE / 2 }; } }
+    findSmoothedPathTarget(map) { 
+        if (!this.path || this.path.length === 0 || this.currentPathIndex >= this.path.length) return; 
+        for (let i = this.path.length - 1; i > this.currentPathIndex; i--) { 
+            const node = this.path[i]; 
+            const targetPos = { x: node.x * TILE_SIZE + TILE_SIZE / 2, y: node.y * TILE_SIZE + TILE_SIZE / 2 }; 
+            if (isLineOfSightClear(this, targetPos, map, this.stats.moveType)) { 
+                this.moveTargetPos = targetPos; this.currentPathIndex = i; return; } 
+        } 
+    
+        const nextNode = this.path[this.currentPathIndex];
+        if (nextNode) { this.moveTargetPos = { x: nextNode.x * TILE_SIZE + TILE_SIZE / 2, y: nextNode.y * TILE_SIZE + TILE_SIZE / 2 }; } 
+    }
 }

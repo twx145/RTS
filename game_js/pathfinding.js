@@ -1,6 +1,3 @@
-// js/pathfinding.js
-import { TILE_SIZE, TERRAIN_TYPES } from './config.js';
-
 class Node {
     constructor(parent = null, position = null) {
         this.parent = parent;
@@ -14,7 +11,7 @@ class Node {
     }
 }
 
-export function findPath(map, start, end, moveType) {
+function findPath(map, start, end, moveType) {
     // 对于空中单位，路径就是起点到终点的直线
     if (moveType === 'air') {
         // A* 算法需要一系列节点，所以即使是直线，也返回包含起点和终点的数组
@@ -100,12 +97,9 @@ export function findPath(map, start, end, moveType) {
     return null;
 }
 
-
-/**
- * 检查两点之间是否有地形障碍（用于路径平滑）
- */
-export function isLineOfSightClear(startPos, endPos, map, moveType) {
-    // 核心修复: 空中单位永远视野清晰，无视地形 (性能提升)
+//检查两点之间是否有地形障碍（用于路径平滑）
+function isLineOfSightClear(startPos, endPos, map, moveType) {
+    // 核心修复: 空中单位永远视野清晰，无视地形
     if (moveType === 'air') {
         return true;
     }

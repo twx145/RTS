@@ -1,7 +1,5 @@
-// js/maps-data.js
-
 // 'g': 草地, 'f': 森林, 'r': 马路, 'w': 海洋, 'b': 建筑
-export const MAP_DEFINITIONS = [
+const MAP_DEFINITIONS = [
     {
         id: 'map_new_01',
         name: '十字路口冲突 (Crossroads Clash)',
@@ -63,5 +61,21 @@ export const MAP_DEFINITIONS = [
             return grid.map(row => row.join(''));
         })()
     },
-    // 其他地图也应按此方式转换为大尺寸...
+    {//修改 增加新手map
+        id: 'map_new',
+        name: '新手地图',
+        description: '新手教学通用',
+        width: 10, height: 10,
+        grid: (() => {
+            const w = 10, h = 10;
+            let grid = Array(h).fill(null).map(() => Array(w).fill('g'));
+            // 添加一些随机森林
+            for (let i = 0; i < 20; i++) {
+                const randX = Math.floor(Math.random() * w);
+                const randY = Math.floor(Math.random() * h);
+                if (grid[randY][randX] === 'g') grid[randY][randX] = 'f';
+            }
+            return grid.map(row => row.join(''));
+        })()
+    },
 ];

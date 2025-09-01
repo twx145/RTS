@@ -6,7 +6,7 @@
  * 当需要查询一个单位附近的其它单位时，只需检查其所在格子及周围的格子即可，
  * 避免了全局遍历，从而将 O(n^2) 的复杂度降低到接近 O(n)。
  */
-export class SpatialGrid {
+class SpatialGrid {
     /**
      * @param {number} mapWidth - 地图的总像素宽度
      * @param {number} mapHeight - 地图的总像素高度

@@ -1,11 +1,9 @@
-import { TILE_SIZE, TERRAIN_TYPES } from './config.js';
-
 function seededRandom(seed) {
     let x = Math.sin(seed) * 10000;
     return x - Math.floor(x);
 }
 
-export class GameMap {
+class GameMap {
     constructor() {
         this.width = 0;
         this.height = 0;

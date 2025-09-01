@@ -1,7 +1,4 @@
-// js/ui.js
-import { UNIT_TYPES, TERRAIN_TYPES, TILE_SIZE } from './config.js';
-
-export class UI {
+class UI {
     constructor(game) {
         this.game = game;
         this.unitListContainer = document.getElementById('unit-selection');
@@ -12,8 +9,29 @@ export class UI {
         
         this.selectedUnitToDeploy = null;
         this.messageTimeout = null;
-
+        // 修改 新增:保存按钮
+        this.addSaveButton();
+        
         this.init();
+    }
+
+    // 修改 添加保存按钮
+    addSaveButton() {
+        const saveBtn = document.createElement('button');
+        saveBtn.textContent = '手动保存';
+        saveBtn.id = 'manual-save-btn';
+        saveBtn.addEventListener('click', () => {
+            if (this.game.savegame.manualSave()) {
+                this.showGameMessage('游戏已保存');
+            } else {
+                this.showGameMessage('保存失败');
+            }
+        });
+        
+        const gameControls = document.getElementById('game-controls');
+        if (gameControls) {
+            gameControls.appendChild(saveBtn);
+        }
     }
 
     init() {
@@ -34,12 +52,15 @@ export class UI {
         const listWrapper = this.unitListContainer.querySelector('#unit-list-wrapper');
 
         const groupedUnits = {};
-        for (const type in UNIT_TYPES) {
-            const unit = UNIT_TYPES[type];
+        // 修改 新增：过滤可用兵种
+        const availableUnits = this.game.availableUnits || Object.keys(UNIT_TYPES);
+        
+        for (const type in availableUnits) {
+            const unit = UNIT_TYPES[availableUnits[type]];
             if (!groupedUnits[unit.unitClass]) {
                 groupedUnits[unit.unitClass] = [];
             }
-            groupedUnits[unit.unitClass].push({ id: type, ...unit });
+            groupedUnits[unit.unitClass].push({ id: availableUnits[type], ...unit });
         }
 
         const categoryOrder = ['步兵', '装甲', '飞行', '炮兵', '海军'];
@@ -87,17 +108,13 @@ export class UI {
         }
     }
 
-    /**
-     * 新增辅助函数：清除部署列表中的所有选中状态
-     */
+    //新增辅助函数：清除部署列表中的所有选中状态
     clearAllSelectionsInList() {
         if (!this.unitListContainer) return;
         this.unitListContainer.querySelectorAll('li.selected').forEach(item => item.classList.remove('selected'));
     }
 
-    /**
-     * 新增辅助函数：被game.js调用，用于清除待部署状态
-     */
+    //新增辅助函数：被game.js调用，用于清除待部署状态
     clearDeploymentSelection() {
         if (this.selectedUnitToDeploy) {
             this.selectedUnitToDeploy = null;

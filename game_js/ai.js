@@ -1,10 +1,4 @@
-// js/ai.js
-import { UNIT_TYPES } from './config.js';
-import { Unit } from './unit.js';
-import { getDistance } from './utils.js';
-import { Base } from './base.js';
-
-export class AIController {
+class AIController {
     constructor(player, difficulty) {
         this.player = player;
         this.difficulty = difficulty;
@@ -18,8 +12,7 @@ export class AIController {
         this.playerBase = null;
     }
 
-    deployUnits(mapWidth, mapHeight, TILE_SIZE) {
-        // ... 此函数无变化 ...
+    deployUnits(mapWidth, mapHeight, TILE_SIZE, map) {
         const deployableUnits = Object.keys(UNIT_TYPES);
         let manpowerToSpend = this.player.manpower;
 
@@ -35,25 +28,22 @@ export class AIController {
             const unitType = deployableUnits[Math.floor(Math.random() * deployableUnits.length)];
             const cost = UNIT_TYPES[unitType].cost;
 
-            if (this.player.canAfford(cost)) {
-                const x = mapWidth * TILE_SIZE - (Math.random() * mapWidth / 3 * TILE_SIZE);
-                const y = Math.random() * mapHeight * TILE_SIZE;
-                const newUnit = new Unit(unitType, 'ai', x, y);
-                this.player.units.push(newUnit);
-                
-                this.player.deductManpower(cost);
-                spentManpower += cost;
-                attempts = 0;
-            } else {
-                attempts++;
-            }
+            if (this.player.canAfford(cost)) {//修改 优化AI兵种放置，不会放到边缘
+                const x = mapWidth - UNIT_TYPES[unitType].drawScale/2 - Math.random() * mapWidth / 3 ;
+                const y = Math.random() * (mapHeight - UNIT_TYPES[unitType].drawScale) + UNIT_TYPES[unitType].drawScale/2;
+                const tile = map.getTile(Math.floor(x), Math.floor(y));
+                if(TERRAIN_TYPES[tile.type].traversableBy.includes(UNIT_TYPES[unitType].moveType)){//修改 优化AI兵种放置，不会放到不可移动的地形
+                    const newUnit = new Unit(unitType, 'ai', x * TILE_SIZE, y * TILE_SIZE);
+                    this.player.units.push(newUnit);
+                    this.player.deductManpower(cost);
+                    spentManpower += cost;
+                    attempts = 0;
+                }
+                else attempts++;
+            }else attempts++;
         }
     }
 
-    /**
-     * 核心修复：接收并使用 spatialGrid
-     * @param {SpatialGrid} spatialGrid // <-- 新增参数
-     */
     update(aiUnits, playerUnits, map, deltaTime, spatialGrid) { // <-- 新增参数
         if (playerUnits.length === 0 && (!this.playerBase || this.playerBase.hp <= 0)) return;
 

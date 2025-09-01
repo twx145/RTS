@@ -1,9 +1,7 @@
 // js/projectile.js
-import { getDistance } from './utils.js';
-
 let nextProjectileId = 0;
 
-export class Projectile {
+class Projectile {
     constructor(owner, startPos, target, stats) {
         this.id = nextProjectileId++;
         this.owner = owner;
@@ -92,7 +90,7 @@ export class Projectile {
  * 核心升级 (需求 #1): 全新的爆炸效果类
  * 通过绘制多层渐变的圆形和随机的烟雾粒子来模拟真实的爆炸效果
  */
-export class Explosion {
+class Explosion {
     constructor(x, y, radius) {
         this.x = x;
         this.y = y;
