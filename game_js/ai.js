@@ -13,7 +13,6 @@ class AIController {
     }
 
     deployUnits(mapWidth, mapHeight, TILE_SIZE, map) {
-        // ... (此函数无变化) ...
         const deployableUnits = Object.keys(UNIT_TYPES);
         let manpowerToSpend = this.player.manpower;
 
@@ -57,14 +56,13 @@ class AIController {
         }
     }
 
-    update(aiUnits, playerUnits, map, deltaTime, spatialGrid) {
-        // ... (此函数无变化) ...
+    update(aiUnits, playerUnits, map, deltaTime) { // 移除 spatialGrid
         if (playerUnits.length === 0 && (!this.playerBase || this.playerBase.hp <= 0)) return;
 
         this.macroTimer += deltaTime;
         this.microTimer += deltaTime;
 
-        this.runSimpleLogic(aiUnits, spatialGrid);
+        this.runSimpleLogic(aiUnits, playerUnits); // 传入 playerUnits
 
         if (this.macroTimer >= this.macroInterval) {
             switch (this.difficulty) {
@@ -73,30 +71,27 @@ class AIController {
                     break;
                 case 'hard':
                 case 'hell':
-                    this.runHardLogic(aiUnits, map, spatialGrid); 
+                    this.runHardLogic(aiUnits, playerUnits, map); // 传入 playerUnits
                     break;
             }
             this.macroTimer = 0;
         }
         
         if (this.difficulty === 'hell' && this.microTimer >= this.microInterval) {
-            this.runHellMicro(aiUnits, spatialGrid);
+            this.runHellMicro(aiUnits, playerUnits); // 传入 playerUnits
             this.microTimer = 0;
         }
     }
 
-    runSimpleLogic(aiUnits, spatialGrid) {
-        // ... (此函数无变化) ...
+    runSimpleLogic(aiUnits, playerUnits) { // 移除 spatialGrid
         aiUnits.forEach(unit => {
             if (!unit.target && unit.path.length === 0 && unit.findTargetCooldown <= 0) {
-                unit.findTarget(this.playerBase, spatialGrid);
+                // 单位自主索敌现在使用 Matter.Query，无需传递参数
+                unit.findTarget(this.playerBase, playerUnits, window.game);
             }
         });
     }
 
-    /**
-     * --- 核心修复: 为AI的移动指令加入节流阀 ---
-     */
     runMediumLogic(aiUnits, map) {
         if (!this.playerBase || this.playerBase.hp <= 0) return;
         const livingAttackWave = this.attackWave.filter(u => u.hp > 0);
@@ -106,9 +101,8 @@ class AIController {
         
         const targetPoint = { x: this.playerBase.pixelX, y: this.playerBase.pixelY };
         
-        // 使用 setTimeout 分散寻路计算
         let delay = 0;
-        const delayIncrement = 10; // AI指令可以延迟稍大一些
+        const delayIncrement = 10;
         this.attackWave.forEach(unit => {
             if (unit.hp > 0 && !unit.target && unit.path.length === 0) {
                  setTimeout(() => {
@@ -119,18 +113,22 @@ class AIController {
         });
     }
 
-    /**
-     * --- 核心修复: 为AI的攻击指令加入节流阀 ---
-     */
-    runHardLogic(aiUnits, map, spatialGrid) {
+    // --- 核心重构: 使用 Matter.Query ---
+    runHardLogic(aiUnits, playerUnits, map) {
         if (aiUnits.length === 0) return;
         
         const centerOfMass = aiUnits.reduce((acc, unit) => ({x: acc.x + unit.x, y: acc.y + unit.y}), {x: 0, y: 0});
         centerOfMass.x /= aiUnits.length;
         centerOfMass.y /= aiUnits.length;
-
-        const nearbyEnemies = spatialGrid.getNearbyWithRadius(centerOfMass, TILE_SIZE * 40)
-                                        .filter(u => u.owner === 'player' && u.hp > 0);
+        
+        const searchRadius = TILE_SIZE * 40;
+        const searchBounds = {
+            min: { x: centerOfMass.x - searchRadius, y: centerOfMass.y - searchRadius },
+            max: { x: centerOfMass.x + searchRadius, y: centerOfMass.y + searchRadius }
+        };
+        const playerBodies = playerUnits.map(u => u.body).filter(Boolean);
+        const bodiesInRegion = Matter.Query.region(playerBodies, searchBounds);
+        const nearbyEnemies = bodiesInRegion.map(body => body.gameObject).filter(u => u.hp > 0);
 
         let priorityTarget = null;
 
@@ -138,7 +136,7 @@ class AIController {
             if (this.playerBase && this.playerBase.hp > 0) {
                 priorityTarget = this.playerBase;
             } else {
-                return; // 没有可攻击的目标
+                return;
             }
         } else {
             const targetPriorities = ['howitzer', 'sniper', 'sam_launcher', 'destroyer'];
@@ -156,7 +154,6 @@ class AIController {
              this.attackWave = aiUnits.filter(u => !u.target && u.path.length === 0).slice(0, 6);
         }
         
-        // 使用 setTimeout 分散设置目标，从而分散寻路计算
         let delay = 0;
         const delayIncrement = 10;
         this.attackWave.forEach(unit => {
@@ -169,18 +166,23 @@ class AIController {
         });
     }
 
-    /**
-     * --- 核心修复: 为AI的集火微操指令加入节流阀 ---
-     */
-    runHellMicro(aiUnits, spatialGrid) {
+    // --- 核心重构: 使用 Matter.Query ---
+    runHellMicro(aiUnits, playerUnits) {
         if (aiUnits.length === 0) return;
 
         const centerOfMass = aiUnits.reduce((acc, unit) => ({x: acc.x + unit.x, y: acc.y + unit.y}), {x: 0, y: 0});
         centerOfMass.x /= aiUnits.length;
         centerOfMass.y /= aiUnits.length;
 
-        const nearbyEnemies = spatialGrid.getNearbyWithRadius(centerOfMass, TILE_SIZE * 30)
-                                        .filter(u => u.owner === 'player' && u.hp > 0);
+        const searchRadius = TILE_SIZE * 30;
+        const searchBounds = {
+            min: { x: centerOfMass.x - searchRadius, y: centerOfMass.y - searchRadius },
+            max: { x: centerOfMass.x + searchRadius, y: centerOfMass.y + searchRadius }
+        };
+        const playerBodies = playerUnits.map(u => u.body).filter(Boolean);
+        const bodiesInRegion = Matter.Query.region(playerBodies, searchBounds);
+        const nearbyEnemies = bodiesInRegion.map(body => body.gameObject).filter(u => u.hp > 0);
+
         if (nearbyEnemies.length === 0) return;
 
         const weakestPlayerUnit = nearbyEnemies.reduce((weakest, unit) => {
@@ -188,9 +190,8 @@ class AIController {
         }, nearbyEnemies[0]);
 
         if (weakestPlayerUnit) {
-            // 使用 setTimeout 分散集火指令
             let delay = 0;
-            const delayIncrement = 5; // 微操的延迟要小
+            const delayIncrement = 5;
             aiUnits.forEach(aiUnit => {
                 const dist = getDistance(aiUnit, weakestPlayerUnit);
                 if (dist <= aiUnit.stats.range) {

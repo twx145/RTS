@@ -14,7 +14,7 @@ class Unit {
         
         this.target = null;
         this.attackCooldown = 0;
-        this.findTargetCooldown = Math.random() * 0.5; // AI索敌计时器，错开计算
+        this.findTargetCooldown = Math.random() * 0.5;
 
         this.path = [];
         this.currentPathIndex = 0;
@@ -23,7 +23,6 @@ class Unit {
         this.targetAngle = this.angle;
         this.rotationSpeed = Math.PI * 2.0;
 
-        // Loitering / Strafing
         this.isLoitering = false;
         this.loiterCenter = null;
         this.loiterRadius = TILE_SIZE * 5;
@@ -32,117 +31,129 @@ class Unit {
         
         this.isSettingUp = false;
         this.setupTimer = 0;
+
+        // --- 核心新增: 创建 Matter.js 物理实体 ---
+        this.body = this.createBody(x, y);
+        if (this.body) {
+             // 添加一个反向引用，方便从 body 找到 unit 对象
+            this.body.gameObject = this;
+            Matter.World.add(window.game.engine.world, this.body);
+        }
     }
 
-    /**
-     * --- 核心修复: 重构整个update方法以解决移动与攻击的逻辑冲突 ---
-     * @param {SpatialGrid} spatialGrid - 用于高效索敌
-     */
-    update(deltaTime, enemyUnits, map, enemyBase, game, spatialGrid) {
+    createBody(x, y) {
+        const radius = this.stats.drawScale * TILE_SIZE * 0.4; // 碰撞半径稍小一些
+        let category, mask;
+
+        if (this.stats.moveType === 'air') {
+            category = COLLISION_CATEGORIES.air_unit;
+            // 空中单位只与其他空中单位碰撞
+            mask = COLLISION_CATEGORIES.air_unit;
+        } else { // 'ground', 'sea', 'amphibious'
+            category = COLLISION_CATEGORIES.ground_unit;
+            // 地面单位与地形和其他地面单位碰撞
+            mask = COLLISION_CATEGORIES.terrain | COLLISION_CATEGORIES.ground_unit;
+        }
+
+        const body = Matter.Bodies.circle(x, y, radius, {
+            frictionAir: 0.1, // 增加空气阻力，防止单位滑行过远
+            friction: 0.01,
+            restitution: 0.1, // 低弹性
+            label: `${this.owner}_${this.type}`,
+            collisionFilter: {
+                category: category,
+                mask: mask
+            }
+        });
+
+        // 初始角度
+        Matter.Body.setAngle(body, this.angle);
+        return body;
+    }
+
+
+    update(deltaTime, enemyUnits, map, enemyBase, game) {
         if (this.attackCooldown > 0) this.attackCooldown -= deltaTime;
         if (this.findTargetCooldown > 0) this.findTargetCooldown -= deltaTime;
         
         this.updateRotation(deltaTime);
 
-        // 如果单位正在部署（如炮兵），则不执行任何其他操作
         if (this.isSettingUp) {
             this.setupTimer -= deltaTime;
             if (this.setupTimer <= 0) this.isSettingUp = false;
             return;
         }
         
-        // --- 决策阶段 ---
-        // 1. 处理现有目标
         if (this.target && this.target.hp > 0) {
             this.handleAttack(this.target, game);
         } else {
-            // 目标已死亡或不存在，清空目标
             this.target = null;
-            
-            // 2. 如果单位空闲（没有移动路径），则自主索敌
             if (this.path.length === 0 && !this.moveTargetPos && this.findTargetCooldown <= 0) {
-                this.findTarget(enemyBase, spatialGrid);
-                this.findTargetCooldown = 0.5 + Math.random() * 0.2; // 重置索敌冷却
+                this.findTarget(enemyBase, enemyUnits, game);
+                this.findTargetCooldown = 0.5 + Math.random() * 0.2;
                 
-                // 如果索敌后仍无目标，飞行单位进入巡逻模式
                 if (!this.target && this.stats.moveType === 'air' && (this.type === 'fighter_jet' || this.type === 'recon_drone')) {
                     this.handleLoitering(deltaTime);
                 }
             }
         }
 
-        // --- 执行阶段 ---
-        // 3. **无条件地**处理移动。只要有路径，就应该移动。
         this.handleMovement(deltaTime, map);
     }
 
-    /**
-     * --- 核心修复: handleAttack现在只负责决策（移动或开火），不再包含移动执行代码 ---
-     */
     handleAttack(target, game) {
         const targetPos = { x: target.pixelX || target.x, y: target.pixelY || target.y };
         const distanceToTarget = getDistance(this, targetPos);
-        const engageRange = this.stats.range * 0.95; // 在稍小于最大射程时就停下
+        const engageRange = this.stats.range * 0.95;
 
-        // 决策：根据距离判断是该移动还是该停下
         if (distanceToTarget > engageRange) {
-            // 在射程外：需要移动。仅在没有路径时才创建新路径，避免每帧都重新寻路
             if (!this.path.length && !this.moveTargetPos) {
-                this.issueMoveCommand(targetPos, game.map, true); // true表示这是一个自主攻击移动
+                this.issueMoveCommand(targetPos, game.map, true);
             }
         } else {
-            // 在射程内：停下移动，准备开火
             this.path = [];
             this.moveTargetPos = null;
+            // --- 核心修改: 停止移动 ---
+            if (this.body) Matter.Body.setVelocity(this.body, { x: 0, y: 0 });
         }
         
-        // 统一开火逻辑
         this.setTargetAngle(targetPos);
         if (distanceToTarget <= this.stats.range) {
             let angleDiff = Math.abs(this.angle - this.targetAngle);
             if (angleDiff > Math.PI) angleDiff = 2 * Math.PI - angleDiff;
             
-            // 必须在冷却完成、未部署且大致朝向目标时才能开火
             if (this.attackCooldown <= 0 && !this.isSettingUp && angleDiff < 0.2) {
                 this.attack(game);
             }
         }
     }
     
-    /**
-     * --- 核心修复: handleMovement现在是纯粹的路径执行器 ---
-     */
     handleMovement(deltaTime, map) {
-        // 如果有路径但没有具体的下一个目标点，说明需要平滑路径以找到更远的点
         if (this.path.length > 0 && !this.moveTargetPos) {
             this.findSmoothedPathTarget(map);
         }
         
-        // 如果有移动目标点，就朝它移动
         if (this.moveTargetPos) {
             this.setTargetAngle(this.moveTargetPos);
             const distanceToNode = getDistance(this, this.moveTargetPos);
             
-            // 如果已到达路径节点
-            if (distanceToNode < TILE_SIZE / 4) {
-                this.moveTargetPos = null; // 清除当前节点目标，下一帧会寻找新节点
-                // 如果这是路径的最后一个节点
+            if (distanceToNode < TILE_SIZE / 2) {
+                this.moveTargetPos = null; 
                 if (this.currentPathIndex >= this.path.length -1) {
-                    this.path = []; // 清空路径
-                    // 如果是需要部署的单位，则开始部署
+                    this.path = [];
+                    // --- 核心修改: 到达终点，停止移动 ---
+                    if (this.body) Matter.Body.setVelocity(this.body, { x: 0, y: 0 });
                     if (this.stats.special === 'SETUP_TO_FIRE') {
                         this.isSettingUp = true;
                         this.setupTimer = 2.0;
                     }
                 }
             } else {
-                // 未到达节点，继续移动
                 this.move(deltaTime);
             }
         }
     }
-
-    //优化飞机巡逻逻辑
+    
     handleLoitering(deltaTime) {
         if (!this.isLoitering) {
             this.isLoitering = true;
@@ -150,7 +161,7 @@ class Unit {
             this.loiterAngle = Math.atan2(this.y - this.loiterCenter.y, this.x - this.loiterCenter.x);
         }
         
-        this.loiterAngle += 0.8 * deltaTime; // 控制盘旋速度
+        this.loiterAngle += 0.8 * deltaTime;
         
         const targetX = this.loiterCenter.x + Math.cos(this.loiterAngle) * this.loiterRadius;
         const targetY = this.loiterCenter.y + Math.sin(this.loiterAngle) * this.loiterRadius;
@@ -160,13 +171,25 @@ class Unit {
     }
 
     move(deltaTime) {
-        const speed = this.stats.speed * deltaTime;
-        this.x += Math.cos(this.angle) * speed;
-        this.y += Math.sin(this.angle) * speed;
+        if (!this.body || !this.moveTargetPos) return;
+
+        const direction = {
+            x: this.moveTargetPos.x - this.x,
+            y: this.moveTargetPos.y - this.y
+        };
+        const normalizedDir = getDistance(direction, {x:0, y:0}) > 0 
+            ? { x: direction.x / getDistance(direction, {x:0, y:0}), y: direction.y / getDistance(direction, {x:0, y:0}) }
+            : { x: 0, y: 0 };
+        
+        const velocity = {
+            x: normalizedDir.x * this.stats.speed,
+            y: normalizedDir.y * this.stats.speed
+        };
+        // --- 核心修改: 使用 Matter.js 设置速度 ---
+        Matter.Body.setVelocity(this.body, velocity);
     }
 
     issueMoveCommand(targetPos, map, isEngaging = false) {
-        // 如果是玩家的明确指令，则清除AI目标
         if (!isEngaging) {
             this.target = null;
         }
@@ -210,12 +233,19 @@ class Unit {
         while (diff > Math.PI) diff -= 2 * Math.PI;
         
         const turnStep = this.rotationSpeed * deltaTime;
+        let newAngle;
         if (Math.abs(diff) < turnStep) {
-            this.angle = this.targetAngle;
+            newAngle = this.targetAngle;
         } else {
-            this.angle += Math.sign(diff) * turnStep;
+            newAngle = this.angle + Math.sign(diff) * turnStep;
         }
-        this.angle = (this.angle + 2 * Math.PI) % (2 * Math.PI);
+        newAngle = (newAngle + 2 * Math.PI) % (2 * Math.PI);
+
+        // --- 核心修改: 使用 Matter.js 设置角度 ---
+        if (this.body) {
+            Matter.Body.setAngle(this.body, newAngle);
+        }
+        this.angle = newAngle; // 立即更新游戏对象角度以便渲染
     }
     
     setTargetAngle(targetPos) {
@@ -257,23 +287,36 @@ class Unit {
         }
         const hpBarWidth = TILE_SIZE * this.stats.hp / UNIT_TYPES.assault_infantry.hp * 0.9;
         const hpBarHeight = 5 / zoom; 
-        const hpBarYOffset = TILE_SIZE * this.stats.drawScale / 2;
+        const hpBarYOffset = TILE_SIZE * this.stats.drawScale / 2 + 5 / zoom;
         ctx.fillStyle = '#333'; 
         ctx.fillRect(this.x - hpBarWidth / 2, this.y - hpBarYOffset, hpBarWidth, hpBarHeight);
         ctx.fillStyle = this.owner === 'player' ? 'green' : '#c0392b'; 
         ctx.fillRect(this.x - hpBarWidth / 2, this.y - hpBarYOffset, hpBarWidth * (this.hp / this.stats.hp), hpBarHeight);
     }
     
-    findTarget(enemyBase, spatialGrid) {
-        if(!spatialGrid)return;// 修改 spatialGrid未更新则返回，防止报错
-
+    // --- 核心重构: 使用 Matter.Query.region 索敌 ---
+    findTarget(enemyBase, enemyUnits, game) {
         let closestTarget = null;
         let minDistance = this.stats.visionRange;
         const validUnitTargetTypes = this.stats.canTarget || ['ground', 'air', 'sea'];
-        const potentialTargets = spatialGrid.getNearbyWithRadius(this, minDistance);
+
+        // 1. 定义搜索区域
+        const searchBounds = {
+            min: { x: this.x - minDistance, y: this.y - minDistance },
+            max: { x: this.x + minDistance, y: this.y + minDistance }
+        };
+
+        // 2. 获取所有敌方单位的物理实体
+        const enemyBodies = enemyUnits.map(unit => unit.body).filter(Boolean);
+
+        // 3. 执行查询
+        const bodiesInRegion = Matter.Query.region(enemyBodies, searchBounds);
+        const potentialTargets = bodiesInRegion.map(body => body.gameObject);
         
+        // 4. 从查询结果中筛选最近的目标
         for (const target of potentialTargets) {
             if (target.owner === this.owner || target.hp <= 0) continue;
+            
             let targetMoveType = 'ground';
             if (target instanceof Unit) {
                 targetMoveType = target.stats.moveType;
@@ -287,6 +330,7 @@ class Unit {
             }
         }
 
+        // 5. 如果没有找到单位，检查基地
         if (!closestTarget && enemyBase && enemyBase.hp > 0 && validUnitTargetTypes.includes('ground')) {
             const distanceToBase = getDistance(this, {x: enemyBase.pixelX, y: enemyBase.pixelY});
             if (distanceToBase < minDistance) {

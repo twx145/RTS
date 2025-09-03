@@ -14,16 +14,12 @@ class Player {
     }
 
     /**
-     * 核心修复：增加 spatialGrid 参数，并将其传递给 AI 控制器
-     * @param {number} deltaTime 
-     * @param {Player} enemyPlayer 
-     * @param {GameMap} map 
-     * @param {SpatialGrid} spatialGrid // <-- 新增参数
+     * 核心修复：移除 spatialGrid 参数
      */
-    update(deltaTime, enemyPlayer, map, spatialGrid) {
+    update(deltaTime, enemyPlayer, map) {
         if (this.isAI) {
-            // 将 spatialGrid 正确地传递给 AI 控制器
-            this.aiController.update(this.units, enemyPlayer.units, map, deltaTime, spatialGrid);
+            // 不再需要传递 spatialGrid
+            this.aiController.update(this.units, enemyPlayer.units, map, deltaTime);
         }
     }
     

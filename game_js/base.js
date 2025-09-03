@@ -7,10 +7,39 @@ class Base {
         this.height = 3; // 3个格子高
         this.maxHp = 2500;
         this.hp = this.maxHp;
+        
         // 计算像素中心点，用于单位寻路
         this.pixelX = (gridX + this.width / 2) * TILE_SIZE;
         this.pixelY = (gridY + this.height / 2) * TILE_SIZE;
+
+        // --- 核心新增: 为基地创建静态物理实体 ---
+        this.body = this.createBody();
+        if (this.body) {
+            this.body.gameObject = this; // 添加反向引用
+            Matter.World.add(window.game.engine.world, this.body);
+        }
     }
+
+    createBody() {
+        const bodyWidth = this.width * TILE_SIZE;
+        const bodyHeight = this.height * TILE_SIZE;
+        
+        return Matter.Bodies.rectangle(
+            this.pixelX,
+            this.pixelY,
+            bodyWidth,
+            bodyHeight,
+            {
+                isStatic: true,
+                label: `${this.owner}_base`,
+                collisionFilter: {
+                    category: COLLISION_CATEGORIES.terrain, // 视作地形
+                    mask: COLLISION_CATEGORIES.ground_unit // 只与地面单位碰撞
+                }
+            }
+        );
+    }
+
 
     takeDamage(amount) {
         this.hp -= amount;if (this.hp < 0)this.hp = 0;
