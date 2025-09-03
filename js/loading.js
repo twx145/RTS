@@ -14,7 +14,6 @@ class LoadingManager {
             "小提示: 及时保存游戏进度以防意外",
             "小提示: 完成任务可以获得额外奖励"
         ];
-        
         this.init();
     }
     
@@ -46,8 +45,7 @@ class LoadingManager {
     }
     
     setRandomTip() {
-        const randomTip = this.tips[Math.floor(Math.random() * this.tips.length)];
-        document.getElementById('loading-tip').textContent = randomTip;
+        document.getElementById('loading-tip').textContent = this.tips[Math.floor(Math.random() * this.tips.length)];
     }
     
     determineResources() {//修改
@@ -59,23 +57,20 @@ class LoadingManager {
             this.setPreviewInfo('加载存档', '正在恢复游戏进度');
             // 获取存档信息
             const currentUser = sessionStorage.getItem('currentUser');
-            const saveInfo = localStorage.getItem(`modernWarfare_load_save_${currentUser}`);
+            const saveInfo = localStorage.getItem(`ShenDun_load_save_${currentUser}`);
             
             if (saveInfo) {
                 try {
                     const { saveData } = JSON.parse(saveInfo);
-                    
                     // 根据存档信息设置预览
                     this.setPreviewInfo(
                         `第${saveData.chapter + 1}章`, 
                         this.getSceneName(saveData.chapter, saveData.scene)
                     );
-                    
                     // 加载存档相关的资源
                     this.loadResourcesForSave(saveData);
-                    
                     // 清理临时存储
-                    localStorage.removeItem(`modernWarfare_load_save_${currentUser}`);
+                    localStorage.removeItem(`ShenDun_load_save_${currentUser}`);
                 } catch (e) {
                     console.error('解析存档信息失败', e);
                     this.loadDefaultResources();
@@ -92,15 +87,15 @@ class LoadingManager {
                 this.resourcesToLoad = [
                     { type: 'script', url: 'data/script.js' },
                     { type: 'image', url: 'assets/backgrounds/bg.png' },
-                    { type: 'image', url: 'assets/characters/commander.jpg' },
-                    { type: 'image', url: 'assets/characters/player.jpg' }
+                    { type: 'image', url: 'assets/characters/eva.jpg' },
+                    { type: 'image', url: 'assets/characters/tanaka.jpg' }
                 ];
             } 
             // 如果是从游戏返回，加载之前场景的资源
             else if (this.loadingParams.returnFromGame === 'true') {
                 // 这里需要根据保存的进度确定要加载的资源 修改
                 const currentUser = sessionStorage.getItem('currentUser');
-                const tempProgress = localStorage.getItem(`modernWarfare_temp_progress_${currentUser}`);
+                const tempProgress = localStorage.getItem(`ShenDun_temp_progress_${currentUser}`);
                 if (tempProgress) {
                     try {
                         const progress = JSON.parse(tempProgress);
@@ -114,9 +109,8 @@ class LoadingManager {
                     this.loadDefaultResources();
                 }
             }else if (this.loadingParams.returnFromGame === 'false') {//修改，新增false
-                // 这里需要根据保存的进度确定要加载的资源 修改
                 const currentUser = sessionStorage.getItem('currentUser');
-                const tempProgress = localStorage.getItem(`modernWarfare_temp_progress_${currentUser}`);
+                const tempProgress = localStorage.getItem(`ShenDun_temp_progress_${currentUser}`);
                 if (tempProgress) {
                     try {
                         var progress = JSON.parse(tempProgress);
@@ -140,12 +134,12 @@ class LoadingManager {
             this.setPreviewInfo('游戏加载中', '正在准备战场环境');
             this.resourcesToLoad = [
                 { type: 'image', url: 'assets/backgrounds/bg.png' },
-                // { type: 'image', url: 'assets/units/infantry.png' },
-                // { type: 'image', url: 'assets/units/tank.png' },
-                // { type: 'image', url: 'assets/units/artillery.png' },
-                { type: 'script', url: 'js/game.js' },
-                { type: 'script', url: 'js/map.js' },
-                { type: 'script', url: 'js/unit.js' }
+                // { type: 'image', url: 'assets/pics/infantry.png' },
+                // { type: 'image', url: 'assets/pics/tank.png' },
+                // { type: 'image', url: 'assets/pics/artillery.png' },
+                { type: 'script', url: 'game_js/game.js' },
+                { type: 'script', url: 'game_js/map.js' },
+                { type: 'script', url: 'game_js/unit.js' }
             ];
         }
         
@@ -208,9 +202,9 @@ class LoadingManager {
             { type: 'image', url: 'assets/units/infantry.png' },
             { type: 'image', url: 'assets/units/tank.png' },
             { type: 'image', url: 'assets/units/artillery.png' },
-            { type: 'script', url: 'js/game.js' },
-            { type: 'script', url: 'js/map.js' },
-            { type: 'script', url: 'js/unit.js' }
+            { type: 'script', url: 'game_js/game.js' },
+            { type: 'script', url: 'game_js/map.js' },
+            { type: 'script', url: 'game_js/unit.js' }
         );
     }
     
@@ -323,7 +317,7 @@ class LoadingManager {
             // 如果是从存档加载，需要传递存档信息
             if (this.loadingParams.fromSave === 'true') {
                 const currentUser = sessionStorage.getItem('currentUser');
-                const saveInfo = localStorage.getItem(`modernWarfare_load_save_${currentUser}`);
+                const saveInfo = localStorage.getItem(`ShenDun_load_save_${currentUser}`);
                 
                 if (saveInfo) {
                     try {

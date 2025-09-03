@@ -1,4 +1,4 @@
-/* css/style.css */
+/* css/game_style.css */
 html, body {
     margin: 0;
     padding: 0;
@@ -138,3 +138,362 @@ h2, h3, h4 { border-bottom: 1px solid #555; padding-bottom: 5px; margin-top: 0; 
 .winner-announcement { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background-color: rgba(0,0,0,0.8); padding: 40px 80px; border-radius: 10px; font-size: 48px; color: gold; z-index: 2000; text-align: center; border: 2px solid gold; }
 #game-message { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); background-color: rgba(217, 39, 39, 0.85); color: white; padding: 15px 30px; border-radius: 5px; z-index: 2000; opacity: 0; transition: opacity 0.5s ease-in-out; pointer-events: none; }
 #game-message.show { opacity: 1; }
+
+/*修改 添加新手教程部分 */
+.tutorial-content {
+    width: 800px;
+    max-width: 90vw;
+    max-height: 85vh;
+    overflow-y: auto;
+    padding: 30px;
+}
+
+.tutorial-step {
+    margin-bottom: 25px;
+}
+
+.tutorial-step h2 {
+    color: #6a9edc;
+    border-bottom: 2px solid #6a9edc;
+    padding-bottom: 10px;
+    margin-top: 0;
+    font-size: 24px;
+}
+
+.tutorial-step p {
+    font-size: 16px;
+    line-height: 1.6;
+    margin-bottom: 15px;
+}
+
+.tutorial-step ul {
+    margin: 15px 0;
+    padding-left: 20px;
+}
+
+.tutorial-step li {
+    margin-bottom: 8px;
+    line-height: 1.5;
+}
+
+.tutorial-image-container {
+    margin: 20px 0;
+    text-align: center;
+}
+
+.tutorial-image-placeholder {
+    background-color: #2a2a2a;
+    border: 2px dashed #6a9edc;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #999;
+    font-style: italic;
+    border-radius: 8px;
+}
+
+.tutorial-image-placeholder.large {
+    width: 100%;
+    height: 250px;
+    font-size: 18px;
+}
+
+.tutorial-tip {
+    background-color: rgba(106, 158, 220, 0.2);
+    border-left: 4px solid #6a9edc;
+    padding: 12px 15px;
+    margin-top: 20px;
+    border-radius: 4px;
+}
+
+.tutorial-progress {
+    margin: 25px 0 15px;
+}
+
+.progress-bar {
+    width: 100%;
+    height: 10px;
+    background-color: #444;
+    border-radius: 5px;
+    overflow: hidden;
+}
+
+.progress-fill {
+    height: 100%;
+    background-color: #6a9edc;
+    transition: width 0.3s ease;
+}
+
+.progress-text {
+    text-align: center;
+    margin-top: 8px;
+    font-size: 14px;
+    color: #bbb;
+}
+
+.tutorial-controls {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 20px;
+}
+
+.tutorial-btn {
+    padding: 12px 24px;
+    background-color: #4a6e9c;
+    border: none;
+    color: white;
+    cursor: pointer;
+    border-radius: 6px;
+    font-size: 16px;
+    transition: all 0.2s;
+    min-width: 120px;
+}
+
+.tutorial-btn:hover {
+    background-color: #5a8cba;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+}
+
+.tutorial-btn:active {
+    transform: translateY(0);
+}
+
+.tutorial-btn.skip-btn {
+    background-color: #888;
+}
+
+.tutorial-btn.skip-btn:hover {
+    background-color: #999;
+}
+
+.tutorial-btn:disabled {
+    background-color: #555;
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
+}
+
+/* 响应式调整 */
+@media (max-height: 700px) {
+    .tutorial-content {
+        max-height: 95vh;
+    }
+    
+    .tutorial-image-placeholder.large {
+        height: 180px;
+    }
+}
+
+/* 修改 设置按钮 */
+.settings-button {
+    position: fixed;
+    top: 15px;
+    left: 40px; /* 修改 设置键位置 侧距 */
+    width: 40px;
+    height: 40px;
+    background-color: rgba(42, 42, 42, 0.9);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    z-index: 100;
+    font-size: 20px;
+    border: 1px solid #555;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+    transition: all 0.2s ease;
+}
+
+.settings-button:hover {
+    background-color: rgba(60, 60, 60, 0.95);
+    transform: scale(1.1);
+}
+
+/* 设置菜单 */
+.settings-menu {
+    position: fixed;
+    top: 65px;
+    left: 40px;/* 修改 设置菜单位置 侧距 */
+    width: 280px;
+    background-color: rgba(42, 42, 42, 0.95);
+    border-radius: 8px;
+    padding: 15px;
+    z-index: 99;
+    display: none;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.5);
+    border: 1px solid #555;
+    max-height: 80vh;
+    overflow-y: auto;
+}
+
+.settings-menu h3 {
+    margin-top: 0;
+    text-align: center;
+    color: #6a9edc;
+    border-bottom: 1px solid #555;
+    padding-bottom: 10px;
+}
+
+.settings-section {
+    margin: 15px 0;
+    border-bottom: 1px solid #444;
+    padding-bottom: 15px;
+}
+
+.settings-section:last-child {
+    border-bottom: none;
+}
+
+.settings-section h4 {
+    margin: 0 0 10px 0;
+    color: #ccc;
+    font-size: 14px;
+}
+
+/* 音量控制 */
+.volume-control {
+    display: flex;
+    align-items: center;
+    margin: 8px 0;
+}
+
+.volume-control label {
+    width: 90px;
+    font-size: 13px;
+    color: #bbb;
+}
+
+.volume-slider {
+    flex-grow: 1;
+    margin: 0 10px;
+    height: 5px;
+    background: #555;
+    outline: none;
+    appearance: none;
+    border-radius: 5px;
+}
+
+.volume-slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 15px;
+    height: 15px;
+    border-radius: 50%;
+    background: #6a9edc;
+    cursor: pointer;
+}
+
+.volume-control span {
+    width: 35px;
+    text-align: right;
+    font-size: 12px;
+    color: #999;
+}
+
+/* 菜单按钮 */
+.menu-button {
+    width: 100%;
+    padding: 10px;
+    margin: 5px 0;
+    background-color: #4a6e9c;
+    border: none;
+    border-radius: 4px;
+    color: white;
+    cursor: pointer;
+    text-align: left;
+    transition: background-color 0.2s;
+    font-size: 14px;
+}
+
+.menu-button:hover {
+    background-color: #5a8cba;
+}
+
+.menu-button.warning {
+    background-color: #9c7c4a;
+}
+
+.menu-button.warning:hover {
+    background-color: #ba965a;
+}
+
+.menu-button.danger {
+    background-color: #9c4a4a;
+}
+
+.menu-button.danger:hover {
+    background-color: #ba5a5a;
+}
+
+.settings-footer {
+    margin-top: 15px;
+    text-align: center;
+}
+
+/* 响应式调整 */
+@media (max-width: 1200px) {
+    .settings-button {
+        right: 15px;
+        top: 15px;
+    }
+    
+    .settings-menu {
+        right: 15px;
+        top: 65px;
+    }
+}
+/* 修改 saveGame的展示 */
+.save-game-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.8);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 10000;
+}
+
+.save-game-content {
+    background: #2c3e50;
+    padding: 20px;
+    border-radius: 10px;
+    text-align: center;
+    color: white;
+    max-width: 400px;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.5);
+}
+
+.save-game-buttons {
+    margin-top: 20px;
+}
+
+.save-game-buttons button {
+    margin: 0 10px;
+    padding: 10px 20px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 16px;
+    transition: background-color 0.3s;
+}
+
+#save-restore-yes {
+    background: #27ae60;
+    color: white;
+}
+
+#save-restore-yes:hover {
+    background: #2ecc71;
+}
+
+#save-restore-no {
+    background: #e74c3c;
+    color: white;
+}
+
+#save-restore-no:hover {
+    background: #c0392b;
+}

@@ -31,7 +31,6 @@ async function initLoadGame() {
 // 加载脚本数据
 async function loadScriptData() {
     try {
-        // const response = await fetch('data/script.js');
         scriptData = window.scriptData;
     } catch (error) {
         console.error('加载脚本数据失败:', error);
@@ -58,7 +57,6 @@ function setRandomBackground() {
 function loadSaveData() {
     // 获取用户存档数据
     const userSaves = getUserSaves();
-    
     // 更新存档槽显示
     for (let i = 1; i <= 9; i++) {
         updateSaveSlot(i, userSaves[i]);
@@ -158,7 +156,7 @@ function getDialogText(saveData) {
 
 // 获取用户存档数据
 function getUserSaves() {
-    const userSavesKey = `modernWarfare_saves_${currentUser}`;
+    const userSavesKey = `ShenDun_saves_${currentUser}`;
     const savesJson = localStorage.getItem(userSavesKey);
     
     if (savesJson) {
@@ -192,7 +190,7 @@ function loadGame(slot) {
     if (saveData) {
         // 保存存档信息到临时存储，供加载页面使用
         const currentUser = sessionStorage.getItem('currentUser');
-        localStorage.setItem(`modernWarfare_load_save_${currentUser}`, JSON.stringify({
+        localStorage.setItem(`ShenDun_load_save_${currentUser}`, JSON.stringify({
             slot: slot,
             saveData: saveData
         }));
@@ -287,7 +285,7 @@ function deleteSave(slot) {
         delete userSaves[slot];
         
         // 更新本地存储
-        const userSavesKey = `modernWarfare_saves_${currentUser}`;
+        const userSavesKey = `ShenDun_saves_${currentUser}`;
         localStorage.setItem(userSavesKey, JSON.stringify(userSaves));
         
         // 立即更新界面
@@ -300,7 +298,7 @@ function deleteSave(slot) {
 
 // 删除所有存档
 function deleteAllSaves() {
-    const userSavesKey = `modernWarfare_saves_${currentUser}`;
+    const userSavesKey = `ShenDun_saves_${currentUser}`;
     localStorage.removeItem(userSavesKey);
     
     // 立即更新所有存档槽

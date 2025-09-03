@@ -35,7 +35,6 @@ const domElements = {
 // 文字显示相关变量
 let isTyping = false;
 let typeInterval = null;
-
 // 初始化函数
 var returnFromGame = false;
 
@@ -54,13 +53,11 @@ async function initGame() {
     // 检查URL参数
     const urlParams = new URLSearchParams(window.location.search);
     const isNewGame = urlParams.get('new') === 'true';
-    const loadSlot = urlParams.get('load');
     returnFromGame = urlParams.get('returnFromGame') !== null;
     
     // 如果是新游戏，清除自动存档
     if (isNewGame) {
-        const user = sessionStorage.getItem('currentUser');
-        localStorage.removeItem(`modernWarfare_autosave_${user}`);
+        localStorage.removeItem(`ShenDun_autosave_${currentUser}`);
     }
     
     // 检查是否有存档需要加载
@@ -71,15 +68,16 @@ async function initGame() {
     
     // 如果是从游戏返回，检查是否有临时进度
     if (returnFromGame) {
-        const tempProgress = localStorage.getItem(`modernWarfare_temp_progress_${currentUser}`);
+        const tempProgress = localStorage.getItem(`ShenDun_temp_progress_${currentUser}`);
         if (tempProgress) {
             try {
                 saveData = JSON.parse(tempProgress);
-                localStorage.removeItem(`modernWarfare_temp_progress_${currentUser}`);
+                localStorage.removeItem(`ShenDun_temp_progress_${currentUser}`);
             } catch (e) {
                 console.error("读取临时进度失败", e);
             }
         }
+        // window.href.location = ''; 尚未修改完
     }
     
     if (saveData) {
@@ -276,9 +274,19 @@ function handleAction(action) {
         dialog: gameState.currentDialog,
         timestamp: new Date().getTime()
     };
-    localStorage.setItem(`modernWarfare_temp_progress_${currentUser}`, JSON.stringify(tempProgress));
+    localStorage.setItem(`ShenDun_temp_progress_${currentUser}`, JSON.stringify(tempProgress));
+
     switch (action.type) {
-        case 'jump_to_game'://修改 跳转到游戏页面
+        case 'jump_to_game':
+            // 修改 新增：保存游戏设置
+            const gameSettings = {
+                mapId: action.mapId || 'map_new_01', 
+                availableUnits: action.availableUnits || Object.keys(UNIT_TYPES),
+                enableFogOfWar: action.enableFogOfWar !== false , // 默认启用
+                aiDifficulty: action.aiDifficulty || 'medium',
+                gameMode: action.gameMode || 'annihilation'
+            };
+            localStorage.setItem('ShenDun_dialogue_settings', JSON.stringify(gameSettings));
             window.location.href = `loading.html?target=game.html&fromDialogue=true`;
             break;
             

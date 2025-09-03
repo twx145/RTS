@@ -1,20 +1,13 @@
 // 存档管理 - 多用户支持
-
 // 获取当前用户
 function getCurrentUser() {
-    // 从URL参数获取用户 修改
-    // const urlParams = new URLSearchParams(window.location.search);
-    // const user = urlParams.get('user');
-    // if (user) return user;
-    
-    // 从sessionStorage获取用户
     return sessionStorage.getItem('currentUser');
 }
 
 // 获取用户存档键名
 function getUserSavesKey() {
     const user = getCurrentUser();
-    return `modernWarfare_saves_${user}`;
+    return `ShenDun_saves_${user}`;
 }
 
 // 获取用户存档数据
@@ -96,13 +89,13 @@ function autoSave() {
     
     // 存储自动存档
     const user = getCurrentUser();
-    localStorage.setItem(`modernWarfare_autosave_${user}`, JSON.stringify(saveData));
+    localStorage.setItem(`ShenDun_autosave_${user}`, JSON.stringify(saveData));
 }
 
 // 加载自动存档
 function loadAutoSave() {
     const user = getCurrentUser();
-    const savedData = localStorage.getItem(`modernWarfare_autosave_${user}`);
+    const savedData = localStorage.getItem(`ShenDun_autosave_${user}`);
     
     if (savedData) {
         try {

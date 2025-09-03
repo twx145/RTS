@@ -153,8 +153,6 @@ body::before {
 }
 
 /* 通用部分样式 */
-.skills-section,
-.experience-section,
 .education-section,
 .contribution-section {
     background: rgba(255, 255, 255, .1);
@@ -163,9 +161,6 @@ body::before {
     box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
     border: 1px solid rgba(255, 255, 255, .1);
 }
-
-.skills-section h2,
-.experience-section h2,
 .education-section h2,
 .contribution-section h2 {
     color: #ff4b2b;
@@ -174,62 +169,10 @@ body::before {
     border-bottom: 2px solid rgba(255, 75, 43, 0.5);
 }
 
-/* 技能列表 */
-.skills-list {
-    list-style: none;
-}
-
-.skills-list li {
-    margin-bottom: 20px;
-}
-
-.skill-name {
-    display: block;
-    margin-bottom: 8px;
-    font-weight: 600;
-    color: rgba(255, 255, 255, 0.9);
-}
-
-.skill-bar {
-    height: 8px;
-    background: rgba(255, 255, 255, .1);
-    border-radius: 4px;
-    overflow: hidden;
-}
-
-.skill-progress {
-    height: 100%;
-    background: #ff4b2b;
-    border-radius: 4px;
-}
-
-/* 时间线 */
-.timeline-item {
-    margin-bottom: 25px;
-    padding-bottom: 25px;
-    border-bottom: 1px solid rgba(255, 255, 255, .1);
-}
-
-.timeline-item:last-child {
-    margin-bottom: 0;
-    padding-bottom: 0;
-    border-bottom: none;
-}
-
-.timeline-item h3 {
-    color: rgba(255, 255, 255, 0.9);
-    margin-bottom: 8px;
-}
-
 .duration {
     color: #ff4b2b;
     font-size: 14px;
     margin-bottom: 10px;
-}
-
-.timeline-item p {
-    color: rgba(255, 255, 255, 0.8);
-    line-height: 1.5;
 }
 
 /* 教育经历 */

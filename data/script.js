@@ -9,7 +9,7 @@ window.scriptData = {
         {
           "id": "scene1_1",
           "name": "任务简报",
-          "background": "desert_base.png",
+          "background": "bg.png",
           "bgm": "briefing_bgm.mp3",
           "dialogs": [
             {
@@ -25,14 +25,21 @@ window.scriptData = {
               "characterLeft": {"image": "eva.jpg","expression": "serious"},
             },
             {
-              "action": {"type": "jump_to_game","description": "开始第一章任务"}
+              "action": {"type": "jump_to_game",
+                "description": "开始第一章任务",
+                mapId: "map01", // 指定地图
+                availableUnits: ["assault_infantry", "sniper", "main_battle_tank"], // 限制可用兵种
+                enableFogOfWar: false, // 启用战争迷雾
+                aiDifficulty: "medium", // AI难度
+                gameMode: "annihilation" // 游戏模式
+              }
             }
           ]
         },
         {
           "id": "scene1_2",
           "name": "突袭与撤离",
-          "background": "desert_battle.png",
+          "background": "bg.png",
           "bgm": "battle_bgm.mp3",
           "dialogs": [
             {
@@ -46,7 +53,7 @@ window.scriptData = {
         {
           "id": "scene1_3",
           "name": "任务结束",
-          "background": "command_center.png",
+          "background": "bg.png",
           "bgm": "intel_bgm.mp3",
           "dialogs": [
             {
@@ -75,7 +82,7 @@ window.scriptData = {
         {
           "id": "scene2_1",
           "name": "任务简报",
-          "background": "canyon_base.png",
+          "background": "bg.png",
           "bgm": "briefing_bgm.mp3",
           "dialogs": [
             {
@@ -98,7 +105,7 @@ window.scriptData = {
         {
           "id": "scene2_2",
           "name": "任务结束",
-          "background": "canyon_ruins.png",
+          "background": "bg.png",
           "bgm": "intel_bgm.mp3",
           "dialogs": [
             {
@@ -127,7 +134,7 @@ window.scriptData = {
         {
           "id": "scene3_1",
           "name": "任务简报",
-          "background": "city_neon.png",
+          "background": "bg.png",
           "bgm": "briefing_bgm.mp3",
           "dialogs": [
             {
@@ -150,7 +157,7 @@ window.scriptData = {
         {
           "id": "scene3_2",
           "name": "毒蛇的狂言",
-          "background": "city_battle.png",
+          "background": "bg.png",
           "bgm": "battle_bgm.mp3",
           "dialogs": [
             {
@@ -164,7 +171,7 @@ window.scriptData = {
         {
           "id": "scene3_3",
           "name": "任务结束",
-          "background": "command_center.png",
+          "background": "bg.png",
           "bgm": "intel_bgm.mp3",
           "dialogs": [
             {
@@ -193,7 +200,7 @@ window.scriptData = {
         {
           "id": "scene4_1",
           "name": "任务简报",
-          "background": "arctic_base.png",
+          "background": "bg.png",
           "bgm": "briefing_bgm.mp3",
           "dialogs": [
             {
@@ -210,7 +217,7 @@ window.scriptData = {
         {
           "id": "scene4_2",
           "name": "AI失控",
-          "background": "arctic_core.png",
+          "background": "bg.png",
           "bgm": "alarm_bgm.mp3",
           "dialogs": [
             {
@@ -245,7 +252,7 @@ window.scriptData = {
         {
           "id": "scene5_1",
           "name": "任务简报",
-          "background": "mountain_cannon.png",
+          "background": "bg.png",
           "bgm": "briefing_bgm.mp3",
           "dialogs": [
             {
@@ -262,7 +269,7 @@ window.scriptData = {
         {
           "id": "scene5_2",
           "name": "任务结束",
-          "background": "ocean_base.png",
+          "background": "bg.png",
           "bgm": "ending_bgm.mp3",
           "dialogs": [
             {
