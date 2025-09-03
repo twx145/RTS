@@ -52,11 +52,11 @@ class Unit {
         }
 
         const body = Matter.Bodies.circle(x, y, radius, {
-            frictionAir: 0.1,
-            friction: 0.01,
-            restitution: 0.1,
+            frictionAir: 0.4,
+            friction: 0.1,
+            restitution: 0.01,
             // --- 核心修复 (问题 #3): 根据单位HP设置质量 ---
-            mass: this.stats.hp / 10,
+            mass: this.stats.hp*this.stats.hp / 100,
             label: `${this.owner}_${this.type}`,
             collisionFilter: {
                 category: category,
