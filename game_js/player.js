@@ -1,5 +1,3 @@
-// const AIController = window.AIController;//ai.js
-
 class Player {
     constructor(id, name, manpower, isAI = false, baseArea, aiDifficulty = 'medium') {
         this.id = id;
@@ -22,10 +20,10 @@ class Player {
      * @param {GameMap} map 
      * @param {SpatialGrid} spatialGrid // <-- 新增参数
      */
-    update(deltaTime, enemyPlayer, map, spatialGrid) { // <-- 新增参数
+    update(deltaTime, enemyPlayer, map, spatialGrid) {
         if (this.isAI) {
             // 将 spatialGrid 正确地传递给 AI 控制器
-            this.aiController.update(this.units, enemyPlayer.units, map, deltaTime, spatialGrid); // <-- 新增参数
+            this.aiController.update(this.units, enemyPlayer.units, map, deltaTime, spatialGrid);
         }
     }
     

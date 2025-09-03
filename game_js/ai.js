@@ -4,28 +4,29 @@ class AIController {
         this.difficulty = difficulty;
         
         this.macroTimer = 0; 
-        this.macroInterval = 2.0; 
+        this.macroInterval = 2.0; // 宏观决策间隔
         this.microTimer = 0;
-        this.microInterval = 0.5;
+        this.microInterval = 0.5; // 微操决策间隔 (地狱难度)
 
         this.attackWave = [];
         this.playerBase = null;
     }
 
-    // js/ai.js
-
+    /**
+     * --- 体验优化: 让AI部署更有策略性 ---
+     * AI会设定一个集结点，并围绕该点部署单位，形成集群而非散兵。
+     * @param {number} mapWidth 
+     * @param {number} mapHeight 
+     * @param {number} TILE_SIZE 
+     * @param {GameMap} map 
+     */
     deployUnits(mapWidth, mapHeight, TILE_SIZE, map) {
-        // --- 体验优化: 让AI部署更有策略性 ---
         const deployableUnits = Object.keys(UNIT_TYPES);
         let manpowerToSpend = this.player.manpower;
 
         if (this.difficulty === 'hard' || this.difficulty === 'hell') {
-            manpowerToSpend *= 0.7; // 困难AI保留一些资源用于后续生产
+            manpowerToSpend *= 0.7; // 困难及以上难度会保留部分资源
         }
-
-        // 决定本次部署的核心单位
-        const coreUnitType = deployableUnits[Math.floor(Math.random() * deployableUnits.length)];
-        const coreUnitCost = UNIT_TYPES[coreUnitType].cost;
 
         // 设定一个集结点
         const rallyPointX = mapWidth - 5 - Math.random() * (mapWidth / 4);
@@ -33,19 +34,18 @@ class AIController {
 
         let spentManpower = 0;
         let attempts = 0;
-        const maxAttempts = 20;
+        const maxAttempts = 30; // 增加尝试次数
 
         while (spentManpower < manpowerToSpend && attempts < maxAttempts) {
-            // 优先部署核心单位，然后部署一些护卫单位
-            const unitType = Math.random() > 0.4 ? coreUnitType : deployableUnits[Math.floor(Math.random() * deployableUnits.length)];
+            const unitType = deployableUnits[Math.floor(Math.random() * deployableUnits.length)];
             const cost = UNIT_TYPES[unitType].cost;
 
             if (this.player.canAfford(cost)) {
-                // 在集结点附近随机放置，形成集群
+                // 在集结点附近随机放置
                 const x = rallyPointX + (Math.random() - 0.5) * 8;
                 const y = rallyPointY + (Math.random() - 0.5) * 8;
                 
-                // 确保不出界
+                // 确保不出界且地形可部署
                 if (x < 0 || y < 0 || x >= mapWidth || y >= mapHeight) {
                     attempts++;
                     continue;
@@ -57,25 +57,24 @@ class AIController {
                     this.player.units.push(newUnit);
                     this.player.deductManpower(cost);
                     spentManpower += cost;
-                }
-                else {
+                } else {
                     attempts++;
                 }
             } else {
-                 attempts++;
+                 attempts++; // 资源不足以购买此单位，换一个试试
             }
         }
     }
 
-    update(aiUnits, playerUnits, map, deltaTime, spatialGrid) { // <-- 新增参数
+    // --- AI主更新函数，将spatialGrid传递给下级逻辑 ---
+    update(aiUnits, playerUnits, map, deltaTime, spatialGrid) {
         if (playerUnits.length === 0 && (!this.playerBase || this.playerBase.hp <= 0)) return;
 
         this.macroTimer += deltaTime;
         this.microTimer += deltaTime;
 
-        // 单位级的微操（所有难度都需要）
-        // 将 spatialGrid 传递下去，用于高效索敌
-        this.runSimpleLogic(aiUnits, spatialGrid); // <-- 修改参数
+        // 单位级的微操（所有难度都需要），使用空间网格高效索敌
+        this.runSimpleLogic(aiUnits, spatialGrid);
 
         // 宏观决策（按难度和频率执行）
         if (this.macroTimer >= this.macroInterval) {
@@ -91,6 +90,7 @@ class AIController {
             this.macroTimer = 0;
         }
         
+        // 地狱难度的微操
         if (this.difficulty === 'hell' && this.microTimer >= this.microInterval) {
             this.runHellMicro(aiUnits, playerUnits);
             this.microTimer = 0;
@@ -98,16 +98,14 @@ class AIController {
     }
 
     /**
-     * 核心修复：使用 spatialGrid 调用新的 findTarget 方法
+     * AI单位的自主索敌逻辑 (所有难度)
      * @param {Array<Unit>} aiUnits
      * @param {SpatialGrid} spatialGrid
      */
     runSimpleLogic(aiUnits, spatialGrid) {
         aiUnits.forEach(unit => {
-            // 如果单位空闲，就让它自己寻找最近的敌人
-            // 注意：这里不再需要 playerUnits 列表，因为索敌将通过空间网格完成
+            // 如果单位空闲，就让它使用空间网格寻找最近的敌人
             if (!unit.target && unit.path.length === 0 && unit.findTargetCooldown <= 0) {
-                 // 使用新的索敌函数签名
                 unit.findTarget(this.playerBase, spatialGrid);
             }
         });
@@ -117,12 +115,12 @@ class AIController {
      * 中等难度：组织波次进攻玩家基地
      */
     runMediumLogic(aiUnits, playerUnits, map) {
-        // ... 此函数无变化 ...
         if (!this.playerBase || this.playerBase.hp <= 0) return;
 
         const livingAttackWave = this.attackWave.filter(u => u.hp > 0);
 
         if (livingAttackWave.length < 3) {
+            // 重新集结5个空闲单位作为新的攻击波次
             this.attackWave = aiUnits.filter(u => !u.target && u.path.length === 0).slice(0, 5); 
         }
         
@@ -138,15 +136,16 @@ class AIController {
      * 困难难度：优先攻击高价值目标，其次攻击基地
      */
     runHardLogic(aiUnits, playerUnits, map) {
-        // ... 此函数无变化 ...
         let priorityTarget = null;
         
-        const targetPriorities = ['howitzer', 'sniper', 'sam_launcher', 'destroyer'];
+        // 定义高价值目标的类型
+        const targetPriorities = ['howitzer', 'sniper', 'sam_launcher', 'destroyer', 'main_battle_tank'];
         for (const type of targetPriorities) {
             priorityTarget = playerUnits.find(pUnit => pUnit.type === type && pUnit.hp > 0);
             if (priorityTarget) break;
         }
 
+        // 如果没有高价值目标，则攻击基地
         if (!priorityTarget && this.playerBase && this.playerBase.hp > 0) {
             priorityTarget = this.playerBase;
         }
@@ -157,6 +156,7 @@ class AIController {
                  this.attackWave = aiUnits.filter(u => !u.target && u.path.length === 0).slice(0, 6);
             }
 
+            // 命令攻击波次中的所有单位攻击该优先目标
             this.attackWave.forEach(unit => {
                 if (unit.hp > 0) {
                     unit.target = priorityTarget;
@@ -169,14 +169,15 @@ class AIController {
      * 地狱难度：完美的集火微操
      */
     runHellMicro(aiUnits, playerUnits) {
-        // ... 此函数无变化 ...
         if (playerUnits.length === 0) return;
 
+        // 找出玩家血量最低的单位
         const weakestPlayerUnit = playerUnits.reduce((weakest, unit) => {
             return (unit.hp < weakest.hp) ? unit : weakest;
         }, playerUnits[0]);
 
         if (weakestPlayerUnit) {
+            // 命令所有在射程内的AI单位集火该最弱单位
             aiUnits.forEach(aiUnit => {
                 const dist = getDistance(aiUnit, weakestPlayerUnit);
                 if (dist <= aiUnit.stats.range) {
