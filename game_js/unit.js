@@ -19,115 +19,130 @@ class Unit {
         this.path = [];
         this.currentPathIndex = 0;
         this.moveTargetPos = null;
-        this.angle = Math.random() * Math.PI * 2; // 初始随机角度
+        this.angle = Math.random() * Math.PI * 2;
         this.targetAngle = this.angle;
         this.rotationSpeed = Math.PI * 2.0;
 
-        // --- 体验优化: 飞行单位巡逻/缠斗逻辑 ---
+        // Loitering / Strafing
         this.isLoitering = false;
         this.loiterCenter = null;
         this.loiterRadius = TILE_SIZE * 5;
         this.loiterAngle = 0;
-        this.strafeDirection = Math.random() < 0.5 ? 1 : -1; // 缠斗方向
+        this.strafeDirection = Math.random() < 0.5 ? 1 : -1;
         
-        // --- 单位特殊状态 ---
-        this.isSettingUp = false; // 用于炮兵等单位
+        this.isSettingUp = false;
         this.setupTimer = 0;
     }
 
+    /**
+     * --- 核心修复: 重构整个update方法以解决移动与攻击的逻辑冲突 ---
+     * @param {SpatialGrid} spatialGrid - 用于高效索敌
+     */
     update(deltaTime, enemyUnits, map, enemyBase, game, spatialGrid) {
         if (this.attackCooldown > 0) this.attackCooldown -= deltaTime;
         if (this.findTargetCooldown > 0) this.findTargetCooldown -= deltaTime;
         
         this.updateRotation(deltaTime);
 
+        // 如果单位正在部署（如炮兵），则不执行任何其他操作
         if (this.isSettingUp) {
             this.setupTimer -= deltaTime;
             if (this.setupTimer <= 0) this.isSettingUp = false;
-            return; // 部署中，不进行其他操作
+            return;
         }
         
-        // 核心逻辑: 优先处理目标，其次处理移动，最后自主索敌
+        // --- 决策阶段 ---
+        // 1. 处理现有目标
         if (this.target && this.target.hp > 0) {
             this.handleAttack(this.target, game);
         } else {
+            // 目标已死亡或不存在，清空目标
             this.target = null;
-            this.handleMovement(deltaTime, map);
-        }
-
-        // --- 性能优化：使用空间网格进行节流索敌 ---
-        // 仅当单位空闲时（无目标、无路径）才自主寻找敌人
-        if (!this.target && this.path.length === 0 && !this.moveTargetPos && this.findTargetCooldown <= 0) {
-            this.findTarget(enemyBase, spatialGrid);
-            this.findTargetCooldown = 0.5 + Math.random() * 0.2; // 无论是否找到，都重置计时器，避免频繁搜索
             
-            // --- 体验优化: 空闲的飞行单位自动进入巡逻模式 ---
-            if (!this.target && this.stats.moveType === 'air' && (this.type === 'fighter_jet' || this.type === 'recon_drone')) {
-                this.handleLoitering(deltaTime);
+            // 2. 如果单位空闲（没有移动路径），则自主索敌
+            if (this.path.length === 0 && !this.moveTargetPos && this.findTargetCooldown <= 0) {
+                this.findTarget(enemyBase, spatialGrid);
+                this.findTargetCooldown = 0.5 + Math.random() * 0.2; // 重置索敌冷却
+                
+                // 如果索敌后仍无目标，飞行单位进入巡逻模式
+                if (!this.target && this.stats.moveType === 'air' && (this.type === 'fighter_jet' || this.type === 'recon_drone')) {
+                    this.handleLoitering(deltaTime);
+                }
             }
         }
+
+        // --- 执行阶段 ---
+        // 3. **无条件地**处理移动。只要有路径，就应该移动。
+        this.handleMovement(deltaTime, map);
     }
 
+    /**
+     * --- 核心修复: handleAttack现在只负责决策（移动或开火），不再包含移动执行代码 ---
+     */
     handleAttack(target, game) {
         const targetPos = { x: target.pixelX || target.x, y: target.pixelY || target.y };
         const distanceToTarget = getDistance(this, targetPos);
-        const engageRange = this.stats.range * 0.95; // 稍微小于最大射程，确保能稳定开火
+        const engageRange = this.stats.range * 0.95; // 在稍小于最大射程时就停下
 
-        // 停止当前移动，准备攻击
-        if (distanceToTarget <= engageRange) {
-             this.path = [];
-             this.moveTargetPos = null;
-        } 
-        // 如果超出射程，则移动到可攻击位置
-        else {
-             // 仅在没有路径时才发布新的移动命令，避免频繁重新计算
+        // 决策：根据距离判断是该移动还是该停下
+        if (distanceToTarget > engageRange) {
+            // 在射程外：需要移动。仅在没有路径时才创建新路径，避免每帧都重新寻路
             if (!this.path.length && !this.moveTargetPos) {
                 this.issueMoveCommand(targetPos, game.map, true); // true表示这是一个自主攻击移动
             }
+        } else {
+            // 在射程内：停下移动，准备开火
+            this.path = [];
+            this.moveTargetPos = null;
         }
         
         // 统一开火逻辑
         this.setTargetAngle(targetPos);
         if (distanceToTarget <= this.stats.range) {
-            // 检查武器是否对准目标
             let angleDiff = Math.abs(this.angle - this.targetAngle);
             if (angleDiff > Math.PI) angleDiff = 2 * Math.PI - angleDiff;
             
-            if (this.attackCooldown <= 0 && !this.isSettingUp && angleDiff < 0.2) { // 容忍小角度偏差
+            // 必须在冷却完成、未部署且大致朝向目标时才能开火
+            if (this.attackCooldown <= 0 && !this.isSettingUp && angleDiff < 0.2) {
                 this.attack(game);
             }
         }
     }
     
+    /**
+     * --- 核心修复: handleMovement现在是纯粹的路径执行器 ---
+     */
     handleMovement(deltaTime, map) {
-        // 如果有路径但没有具体的移动目标点，说明需要平滑路径
+        // 如果有路径但没有具体的下一个目标点，说明需要平滑路径以找到更远的点
         if (this.path.length > 0 && !this.moveTargetPos) {
             this.findSmoothedPathTarget(map);
         }
         
+        // 如果有移动目标点，就朝它移动
         if (this.moveTargetPos) {
             this.setTargetAngle(this.moveTargetPos);
             const distanceToNode = getDistance(this, this.moveTargetPos);
             
-            // 到达路径节点
+            // 如果已到达路径节点
             if (distanceToNode < TILE_SIZE / 4) {
-                this.moveTargetPos = null; 
-                // 如果是路径的最后一个节点
+                this.moveTargetPos = null; // 清除当前节点目标，下一帧会寻找新节点
+                // 如果这是路径的最后一个节点
                 if (this.currentPathIndex >= this.path.length -1) {
-                    this.path = [];
-                    // 如果单位是炮兵等需要部署的单位
+                    this.path = []; // 清空路径
+                    // 如果是需要部署的单位，则开始部署
                     if (this.stats.special === 'SETUP_TO_FIRE') {
                         this.isSettingUp = true;
                         this.setupTimer = 2.0;
                     }
                 }
             } else {
+                // 未到达节点，继续移动
                 this.move(deltaTime);
             }
         }
     }
 
-    // --- 体验优化: 空中单位巡逻逻辑 ---
+    //优化飞机巡逻逻辑
     handleLoitering(deltaTime) {
         if (!this.isLoitering) {
             this.isLoitering = true;
@@ -150,11 +165,8 @@ class Unit {
         this.y += Math.sin(this.angle) * speed;
     }
 
-    /**
-     * --- 核心修改: 增加 isEngaging 参数，用于区分玩家指令和自主攻击 ---
-     */
     issueMoveCommand(targetPos, map, isEngaging = false) {
-        // 如果是玩家的明确指令，则清除AI自主索敌的目标
+        // 如果是玩家的明确指令，则清除AI目标
         if (!isEngaging) {
             this.target = null;
         }
@@ -162,7 +174,6 @@ class Unit {
         this.isSettingUp = false;
         this.moveTargetPos = null;
         
-        // --- 核心体验优化 (截击逻辑): 如果是攻击移动，则计算截击点 ---
         let finalTargetPos = { ...targetPos };
         if (isEngaging && this.target instanceof Unit && this.target.stats.speed > 0) {
             finalTargetPos = this.calculateInterceptPoint(this.target);
@@ -180,27 +191,16 @@ class Unit {
         }
     }
 
-    /**
-     * --- 核心体验优化 (新增): 预测截击点算法 ---
-     * @param {Unit} target - The moving target unit.
-     * @returns {object} - The predicted {x, y} intercept point.
-     */
     calculateInterceptPoint(target) {
         const distance = getDistance(this, target);
-        // 如果自己比目标慢，或者弹速不存在，直接返回目标当前位置
-        const projectileSpeed = this.stats.ammoSpeed || this.stats.speed;
-        if (projectileSpeed <= target.stats.speed) {
+        if (this.stats.speed <= target.stats.speed || target.stats.speed < TILE_SIZE * 0.1) {
             return { x: target.x, y: target.y };
         }
-
-        const timeToIntercept = distance / projectileSpeed;
-        
-        // 预测目标在 timeToIntercept 秒后的位置
+        const timeToIntercept = distance / (this.stats.speed - target.stats.speed);
         const targetSpeed = target.stats.speed;
-        const targetAngle = target.angle; // 假设目标会沿当前方向前进
+        const targetAngle = target.angle;
         const predictedX = target.x + Math.cos(targetAngle) * targetSpeed * timeToIntercept;
         const predictedY = target.y + Math.sin(targetAngle) * targetSpeed * timeToIntercept;
-
         return { x: predictedX, y: predictedY };
     }
 
@@ -225,69 +225,58 @@ class Unit {
     draw(ctx, isSelected, zoom = 1, showDetails = false) {
         ctx.save();
         ctx.translate(this.x, this.y);
-        ctx.rotate(this.angle + Math.PI / 2); // 加 PI/2 是因为大部分素材的头部是朝上的
+        ctx.rotate(this.angle + Math.PI / 2);
         const size = TILE_SIZE * this.stats.drawScale;
         if (this.image) {
             ctx.drawImage(this.image, -size / 2, -size / 2, size, size);
         }
         ctx.restore();
 
-        // --- 绘制选中效果和详细信息 ---
         if (isSelected) {
-            ctx.strokeStyle = this.owner === 'player' ? 'rgba(255, 255, 0, 0.9)' : 'rgba(255, 165, 0, 0.9)';
+            ctx.strokeStyle = this.owner === 'player' ? 'yellow' : 'orange';
             ctx.lineWidth = 2 / zoom;
             ctx.beginPath();
-            ctx.arc(this.x, this.y, TILE_SIZE * this.stats.drawScale / 2 + 2 / zoom, 0, Math.PI * 2);
+            ctx.arc(this.x, this.y, TILE_SIZE * this.stats.drawScale/2, 0, Math.PI * 2);
             ctx.stroke();
-
             if (showDetails) {
-                // 绘制攻击范围 (虚线)
                 if (this.stats.range > 0) { 
-                    ctx.strokeStyle = 'rgba(255, 100, 100, 0.6)'; ctx.lineWidth = 1 / zoom; 
+                    ctx.strokeStyle = 'rgba(255, 100, 100, 0.5)'; ctx.lineWidth = 1 / zoom; 
                     ctx.beginPath(); ctx.arc(this.x, this.y, this.stats.range, 0, Math.PI * 2); 
                     ctx.setLineDash([4 / zoom, 2 / zoom]); ctx.stroke(); ctx.setLineDash([]);
                 }
-                // 绘制移动路径
                 if (this.path && this.path.length > 0) { 
                     const endNode = this.path[this.path.length - 1]; 
                     const destX = endNode.x * TILE_SIZE + TILE_SIZE / 2; 
                     const destY = endNode.y * TILE_SIZE + TILE_SIZE / 2; 
                     ctx.beginPath(); ctx.moveTo(this.x, this.y); ctx.lineTo(destX, destY); 
-                    ctx.strokeStyle = this.target ? 'rgba(255, 50, 50, 0.7)' : 'rgba(200, 200, 200, 0.7)'; 
+                    ctx.strokeStyle = this.target ? 'rgba(255, 50, 50, 0.7)' : 'rgba(255, 255, 255, 0.7)'; 
                     ctx.lineWidth = 2 / zoom; ctx.setLineDash([5 / zoom, 3 / zoom]); 
                     ctx.stroke(); ctx.setLineDash([]); 
                 }
             }
         }
-        // --- 体验优化: 根据单位最大HP和尺寸调整血条 ---
-        const hpBarWidth = TILE_SIZE * Math.max(1, this.stats.hp / 150); // 以150HP为基准调整长度
+        const hpBarWidth = TILE_SIZE * this.stats.hp / UNIT_TYPES.assault_infantry.hp * 0.9;
         const hpBarHeight = 5 / zoom; 
-        const hpBarYOffset = (TILE_SIZE * this.stats.drawScale / 2) + hpBarHeight; // 放在单位头上
-        
-        ctx.fillStyle = 'rgba(50, 50, 50, 0.7)'; 
+        const hpBarYOffset = TILE_SIZE * this.stats.drawScale / 2;
+        ctx.fillStyle = '#333'; 
         ctx.fillRect(this.x - hpBarWidth / 2, this.y - hpBarYOffset, hpBarWidth, hpBarHeight);
-        ctx.fillStyle = this.owner === 'player' ? '#2ecc71' : '#c0392b'; 
+        ctx.fillStyle = this.owner === 'player' ? 'green' : '#c0392b'; 
         ctx.fillRect(this.x - hpBarWidth / 2, this.y - hpBarYOffset, hpBarWidth * (this.hp / this.stats.hp), hpBarHeight);
     }
     
-    /**
-     * --- 核心性能优化: 使用空间网格进行高效索敌 ---
-     * 不再遍历全局敌人列表，而是只查询自身视野范围内的网格，极大提升效率。
-     * @param {Base} enemyBase 敌方基地
-     * @param {SpatialGrid} spatialGrid 空间网格实例
-     */
     findTarget(enemyBase, spatialGrid) {
         let closestTarget = null;
         let minDistance = this.stats.visionRange;
-        const validUnitTargetTypes = this.stats.canTarget || ['ground', 'air', 'sea', 'amphibious'];
-
-        // 1. 从空间网格获取附近的潜在目标
+        const validUnitTargetTypes = this.stats.canTarget || ['ground', 'air', 'sea'];
         const potentialTargets = spatialGrid.getNearbyWithRadius(this, minDistance);
         
         for (const target of potentialTargets) {
-            // 排除友军、死亡单位和无法攻击的类型
             if (target.owner === this.owner || target.hp <= 0) continue;
-            if (target instanceof Unit && !validUnitTargetTypes.includes(target.stats.moveType)) continue;
+            let targetMoveType = 'ground';
+            if (target instanceof Unit) {
+                targetMoveType = target.stats.moveType;
+            }
+            if (!validUnitTargetTypes.includes(targetMoveType)) continue;
 
             const distance = getDistance(this, target);
             if (distance < minDistance) {
@@ -296,28 +285,25 @@ class Unit {
             }
         }
 
-        // 2. 如果没有找到单位，再检查基地
         if (!closestTarget && enemyBase && enemyBase.hp > 0 && validUnitTargetTypes.includes('ground')) {
             const distanceToBase = getDistance(this, {x: enemyBase.pixelX, y: enemyBase.pixelY});
             if (distanceToBase < minDistance) {
                 closestTarget = enemyBase;
             }
         }
-        
         this.target = closestTarget;
     }
     
-    // --- Unchanged methods below ---
     attack(game) { 
         if (!this.target || !this.stats.ammoType) return; 
         const pStats = { damage: this.stats.attack, ammoType: this.stats.ammoType, ammoSpeed: this.stats.ammoSpeed, splashRadius: this.stats.ammoSplashRadius, };
-        game.projectiles.push(new Projectile(this.owner, { x: this.x, y: this.y }, this.target, pStats));
+        const proj = new Projectile(this.owner, { x: this.x, y: this.y }, this.target, pStats); 
+        game.projectiles.push(proj); 
         this.attackCooldown = this.stats.attackSpeed; 
     }
     takeDamage(amount) { this.hp -= amount; if (this.hp <= 0) this.hp = 0; }
     findSmoothedPathTarget(map) { 
         if (!this.path || this.path.length === 0 || this.currentPathIndex >= this.path.length) return; 
-        // 从路径终点向前查找，找到第一个可以直接到达的节点
         for (let i = this.path.length - 1; i > this.currentPathIndex; i--) { 
             const node = this.path[i]; 
             const targetPos = { x: node.x * TILE_SIZE + TILE_SIZE / 2, y: node.y * TILE_SIZE + TILE_SIZE / 2 }; 
@@ -325,7 +311,6 @@ class Unit {
                 this.moveTargetPos = targetPos; this.currentPathIndex = i; return; 
             } 
         } 
-        // 如果都不能，则朝向下一个节点移动
         const nextNode = this.path[this.currentPathIndex];
         if (nextNode) { this.moveTargetPos = { x: nextNode.x * TILE_SIZE + TILE_SIZE / 2, y: nextNode.y * TILE_SIZE + TILE_SIZE / 2 }; } 
     }
