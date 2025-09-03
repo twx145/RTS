@@ -12,35 +12,58 @@ class AIController {
         this.playerBase = null;
     }
 
+    // js/ai.js
+
     deployUnits(mapWidth, mapHeight, TILE_SIZE, map) {
+        // --- 体验优化: 让AI部署更有策略性 ---
         const deployableUnits = Object.keys(UNIT_TYPES);
         let manpowerToSpend = this.player.manpower;
 
         if (this.difficulty === 'hard' || this.difficulty === 'hell') {
-            manpowerToSpend *= 0.7;
+            manpowerToSpend *= 0.7; // 困难AI保留一些资源用于后续生产
         }
+
+        // 决定本次部署的核心单位
+        const coreUnitType = deployableUnits[Math.floor(Math.random() * deployableUnits.length)];
+        const coreUnitCost = UNIT_TYPES[coreUnitType].cost;
+
+        // 设定一个集结点
+        const rallyPointX = mapWidth - 5 - Math.random() * (mapWidth / 4);
+        const rallyPointY = Math.random() * mapHeight;
 
         let spentManpower = 0;
         let attempts = 0;
-        const maxAttempts = deployableUnits.length * 3;
+        const maxAttempts = 20;
 
         while (spentManpower < manpowerToSpend && attempts < maxAttempts) {
-            const unitType = deployableUnits[Math.floor(Math.random() * deployableUnits.length)];
+            // 优先部署核心单位，然后部署一些护卫单位
+            const unitType = Math.random() > 0.4 ? coreUnitType : deployableUnits[Math.floor(Math.random() * deployableUnits.length)];
             const cost = UNIT_TYPES[unitType].cost;
 
-            if (this.player.canAfford(cost)) {//修改 优化AI兵种放置，不会放到边缘
-                const x = mapWidth - UNIT_TYPES[unitType].drawScale/2 - Math.random() * mapWidth / 3 ;
-                const y = Math.random() * (mapHeight - UNIT_TYPES[unitType].drawScale) + UNIT_TYPES[unitType].drawScale/2;
+            if (this.player.canAfford(cost)) {
+                // 在集结点附近随机放置，形成集群
+                const x = rallyPointX + (Math.random() - 0.5) * 8;
+                const y = rallyPointY + (Math.random() - 0.5) * 8;
+                
+                // 确保不出界
+                if (x < 0 || y < 0 || x >= mapWidth || y >= mapHeight) {
+                    attempts++;
+                    continue;
+                }
+
                 const tile = map.getTile(Math.floor(x), Math.floor(y));
-                if(TERRAIN_TYPES[tile.type].traversableBy.includes(UNIT_TYPES[unitType].moveType)){//修改 优化AI兵种放置，不会放到不可移动的地形
+                if(tile && TERRAIN_TYPES[tile.type].traversableBy.includes(UNIT_TYPES[unitType].moveType)){
                     const newUnit = new Unit(unitType, 'ai', x * TILE_SIZE, y * TILE_SIZE);
                     this.player.units.push(newUnit);
                     this.player.deductManpower(cost);
                     spentManpower += cost;
-                    attempts = 0;
                 }
-                else attempts++;
-            }else attempts++;
+                else {
+                    attempts++;
+                }
+            } else {
+                 attempts++;
+            }
         }
     }
 

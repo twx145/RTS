@@ -392,14 +392,52 @@ class Game {
 
     issueGroupMoveCommand(targetPos, map) {
         if (this.selectedUnits.length === 0) return;
-        const centroid = this.selectedUnits.reduce((acc, unit) => ({ x: acc.x + unit.x, y: acc.y + unit.y }), { x: 0, y: 0 });
-        centroid.x /= this.selectedUnits.length;
-        centroid.y /= this.selectedUnits.length;
-        const offsets = this.selectedUnits.map(unit => ({ dx: unit.x - centroid.x, dy: unit.y - centroid.y }));
-        this.selectedUnits.forEach((unit, index) => {
-            const unitTargetPos = { x: targetPos.x + offsets[index].dx, y: targetPos.y + offsets[index].dy };
-            unit.issueMoveCommand(unitTargetPos, map);
+        
+        // --- 体验优化: 使用阵型移动，而非简单的质心偏移 ---
+        const formation = this.calculateFormation(this.selectedUnits.length, targetPos, TILE_SIZE * 2);
+        const sortedUnits = [...this.selectedUnits].sort((a, b) => getDistance(a, targetPos) - getDistance(b, targetPos));
+
+        // --- 核心修改: 分散寻路计算 ---
+        let delay = 0;
+        const delayIncrement = 5; // 每隔5毫秒计算下一个单位的路径
+
+        sortedUnits.forEach((unit, index) => {
+            const unitTargetPos = formation[index] || targetPos;
+            
+            setTimeout(() => {
+                if (unit && unit.hp > 0) { // 检查单位在延迟后是否仍然存在
+                     unit.issueMoveCommand(unitTargetPos, map);
+                }
+            }, delay);
+
+            delay += delayIncrement;
         });
+    }
+
+    /**
+     * --- 体验优化 (新增): 计算简单的矩形阵型位置 ---
+     * @param {number} count - 单位数量
+     * @param {object} center - 目标中心点 {x, y}
+     * @param {number} spacing - 单位间距
+     * @returns {Array<object>} - 每个单位的目标点数组
+     */
+    calculateFormation(count, center, spacing) {
+        const positions = [];
+        const cols = Math.ceil(Math.sqrt(count));
+        const rows = Math.ceil(count / cols);
+        
+        const startX = center.x - ((cols - 1) * spacing) / 2;
+        const startY = center.y - ((rows - 1) * spacing) / 2;
+
+        for (let i = 0; i < count; i++) {
+            const row = Math.floor(i / cols);
+            const col = i % cols;
+            positions.push({
+                x: startX + col * spacing,
+                y: startY + row * spacing
+            });
+        }
+        return positions;
     }
 
     getMousePos(e) { const rect = this.canvas.getBoundingClientRect(); const scaleX = this.canvas.width / rect.width; const scaleY = this.canvas.height / rect.height; return { x: (e.clientX - rect.left) * scaleX, y: (e.clientY - rect.top) * scaleY }; }
@@ -433,46 +471,51 @@ class Game {
     /**
      * 核心重构 (性能革命): 使用空间网格进行物理碰撞检测
      * @param {number} deltaTime
-     * @param {Array<Unit>} allUnits
      */
-    updatePhysics(deltaTime, allUnits) {
+    updatePhysics(deltaTime) {
+        // --- 核心修改: 不再需要手动创建 allUnits 列表 ---
         const PUSH_FORCE = 30;
         const processedPairs = new Set(); // 防止A-B和B-A重复计算
 
-        for (const unitA of allUnits) {
-            // 从空间网格获取附近的单位，而不是遍历所有单位
-            const nearbyUnits = this.spatialGrid.getNearby(unitA);
-            
-            for (const unitB of nearbyUnits) {
-                if (unitA.id === unitB.id) continue;
+        // --- 核心修改: 直接遍历空间网格中的格子，而不是所有单位 ---
+        for (const cell of this.spatialGrid.grid.values()) {
+            if (cell.length < 2) continue; // 如果格子里少于2个单位，不可能发生碰撞
 
-                // 使用ID组合来唯一标识一对单位，避免重复
-                const pairKey = unitA.id < unitB.id ? `${unitA.id}-${unitB.id}` : `${unitB.id}-${unitA.id}`;
-                if (processedPairs.has(pairKey)) continue;
-                processedPairs.add(pairKey);
+            // 现在只需要对每个格子内的单位进行碰撞检测
+            for (let i = 0; i < cell.length; i++) {
+                for (let j = i + 1; j < cell.length; j++) {
+                    const unitA = cell[i];
+                    const unitB = cell[j];
 
-                // 如果一个是空中单位，另一个不是，则跳过碰撞
-                const isAirA = unitA.stats.moveType === 'air';
-                const isAirB = unitB.stats.moveType === 'air';
-                if (isAirA !== isAirB) {
-                    continue;
-                }
-
-                const distance = getDistance(unitA, unitB);
-                const collisionRadius = (unitA.stats.drawScale + unitB.stats.drawScale) / 2 * (TILE_SIZE / 2); // 半径更精确
-                
-                if (distance > 0 && distance < collisionRadius) {
-                    const overlap = collisionRadius - distance;
-                    const angle = Math.atan2(unitB.y - unitA.y, unitB.x - unitA.x);
-                    const pushAmount = overlap * PUSH_FORCE * deltaTime;
-                    const pushX = Math.cos(angle) * pushAmount;
-                    const pushY = Math.sin(angle) * pushAmount;
+                    // ID组合检查在这里不再严格需要，因为我们不会重复处理同一对，但保留亦无妨
+                    const pairKey = unitA.id < unitB.id ? `${unitA.id}-${unitB.id}` : `${unitB.id}-${unitA.id}`;
+                    if (processedPairs.has(pairKey)) continue;
+                    processedPairs.add(pairKey);
                     
-                    // 各推开一半
-                    unitA.x -= pushX * 0.5;
-                    unitA.y -= pushY * 0.5;
-                    unitB.x += pushX * 0.5;
-                    unitB.y += pushY * 0.5;
+                    // 如果一个是空中单位，另一个不是，则跳过碰撞
+                    const isAirA = unitA.stats.moveType === 'air';
+                    const isAirB = unitB.stats.moveType === 'air';
+                    if (isAirA !== isAirB) {
+                        continue;
+                    }
+
+                    const distance = getDistance(unitA, unitB);
+                    // --- 体验优化: 使用更精确的半径，基于drawScale ---
+                    const collisionRadius = (unitA.stats.drawScale + unitB.stats.drawScale) * 0.25 * TILE_SIZE; 
+                    
+                    if (distance > 0 && distance < collisionRadius) {
+                        const overlap = collisionRadius - distance;
+                        const angle = Math.atan2(unitB.y - unitA.y, unitB.x - unitA.x);
+                        const pushAmount = overlap * PUSH_FORCE * deltaTime;
+                        const pushX = Math.cos(angle) * pushAmount;
+                        const pushY = Math.sin(angle) * pushAmount;
+                        
+                        // 各推开一半，确保物理效果稳定
+                        unitA.x -= pushX * 0.5;
+                        unitA.y -= pushY * 0.5;
+                        unitB.x += pushX * 0.5;
+                        unitB.y += pushY * 0.5;
+                    }
                 }
             }
         }

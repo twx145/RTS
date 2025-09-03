@@ -9,6 +9,7 @@ class GameMap {
         this.height = 0;
         this.grid = [];
         this.terrainDetails = new Map();
+        this.MAX_DETAIL_CACHE = 5000;
     }
 
     load(mapData) {
@@ -70,6 +71,11 @@ class GameMap {
                 const detailKey = `${x},${y}`;
                 if (!this.terrainDetails.has(detailKey)) {
                     // ... (这部分逻辑保持不变)
+                    if (this.terrainDetails.size >= this.MAX_DETAIL_CACHE) {
+                        // 删除最早添加的条目 (Map的迭代器会保持插入顺序)
+                        const oldestKey = this.terrainDetails.keys().next().value;
+                        this.terrainDetails.delete(oldestKey);
+                    }
                     const details = [];
                     const numDetails = Math.floor(seededRandom(y * this.width + x + 1) * 5);
                     for (let i = 0; i < numDetails; i++) {
