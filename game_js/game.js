@@ -46,7 +46,7 @@ class Game {
     init(settings) {
 
         window.game = this;
-        
+
         const dialogueSettings = localStorage.getItem('ShenDun_dialogue_settings');
         if (dialogueSettings) {
             try {
@@ -395,6 +395,8 @@ class Game {
             this.selectedUnits.forEach(unit => {
                 setTimeout(() => {
                     if (unit && unit.hp > 0) {
+                        unit.path = [];
+                        unit.moveTargetPos = null;
                         unit.target = targetEnemy;
                     }
                 }, delay);
