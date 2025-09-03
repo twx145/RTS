@@ -265,6 +265,8 @@ class Unit {
     }
     
     findTarget(enemyBase, spatialGrid) {
+        if(!spatialGrid)return;// 修改 spatialGrid未更新则返回，防止报错
+
         let closestTarget = null;
         let minDistance = this.stats.visionRange;
         const validUnitTargetTypes = this.stats.canTarget || ['ground', 'air', 'sea'];

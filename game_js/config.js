@@ -73,7 +73,7 @@ const UNIT_TYPES = {
     },
     recon_drone: {
         unitClass: '飞行', icon: '🛰️', name: '无人侦察机',
-        cost: 2, hp: 50, attack: 0, defense: 0, range: 0, speed: 4.0 * TILE_SIZE, attackSpeed: 99, visionRange: 0,
+        cost: 2, hp: 50, attack: 0, defense: 0, range: 0, speed: 4.0 * TILE_SIZE, attackSpeed: 99, visionRange: 8 * TILE_SIZE * 1.5,
         moveType: 'air', unitType: 'air', canTarget: [], imageSrc: 'assets/pics/recon_drone.png', drawScale: 1.5,
         ammoType: null, ammoSpeed: 0, ammoSplashRadius: 0,
         description: '廉价的空中侦察单位，移动速度快，视野范围广。'

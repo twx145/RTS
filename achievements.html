@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>神盾计划 - 成就系统</title>
+    <link rel="stylesheet" href="css/achievements.css">
+</head>
+<body>
+    <div class="container">
+        <div class="logo">
+            <img src="assets/logo.png" alt="神盾计划 Logo" id="game-logo">
+        </div>
+        <h1>成就系统</h1>
+        <div class="achievement-stats">
+            <div class="stat">
+                <span class="stat-value" id="total-achievements">0</span>
+                <span class="stat-label">总成就数</span>
+            </div>
+            <div class="stat">
+                <span class="stat-value" id="unlocked-achievements">0</span>
+                <span class="stat-label">已解锁</span>
+            </div>
+            <div class="stat">
+                <span class="stat-value" id="completion-percentage">0%</span>
+                <span class="stat-label">完成度</span>
+            </div>
+            <div class="stat">
+                <span class="stat-value" id="total-points">0</span>
+                <span class="stat-label">成就点数</span>
+            </div>
+        </div>
+        <div class="achievement-filters">
+            <button class="filter-btn active" data-filter="all">全部</button>
+            <button class="filter-btn" data-filter="unlocked">已解锁</button>
+            <button class="filter-btn" data-filter="locked">未解锁</button>
+        </div>
+        <div class="achievements-grid" id="achievements-grid">
+            <!-- 成就将通过JavaScript动态加载 -->
+        </div>
+                
+        <a class="back-btn" href="index.html">返回主菜单</a>
+    </div>
+    <script src="data/script.js"></script>
+    <script src="js/achievements.js"></script>
+</body>
+</html>

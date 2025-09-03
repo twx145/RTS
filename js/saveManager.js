@@ -89,13 +89,13 @@ function autoSave() {
     
     // 存储自动存档
     const user = getCurrentUser();
-    localStorage.setItem(`ShenDun_autosave_${user}`, JSON.stringify(saveData));
+    localStorage.setItem(`ShenDun_savedialog_${user}`, JSON.stringify(saveData));
 }
 
 // 加载自动存档
 function loadAutoSave() {
     const user = getCurrentUser();
-    const savedData = localStorage.getItem(`ShenDun_autosave_${user}`);
+    const savedData = localStorage.getItem(`ShenDun_savedialog_${user}`);
     
     if (savedData) {
         try {

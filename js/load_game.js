@@ -11,7 +11,6 @@ async function initLoadGame() {
         window.location.href = 'login.html';
         return;
     }
-    
     // 更新用户名显示
     document.getElementById('username').textContent = `玩家: ${JSON.parse(currentUser).username}`;
     

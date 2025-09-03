@@ -7,17 +7,13 @@ class Base {
         this.height = 3; // 3个格子高
         this.maxHp = 2500;
         this.hp = this.maxHp;
-
         // 计算像素中心点，用于单位寻路
         this.pixelX = (gridX + this.width / 2) * TILE_SIZE;
         this.pixelY = (gridY + this.height / 2) * TILE_SIZE;
     }
 
     takeDamage(amount) {
-        this.hp -= amount;
-        if (this.hp < 0) {
-            this.hp = 0;
-        }
+        this.hp -= amount;if (this.hp < 0)this.hp = 0;
         console.log(`${this.owner}'s base took ${amount} damage, remaining HP: ${this.hp}`);
     }
 

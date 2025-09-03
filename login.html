@@ -9,7 +9,7 @@
 <body>
     <div class="container" id="container">
         <div class="logo">
-            <span>神盾计划</span>
+            <img src="assets/logo.png" alt="神盾计划 Logo" id="game-logo">
         </div>
         
         <div class="message error" id="errorMessage"></div>
@@ -34,15 +34,15 @@
                 <h2>创建账号</h2>
                 <div class="input-group">
                     <input type="text" id="registerUsername" placeholder="用户名" required>
-                </div>
-                <div class="input-group">
-                    <input type="email" id="registerEmail" placeholder="电子邮箱" required>
+                    <div class="validation-message" id="usernameValidation"></div>
                 </div>
                 <div class="input-group">
                     <input type="password" id="registerPassword" placeholder="密码" required>
+                    <div class="validation-message" id="passwordValidation"></div>
                 </div>
                 <div class="input-group">
                     <input type="password" id="confirmPassword" placeholder="确认密码" required>
+                    <div class="validation-message" id="confirmValidation"></div>
                 </div>
                 <button type="submit" class="btn">注册</button>
                 <div class="switch-form">

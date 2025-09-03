@@ -31,7 +31,6 @@ class LoadingManager {
             this.skipLoading();
         });
     }
-    
     parseUrlParams() {
         const urlParams = new URLSearchParams(window.location.search);
         this.targetPage = urlParams.get('target') || 'dialogue.html';
@@ -45,7 +44,9 @@ class LoadingManager {
     }
     
     setRandomTip() {
-        document.getElementById('loading-tip').textContent = this.tips[Math.floor(Math.random() * this.tips.length)];
+        const loadingtip = document.getElementById('loading-tip');
+        if(loadingtip)
+            loadingtip.textContent = this.tips[1];//Math.floor(Math.random() * this.tips.length)];
     }
     
     determineResources() {//修改

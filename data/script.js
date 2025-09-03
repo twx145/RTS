@@ -293,3 +293,146 @@ window.scriptData = {
     }
   ]
 }
+// 成就数据
+const ACHIEVEMENTS = {
+    '初战告捷': {
+        name: '初战告捷',
+        type: '剧情',
+        description: '欢迎来到战场，指挥官。你成功应对了第一次考验。',
+        points: 10,
+        condition: '完成第一章"回声-7哨站"任务',
+        icon: '🎯',
+        unlocked: false,
+        unlockTime: null
+    },
+    '深渊猎手': {
+        name: '深渊猎手',
+        type: '剧情', 
+        description: '你摧毁了"刻耳柏洛斯"在安第斯山脉的巢穴',
+        points: 15,
+        condition: '完成第二章"安第斯突袭"任务',
+        icon: '🏔️',
+        unlocked: false,
+        unlockTime: null
+    },
+    '都市幽灵': {
+        name: '都市幽灵',
+        type: '剧情',
+        description: '在霓虹都市的混乱中，你清除了目标"毒蛇"',
+        points: 20,
+        condition: '完成第三章"新京斩首"任务',
+        icon: '🌃',
+        unlocked: false,
+        unlockTime: null
+    },
+    '极地风暴': {
+        name: '极地风暴',
+        type: '剧情',
+        description: '顶着北极的暴风雪，你成功瓦解了天锤的防御',
+        points: 25,
+        condition: '完成第四章"北极总攻"任务',
+        icon: '❄️',
+        unlocked: false,
+        unlockTime: null
+    },
+    '终局之光': {
+        name: '终局之光',
+        type: '剧情',
+        description: '你拯救了世界。人类文明将铭记这一天',
+        points: 50,
+        condition: '完成最终章"海上终战"任务',
+        icon: '🌟',
+        unlocked: false,
+        unlockTime: null
+    },
+    '爱兵如子': {
+        name: '爱兵如子',
+        type: '战术',
+        description: '完美的战术执行！你的名字将被载入史册',
+        points: 30,
+        condition: '在任何一关主线任务中，无任何单位损失',
+        icon: '❤️',
+        unlocked: false,
+        unlockTime: null
+    },
+    '闪电突击': {
+        name: '闪电突击',
+        type: '战术',
+        description: '兵贵神速，你的进攻让敌人措手不及',
+        points: 20,
+        condition: '在困难或地狱难度下，于1分钟内完成任一关卡',
+        icon: '⚡',
+        unlocked: false,
+        unlockTime: null
+    },
+    '全能指挥官': {
+        name: '全能指挥官',
+        type: '战术',
+        description: '你精通所有兵种的协同艺术，是一位真正的全能指挥官',
+        points: 25,
+        condition: '在同一关卡中，建造并部署所有类型的作战单位（步兵、坦克、空军、海军）',
+        icon: '🎖️',
+        unlocked: false,
+        unlockTime: null
+    },
+    '反装甲专家': {
+        name: '反装甲专家',
+        type: '战术',
+        description: '敌人的钢铁洪流在你面前不堪一击',
+        points: 15,
+        condition: '单场战斗中累计摧毁10辆敌方重型坦克或机甲单位',
+        icon: '💥',
+        unlocked: false,
+        unlockTime: null
+    },
+    '全球防御者': {
+        name: '全球防御者',
+        type: '挑战',
+        description: '你是神盾部队有史以来最优秀的指挥官',
+        points: 100,
+        condition: '以"困难"难度完成整个战役',
+        icon: '🌎',
+        unlocked: false,
+        unlockTime: null
+    },
+    '正义天降': {
+        name: '正义天降',
+        type: '隐藏',
+        description: '你的空降兵不仅是侦察兵，更是死神',
+        points: 20,
+        condition: '使用步兵单位直接摧毁10辆敌方载具',
+        icon: '🪂',
+        unlocked: false,
+        unlockTime: null
+    },
+    '海陆协同': {
+        name: '海陆协同',
+        type: '隐藏',
+        description: '你证明了神盾部队拥有无缝的多维作战能力',
+        points: 20,
+        condition: '在同一场战斗中，用海军舰艇击毁一个陆地目标，同时用陆军单位击毁一艘海军舰艇',
+        icon: '⚓',
+        unlocked: false,
+        unlockTime: null
+    },
+    '人海战术': {
+        name: '人海战术',
+        type: '隐藏',
+        description: '你的军队浩浩荡荡，足以碾碎一切敌人',
+        points: 30,
+        condition: '在同一关卡中，同时拥有50个以上单位存活',
+        icon: '👥',
+        unlocked: false,
+        unlockTime: null
+    },
+    '神话守护者': {
+        name: '神话守护者',
+        type: '隐藏',
+        description: '你已达成全部目标。你就是守护人类的神盾',
+        points: 100,
+        condition: '解锁所有其他成就',
+        icon: '🛡️',
+        unlocked: false,
+        unlockTime: null
+    }
+};

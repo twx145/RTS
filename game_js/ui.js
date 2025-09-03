@@ -205,4 +205,31 @@ class UI {
             messageDiv.classList.remove('show');
         }, 3000);
     }
+    // 修改 添加成就解锁展示
+    showAchievementUnlocked(achievementId) {
+        const achievement = ACHIEVEMENTS[achievementId];
+        const popup = document.createElement('div');
+        popup.className = 'achievement-popup';
+        popup.innerHTML = `
+            <div class="achievement-popup-icon">${achievement.icon}</div>
+            <div class="achievement-popup-content">
+                <h4>成就已解锁! +${achievement.points}成就点</h4>
+                <h3>${achievement.name}</h3>
+                <p>${achievement.description}</p>
+            </div>
+        `;
+        
+        document.body.appendChild(popup);
+        
+        // 动画显示
+        setTimeout(() => {
+            popup.classList.add('show');
+            setTimeout(() => {
+                popup.classList.remove('show');
+                setTimeout(() => {
+                    document.body.removeChild(popup);
+                }, 500);
+            }, 5000);
+        }, 100);
+    }
 }

@@ -5,7 +5,7 @@ const gameState = {
     currentDialog: 0,
     autoPlay: false,
     fastForward: false,
-    textSpeed: 30, // 文字显示速度（毫秒）
+    textSpeed: 60, // 文字显示速度（毫秒）
     scriptData: null
 };
 
@@ -36,8 +36,6 @@ const domElements = {
 let isTyping = false;
 let typeInterval = null;
 // 初始化函数
-var returnFromGame = false;
-
 async function initGame() {
     // 检查当前用户
     const currentUser = sessionStorage.getItem('currentUser');
@@ -46,25 +44,18 @@ async function initGame() {
         window.location.href = 'login.html';
         return;
     }
-    
     // 加载对话脚本
     await loadScript();
-    
     // 检查URL参数
     const urlParams = new URLSearchParams(window.location.search);
     const isNewGame = urlParams.get('new') === 'true';
-    returnFromGame = urlParams.get('returnFromGame') !== null;
-    
+    const returnFromGame = urlParams.get('returnFromGame') !== null;
     // 如果是新游戏，清除自动存档
-    if (isNewGame) {
-        localStorage.removeItem(`ShenDun_autosave_${currentUser}`);
-    }
+    if (isNewGame) {localStorage.removeItem(`ShenDun_savedialog_${currentUser}`);}
     
     // 检查是否有存档需要加载
     let saveData = null;
-    if (!isNewGame) {
-        saveData = getSaveDataFromURL() || loadAutoSave();
-    }
+    if (!isNewGame) {saveData = getSaveDataFromURL() || loadAutoSave();}
     
     // 如果是从游戏返回，检查是否有临时进度
     if (returnFromGame) {
@@ -73,22 +64,13 @@ async function initGame() {
             try {
                 saveData = JSON.parse(tempProgress);
                 localStorage.removeItem(`ShenDun_temp_progress_${currentUser}`);
-            } catch (e) {
-                console.error("读取临时进度失败", e);
-            }
+            } catch (e) {console.error("读取临时进度失败", e);}
         }
-        // window.href.location = ''; 尚未修改完
     }
     
-    if (saveData) {
-        // 加载存档
+    if (saveData) {// 加载存档
         playChapter(saveData.chapter, saveData.scene, saveData.dialog + returnFromGame);
-        // loadGameState(saveData);
-    } else {
-        // 开始新游戏
-        playChapter(0, 0, 0);
-    }
-    
+    } else {playChapter(0, 0, 0);}
     // 绑定事件监听器
     bindEvents();
 }
@@ -100,7 +82,6 @@ function getSaveDataFromURL() {
     if (saveSlot) {
         return loadSave(saveSlot);
     }
-    
     return null;
 }
 
@@ -163,7 +144,6 @@ function playChapter(chapterIndex, sceneIndex = 0, dialogIndex = 0) {
         showEnding();
         return;
     }
-    
     // 更新游戏状态
     gameState.currentChapter = chapterIndex;
     gameState.currentScene = sceneIndex;
@@ -233,13 +213,7 @@ function playDialog(sceneIndex, dialogIndex) {
     // 更新游戏状态
     gameState.currentScene = sceneIndex;
     gameState.currentDialog = dialogIndex;
-    
-    // // 检查是否有特殊动作 修改
-    // if (dialog.action) {
-    //     handleAction(dialog.action);
-    //     return;
-    // }
-    
+        
     // 设置角色名称
     domElements.characterName.textContent = dialog.character;
     
@@ -287,7 +261,7 @@ function handleAction(action) {
                 gameMode: action.gameMode || 'annihilation'
             };
             localStorage.setItem('ShenDun_dialogue_settings', JSON.stringify(gameSettings));
-            window.location.href = `loading.html?target=game.html&fromDialogue=true`;
+            window.location.href = `loading.html?target=game.html&fromDialogue=true&user=${JSON.parse(currentUser).username}`;
             break;
             
         case 'jump_to_chapter':// 跳转到指定章节' 修改

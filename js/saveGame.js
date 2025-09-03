@@ -1,4 +1,4 @@
-//新增 saveGame.js - 游戏状态保存与恢复管理器
+// saveGame.js - 游戏状态保存与恢复管理器
 class saveGame {
     constructor(game) {
         this.game = game;
@@ -6,7 +6,6 @@ class saveGame {
         this.lastAutoSaveTime = 0;
         this.autoSaveEnabled = true;
         this.currentUser = null;
-        
         this.init();
     }
     
@@ -24,8 +23,7 @@ class saveGame {
         if (!this.currentUser) return;
         
         const autoSaveData = this.getAutoSaveData();
-        // alert(autoSaveData);
-        if (autoSaveData && this.game.gameState !== 'gameover') {
+        if (autoSaveData !== null && this.game.gameState !== 'gameover') {
             this.showRestorePrompt(autoSaveData);
         }
     }
@@ -66,7 +64,6 @@ class saveGame {
     // 设置自动保存
     setupAutoSave() {
         if (!this.autoSaveEnabled || !this.currentUser) return;
-        
         // 使用requestAnimationFrame来检查是否需要自动保存
         const checkAutoSave = (currentTime) => {
             if (this.game.gameState === 'playing' && currentTime - this.lastAutoSaveTime > this.autoSaveInterval) {
@@ -75,14 +72,12 @@ class saveGame {
             }
             requestAnimationFrame(checkAutoSave);
         };
-        
         requestAnimationFrame(checkAutoSave);
     }
     
     // 自动保存游戏
     autoSave() {
         if (!this.currentUser) return;
-        
         try {
             const saveData = this.serializeGameState();
             const autoSaveKey = `ShenDun_autosave_${this.currentUser}`;
@@ -97,7 +92,6 @@ class saveGame {
     // 手动保存游戏
     manualSave() {
         if (!this.currentUser) return;
-        
         try {
             const saveData = this.serializeGameState();
             const manualSaveKey = `ShenDun_autosave_${this.currentUser}`;
@@ -241,6 +235,7 @@ class saveGame {
             // 修改 恢复地图
             this.game.map.grid = saveData.mapgrid || this.game.map.grid;
             this.restoreTerrainDetails(saveData.terrainDetails, this.game.map);
+            this.restoreSpatialGrid(this.game.spatialGrid);
             // 恢复弹道和爆炸
             this.game.projectiles = this.restoreProjectiles(saveData.projectiles);
             this.game.explosions = this.restoreExplosions(saveData.explosions);
@@ -329,11 +324,20 @@ class saveGame {
         }
     }
 
+    // 修改 恢复空间网格
+    restoreSpatialGrid(spatialGrid) {
+        const allPlayerUnits = [...this.game.player.units];
+        const allAiUnits = [...this.game.ai.units];
+        const allUnits = [...allPlayerUnits, ...allAiUnits];
+        
+        spatialGrid.grid.clear();
+        allUnits.forEach(unit => spatialGrid.insert(unit));
+    }
+
     // 获取自动保存数据
     getAutoSaveData() {
         const autoSaveKey = `ShenDun_autosave_${this.currentUser}`;
         const autoSaveData = localStorage.getItem(autoSaveKey);
-        
         if (autoSaveData) {
             try {
                 return JSON.parse(autoSaveData);
@@ -349,7 +353,6 @@ class saveGame {
     // 清除自动保存
     clearAutoSave() {
         if (!this.currentUser) return;
-        
         const autoSaveKey = `ShenDun_autosave_${this.currentUser}`;
         localStorage.removeItem(autoSaveKey);
     }
@@ -365,7 +368,6 @@ class saveGame {
         } catch (e) {
             console.error("加载保存失败", e);
         }
-        
         return false;
     }
 }
