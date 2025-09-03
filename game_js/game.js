@@ -5,7 +5,7 @@ class Game {
         
         this.gameState = 'setup';
         this.gameMode = 'annihilation';
-        this.showDetails = false; // 新增：用于控制是否显示详细信息
+        this.showDetails = false;
         this.lastTime = 0;
         this.gameSpeedModifier = 1;
 
@@ -16,7 +16,7 @@ class Game {
         this.aiBase = null;
         
         this.fogOfWar = null;
-        this.spatialGrid = null; // <-- 性能优化核心
+        this.spatialGrid = null;
         this.projectiles = [];
         this.explosions = [];
         this.selectedUnits = [];
@@ -24,7 +24,7 @@ class Game {
         this.dragStart = { x: 0, y: 0 };
         this.dragEnd = { x: 0, y: 0 };
         this.mousePos = { x: 0, y: 0 };
-        this.globalMousePos = { x: 0, y: 0 }; // 新增：相对于窗口的鼠标位置
+        this.globalMousePos = { x: 0, y: 0 };
         this.camera = { x: 0, y: 0, zoom: 1.2, minZoom: 1, maxZoom: 2.5 };
         this.isDraggingMap = false;
         this.lastDragPos = { x: 0, y: 0 };
@@ -33,12 +33,10 @@ class Game {
         this.lastTouchDistance = 0;
         this.lastTouchCenter = null;
         
-        // 修改 新增对游戏的设置
-        this.dialogueSettings = null;//获取剧情传递的设置
-        this.enableFogOfWar = null;//是否启用战争迷雾
-        this.availableUnits = null;//对可用兵种的限制
+        this.dialogueSettings = null;
+        this.enableFogOfWar = null;
+        this.availableUnits = null;
 
-        // 修改 新增：游戏保存管理器
         this.savegame = null;
     }
 
@@ -47,20 +45,17 @@ class Game {
         if (dialogueSettings) {
             try {
                 const dialogueConfig = JSON.parse(dialogueSettings);
-                // 合并设置，对话设置优先
                 settings = {...settings, ...dialogueConfig};
             } catch (e) {
                 console.error('解析对话设置失败', e);
             }
         }
         this.gameMode = settings.gameMode;
-        this.showDetails = settings.showDetails; // 保存设置
+        this.showDetails = settings.showDetails;
         this.fromDialogue = settings.fromDialogue || false;
         this.user = settings.user || null;
 
-        // 修改 新增：读取战争迷雾设置
-        this.enableFogOfWar = settings.enableFogOfWar !== false; // 默认启用
-        // 修改 新增：读取可用兵种限制
+        this.enableFogOfWar = settings.enableFogOfWar !== false;
         this.availableUnits = settings.availableUnits || Object.keys(UNIT_TYPES);
 
         const selectedMapData = MAP_DEFINITIONS.find(m => m.id === settings.mapId);
@@ -69,13 +64,10 @@ class Game {
         
         const mapWidthPixels = this.map.width * TILE_SIZE;
         const mapHeightPixels = this.map.height * TILE_SIZE;
-        // --- 性能优化：初始化空间网格 ---
-        // 单元格大小通常是最大单位视野或射程的2倍左右，以确保一次查询就能覆盖所需范围
         const gridCellSize = TILE_SIZE * 15; 
         this.spatialGrid = new SpatialGrid(mapWidthPixels, mapHeightPixels, gridCellSize);
         
         this.fogOfWar = new FogOfWar(this.map.width * TILE_SIZE, this.map.height * TILE_SIZE);
-        //修改 minZoom
         this.camera.minZoom = Math.max(this.camera.minZoom,Math.max(this.canvas.width / this.map.width , this.canvas.height / this.map.height)/TILE_SIZE);
 
         const baseGridY = Math.floor(this.map.height / 2) - 1; 
@@ -99,7 +91,6 @@ class Game {
         
         this.gameSpeedModifier = GAME_SPEEDS[settings.gameSpeed];
         this.gameState = 'deployment';
-        // 修改 初始化保存管理器
         this.savegame = new saveGame(this);
 
         this.addEventListeners();
@@ -110,7 +101,7 @@ class Game {
     }
     
     setupInitialCamera() {
-        this.camera.zoom = Math.max(1.2,this.camera.minZoom);//修改
+        this.camera.zoom = Math.max(1.2,this.camera.minZoom);
         let focusPoint = this.playerBase 
             ? { x: this.playerBase.pixelX, y: this.playerBase.pixelY }
             : { x: (this.map.width * TILE_SIZE) / 2, y: (this.map.height * TILE_SIZE) / 2 };
@@ -118,7 +109,7 @@ class Game {
         this.camera.x = focusPoint.x - (this.canvas.width / 2) / this.camera.zoom;
         this.camera.y = focusPoint.y - (this.canvas.height / 2) / this.camera.zoom;
         
-        this.globalMousePos = { x: this.camera.x, y: this.camera.y };//修改 保证初始视角在大本营
+        this.globalMousePos = { x: this.camera.x, y: this.camera.y };
 
         this.constrainCamera();
     }
@@ -170,7 +161,6 @@ class Game {
         this.player.units = this.player.units.filter(u => u.hp > 0);
         this.ai.units = this.ai.units.filter(u => u.hp > 0);
         this.selectedUnits = this.selectedUnits.filter(u => u.hp > 0);
-        // 修改：只在启用战争迷雾时更新
         if (this.enableFogOfWar) {
             this.fogOfWar.update([...this.player.units, this.playerBase].filter(Boolean));
         }
@@ -188,7 +178,6 @@ class Game {
         this.ctx.scale(this.camera.zoom, this.camera.zoom);
         this.ctx.translate(-this.camera.x, -this.camera.y);
 
-        // --- 性能优化：计算镜头可见范围 ---
         const viewBounds = {
             left: this.camera.x,
             top: this.camera.y,
@@ -201,7 +190,6 @@ class Game {
         if (this.playerBase) this.playerBase.draw(this.ctx, this.camera.zoom);
         if (this.aiBase) this.aiBase.draw(this.ctx, this.camera.zoom);
 
-        // --- 分层绘制单位 ---
         const allUnits = [...this.player.units, ...this.ai.units];
         const groundSeaUnits = allUnits.filter(u => u.stats.moveType !== 'air');
         const airUnits = allUnits.filter(u => u.stats.moveType === 'air');
@@ -211,25 +199,21 @@ class Game {
                    entity.y > viewBounds.top - padding && entity.y < viewBounds.bottom + padding;
         };
 
-        // 1. 绘制地面和海上单位 (只绘制可见的)
         groundSeaUnits.forEach(unit => {
             if (isVisible(unit)) {
                 unit.draw(this.ctx, this.selectedUnits.includes(unit), this.camera.zoom, this.showDetails)
             }
         });
         
-        // 2. 绘制弹道和爆炸 (只绘制可见的)
         this.projectiles.forEach(p => { if(isVisible(p)) p.draw(this.ctx) });
         this.explosions.forEach(e => { if(isVisible(e)) e.draw(this.ctx) });
         
-        // 3. 绘制空中单位 (只绘制可见的)
         airUnits.forEach(unit => {
              if (isVisible(unit)) {
                 unit.draw(this.ctx, this.selectedUnits.includes(unit), this.camera.zoom, this.showDetails)
             }
         });
 
-        // 修改 启用战争迷雾时才绘制迷雾
         if (this.enableFogOfWar) {this.fogOfWar.draw(this.ctx);}
 
         this.ctx.restore();
@@ -242,7 +226,6 @@ class Game {
     }
 
     addEventListeners() {
-        // --- 核心修复 (需求 #1): 监听整个窗口的mousemove ---
         window.addEventListener('mousemove', (e) => this.handleMouseMove(e));
         this.canvas.addEventListener('mousedown', (e) => this.handleMouseDown(e));
         this.canvas.addEventListener('mouseup', (e) => this.handleMouseUp(e));
@@ -283,7 +266,7 @@ class Game {
 
     handleMouseMove(e) {
         this.mousePos = this.getMousePos(e);
-        this.globalMousePos = { x: e.clientX, y: e.clientY }; // 存储全局坐标
+        this.globalMousePos = { x: e.clientX, y: e.clientY };
 
         if (this.isDraggingMap) {
             const dx = e.clientX - this.lastDragPos.x;
@@ -322,12 +305,13 @@ class Game {
             this.tryDeployUnit(worldPos, this.ui.selectedUnitToDeploy);
             return;
         }
-        if (this.selectedUnits.length > 0) {
-            this.issueCommandForSelectedUnits(worldPos);
-            return;
-        }
         const clickedUnit = this.player.units.find(unit => getDistance(worldPos, unit) < TILE_SIZE / 2);
-        this.selectedUnits = clickedUnit ? [clickedUnit] : [];
+        if(this.selectedUnits.length > 0 && !clickedUnit) {
+             // Classic RTS behavior: left clicking ground deselects.
+             this.selectedUnits = [];
+        } else {
+            this.selectedUnits = clickedUnit ? [clickedUnit] : [];
+        }
     }
     
     handleRightClick(x, y) {
@@ -337,6 +321,9 @@ class Game {
         }
     }
 
+    /**
+     * --- 核心修复(最终版): 正确处理攻击和移动指令的分流 ---
+     */
     issueCommandForSelectedUnits(worldPos) {
         let targetEnemy = null;
         const allEnemies = [...this.ai.units, this.aiBase].filter(Boolean);
@@ -348,15 +335,29 @@ class Game {
                 break;
             }
         }
+        
+        let delay = 0;
+        const delayIncrement = 5; // 5ms delay between each unit's command processing
+
         if (targetEnemy) {
-            this.selectedUnits.forEach(unit => unit.target = targetEnemy);
+            // --- 攻击指令 ---
+            // 我们通过节流循环来分散设置每个单位的'target'。
+            // 这样，每个单位的 'update' 逻辑会在不同时间点触发寻路，从而避免卡顿。
+            // 这种方法可以正确触发单位自己的 'handleAttack' 逻辑，使其在射程外停下。
+            this.selectedUnits.forEach(unit => {
+                setTimeout(() => {
+                    if (unit && unit.hp > 0) {
+                        unit.target = targetEnemy;
+                    }
+                }, delay);
+                delay += delayIncrement;
+            });
+
         } else {
+            // --- 移动指令 ---
+            // 清除所有单位的目标，然后调用已经优化好的 issueGroupMoveCommand。
             this.selectedUnits.forEach(unit => unit.target = null);
-            if (this.selectedUnits.length === 1) {
-                this.selectedUnits[0].issueMoveCommand(worldPos, this.map);
-            } else {
-                this.issueGroupMoveCommand(worldPos, this.map);
-            }
+            this.issueGroupMoveCommand(worldPos, this.map);
         }
     }
 
@@ -368,7 +369,7 @@ class Game {
             const tile = this.map.getTile(gridX, gridY);
             const unitStats = UNIT_TYPES[unitType];
             if (unitStats.moveType === 'air' || (tile && TERRAIN_TYPES[tile.type].traversableBy.includes(unitStats.moveType))) {
-                this.player.units.push(new Unit(unitType, 'player', worldPos.x + Math.random()*2 - 1, worldPos.y +Math.random()*2 - 1));//修改 增加微扰
+                this.player.units.push(new Unit(unitType, 'player', worldPos.x + Math.random()*2 - 1, worldPos.y +Math.random()*2 - 1));
                 this.player.deductManpower(cost);
                 this.ui.update();
             } else { this.ui.showGameMessage("该单位无法部署在此地形上！"); }
@@ -390,23 +391,23 @@ class Game {
         });
     }
 
+    // 这个函数现在只用于纯粹的移动指令
     issueGroupMoveCommand(targetPos, map) {
         if (this.selectedUnits.length === 0) return;
         
-        // --- 体验优化: 使用阵型移动，而非简单的质心偏移 ---
         const formation = this.calculateFormation(this.selectedUnits.length, targetPos, TILE_SIZE * 2);
         const sortedUnits = [...this.selectedUnits].sort((a, b) => getDistance(a, targetPos) - getDistance(b, targetPos));
 
-        // --- 核心修改: 分散寻路计算 ---
         let delay = 0;
-        const delayIncrement = 5; // 每隔5毫秒计算下一个单位的路径
+        const delayIncrement = 5;
 
         sortedUnits.forEach((unit, index) => {
             const unitTargetPos = formation[index] || targetPos;
             
             setTimeout(() => {
-                if (unit && unit.hp > 0) { // 检查单位在延迟后是否仍然存在
-                     unit.issueMoveCommand(unitTargetPos, map);
+                if (unit && unit.hp > 0) {
+                     // false 代表这不是一个攻击移动，单位应该清除自己的旧目标
+                     unit.issueMoveCommand(unitTargetPos, map, false);
                 }
             }, delay);
 
@@ -414,13 +415,6 @@ class Game {
         });
     }
 
-    /**
-     * --- 体验优化 (新增): 计算简单的矩形阵型位置 ---
-     * @param {number} count - 单位数量
-     * @param {object} center - 目标中心点 {x, y}
-     * @param {number} spacing - 单位间距
-     * @returns {Array<object>} - 每个单位的目标点数组
-     */
     calculateFormation(count, center, spacing) {
         const positions = [];
         const cols = Math.ceil(Math.sqrt(count));
@@ -445,7 +439,6 @@ class Game {
     screenToWorld(screenX, screenY) { return { x: screenX / this.camera.zoom + this.camera.x, y: screenY / this.camera.zoom + this.camera.y }; }
     constrainCamera() { if (!this.map) return; const mapWidthPixels = this.map.width * TILE_SIZE; const mapHeightPixels = this.map.height * TILE_SIZE; const viewWidth = this.canvas.width / this.camera.zoom; const viewHeight = this.canvas.height / this.camera.zoom; this.camera.x = Math.max(0, Math.min(this.camera.x, mapWidthPixels - viewWidth)); this.camera.y = Math.max(0, Math.min(this.camera.y, mapHeightPixels - viewHeight)); }
     
-    // --- Touch and Wheel events unchanged ---
     handleWheel(e) { e.preventDefault(); const zoomFactor = e.deltaY > 0 ? 1.01 : 0.99; this.zoomAtPoint(zoomFactor, this.getMousePos(e)); }
     zoomAtPoint(factor, point) { const oldZoom = this.camera.zoom; const newZoom = Math.max(this.camera.minZoom, Math.min(this.camera.maxZoom, oldZoom / factor)); if (newZoom === oldZoom) return; const worldMouseX = point.x / oldZoom + this.camera.x; const worldMouseY = point.y / oldZoom + this.camera.y; this.camera.zoom = newZoom; this.camera.x = worldMouseX - point.x / newZoom; this.camera.y = worldMouseY - point.y / newZoom; }
     handleTouchStart(e) { e.preventDefault(); for (const touch of e.changedTouches) { this.activeTouches.set(touch.identifier, this.getTouchPos(touch)); } this.updateTouchState(); }
@@ -455,7 +448,6 @@ class Game {
     updateTouchState() { if (this.activeTouches.size < 2) { this.lastTouchDistance = 0; this.lastTouchCenter = null; } }
 
 
-    //核心修复 (需求 #1): 使用全局鼠标坐标判断窗口边缘滚动
     handleEdgeScrolling(deltaTime) {
         if (this.isDraggingMap || this.isDragging || this.activeTouches.size > 0) return;
         
@@ -468,31 +460,22 @@ class Game {
         if (this.globalMousePos.y > window.innerHeight - edgeMargin) this.camera.y += scrollSpeed * deltaTime;
     }
 
-    /**
-     * 核心重构 (性能革命): 使用空间网格进行物理碰撞检测
-     * @param {number} deltaTime
-     */
     updatePhysics(deltaTime) {
-        // --- 核心修改: 不再需要手动创建 allUnits 列表 ---
         const PUSH_FORCE = 30;
-        const processedPairs = new Set(); // 防止A-B和B-A重复计算
+        const processedPairs = new Set();
 
-        // --- 核心修改: 直接遍历空间网格中的格子，而不是所有单位 ---
         for (const cell of this.spatialGrid.grid.values()) {
-            if (cell.length < 2) continue; // 如果格子里少于2个单位，不可能发生碰撞
+            if (cell.length < 2) continue;
 
-            // 现在只需要对每个格子内的单位进行碰撞检测
             for (let i = 0; i < cell.length; i++) {
                 for (let j = i + 1; j < cell.length; j++) {
                     const unitA = cell[i];
                     const unitB = cell[j];
 
-                    // ID组合检查在这里不再严格需要，因为我们不会重复处理同一对，但保留亦无妨
                     const pairKey = unitA.id < unitB.id ? `${unitA.id}-${unitB.id}` : `${unitB.id}-${unitA.id}`;
                     if (processedPairs.has(pairKey)) continue;
                     processedPairs.add(pairKey);
                     
-                    // 如果一个是空中单位，另一个不是，则跳过碰撞
                     const isAirA = unitA.stats.moveType === 'air';
                     const isAirB = unitB.stats.moveType === 'air';
                     if (isAirA !== isAirB) {
@@ -500,7 +483,6 @@ class Game {
                     }
 
                     const distance = getDistance(unitA, unitB);
-                    // --- 体验优化: 使用更精确的半径，基于drawScale ---
                     const collisionRadius = (unitA.stats.drawScale + unitB.stats.drawScale) * 0.25 * TILE_SIZE; 
                     
                     if (distance > 0 && distance < collisionRadius) {
@@ -510,7 +492,6 @@ class Game {
                         const pushX = Math.cos(angle) * pushAmount;
                         const pushY = Math.sin(angle) * pushAmount;
                         
-                        // 各推开一半，确保物理效果稳定
                         unitA.x -= pushX * 0.5;
                         unitA.y -= pushY * 0.5;
                         unitB.x += pushX * 0.5;
@@ -521,7 +502,6 @@ class Game {
         }
     }
     
-    // --- Unchanged methods below ---
     handleProjectileHit(p) { this.explosions.push(new Explosion(p.x, p.y, p.stats.splashRadius || 10)); if (p.target.hp > 0) p.target.takeDamage(p.stats.damage); if (p.stats.splashRadius > 0) { const allTargets = [...this.player.units, ...this.ai.units, this.playerBase, this.aiBase].filter(Boolean); allTargets.forEach(entity => { if (entity.owner !== p.owner && entity.id !== p.target.id && entity.hp > 0) { const entityPos = { x: entity.pixelX || entity.x, y: entity.pixelY || entity.y }; const distance = getDistance(entityPos, p); if (distance < p.stats.splashRadius) { const splashDamage = p.stats.damage * (1 - distance / p.stats.splashRadius); entity.takeDamage(splashDamage); } } }); } }
     startGame() { if (this.gameState === 'deployment') this.gameState = 'playing'; }
     checkWinConditions() { 
@@ -545,7 +525,7 @@ class Game {
         } 
     }
     endGame(winner) {
-        if (this.gameState === 'gameover') return; // 防止重复调用
+        if (this.gameState === 'gameover') return;
         this.gameState = 'gameover';
         
         console.log(`${winner.name} 获胜!`);
@@ -553,18 +533,14 @@ class Game {
         localStorage.removeItem('ShenDun_dialogue_settings');
         this.savegame.clearAutoSave();
 
-        // 返回对话系统
         if (this.returnToDialogue())return;
     }
-    // 添加返回对话系统的方法
-    returnToDialogue() {//修改
+    returnToDialogue() {
         const currentUser = sessionStorage.getItem('currentUser');
         if (currentUser) {
-            // 检查是否从对话系统跳转而来
             const urlParams = new URLSearchParams(window.location.search);
             const fromDialogue = urlParams.get('fromDialogue');
             if (fromDialogue === 'true') {
-                // 保存游戏状态到临时进度
                 const tempProgress = {
                     chapter: window.game?.gameState?.currentChapter || 0,
                     scene: window.game?.gameState?.currentScene || 0,
@@ -572,8 +548,7 @@ class Game {
                     timestamp: new Date().getTime()
                 };
                 localStorage.setItem(`ShenDun_temp_progress_${currentUser}`, JSON.stringify(tempProgress));
-                // 返回对话系统，先跳转到加载页面
-                setTimeout(() => {window.location.href = `loading.html?target=dialogue.html&returnFromGame=true&user=${JSON.parse(currentUser).username}`;},2000);//修改 增加了延时
+                setTimeout(() => {window.location.href = `loading.html?target=dialogue.html&returnFromGame=true&user=${JSON.parse(currentUser).username}`;},2000);
                 return true;
             }
         }
@@ -581,7 +556,6 @@ class Game {
     }
     placeBaseOnMap(base) { for (let y = 0; y < base.height; y++) { for (let x = 0; x < base.width; x++) { this.map.setTileType(base.gridX + x, base.gridY + y, 'base'); } } }
 
-    // 修改 增加设置 添加以下方法
     getSaveData() {
         return {
             gameState: this.gameState,
@@ -611,13 +585,10 @@ class Game {
     }
     
     loadSaveData(saveData) {
-        // 实现加载存档逻辑
         console.log('加载存档:', saveData);
-        // 这里需要根据存档数据恢复游戏状态
     }
     
     skipCurrentScenario() {
-        // 实现跳过当前关卡逻辑
         if (this.gameMode === 'annihilation' || this.gameMode === 'attack') {
             this.aiBase.hp = 0;
         } else if (this.gameMode === 'defend') {
@@ -629,15 +600,11 @@ class Game {
     }
     
     returnToMainMenu() {
-        // 清理游戏资源
         this.cleanup();
-        // 返回主菜单
         window.location.href = 'index.html';
     }
     
     cleanup() {
-        // 清理游戏资源
         cancelAnimationFrame(this.animationFrameId);
-        // 移除事件监听器等
     }
-} 
+}
