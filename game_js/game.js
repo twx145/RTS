@@ -9,7 +9,6 @@ class Game {
         this.lastTime = 0;
         this.gameSpeedModifier = 1;
 
-        // --- 核心新增: Matter.js 引擎 ---
         this.engine = null; 
 
         this.map = null;
@@ -44,7 +43,6 @@ class Game {
     }
 
     init(settings) {
-
         window.game = this;
 
         const dialogueSettings = localStorage.getItem('ShenDun_dialogue_settings');
@@ -68,9 +66,13 @@ class Game {
         this.map = new GameMap();
         this.map.load(selectedMapData);
 
-        // --- 核心新增: 初始化 Matter.js 引擎 ---
-        this.engine = Matter.Engine.create();
-        this.engine.world.gravity.y = 0; // 顶视角游戏，禁用重力
+        // --- 核心修复 (问题 #2): 增加迭代次数以提高物理稳定性 ---
+        this.engine = Matter.Engine.create({
+            // 默认值是 6 和 4。增加迭代次数可以提高精度和稳定性，防止物体弹飞。
+            positionIterations: 8,
+            velocityIterations: 6
+        });
+        this.engine.world.gravity.y = 0;
 
         this.fogOfWar = new FogOfWar(this.map.width * TILE_SIZE, this.map.height * TILE_SIZE);
         this.camera.minZoom = Math.max(this.camera.minZoom,Math.max(this.canvas.width / this.map.width , this.canvas.height / this.map.height)/TILE_SIZE);
@@ -85,12 +87,11 @@ class Game {
             this.placeBaseOnMap(this.aiBase);
         }
         
-        // --- 核心新增: 创建地形的静态物理实体 ---
         this.createTerrainBodies();
 
         const initialManpower = 50;
         this.player = new Player('player', '玩家', initialManpower);
-        const aiManpower = settings.aiDifficulty === 'hell' ? Math.round(initialManpower * 2.0) : initialManpower;
+        const aiManpower = settings.aiDifficulty === 'hell' ? Math.round(initialManpower * 1.5) : initialManpower;
         this.ai = new Player('ai', '电脑', aiManpower, true, {}, settings.aiDifficulty);
         
         this.ui = new UI(this);
@@ -103,8 +104,7 @@ class Game {
 
         this.addEventListeners();
         this.setupInitialCamera();
-
-        window.game = this;
+        
         requestAnimationFrame(this.gameLoop.bind(this));
     }
 
@@ -113,7 +113,6 @@ class Game {
         for (let y = 0; y < this.map.height; y++) {
             for (let x = 0; x < this.map.width; x++) {
                 const tile = this.map.getTile(x, y);
-                // 为不可通行的地形创建物理实体
                 if (tile && TERRAIN_TYPES[tile.type].traversableBy.length === 0) {
                     const body = Matter.Bodies.rectangle(
                         x * TILE_SIZE + TILE_SIZE / 2,
@@ -125,7 +124,6 @@ class Game {
                             label: 'terrain',
                             collisionFilter: {
                                 category: COLLISION_CATEGORIES.terrain,
-                                // 地形只与地面单位碰撞
                                 mask: COLLISION_CATEGORIES.ground_unit
                             }
                         }
@@ -167,8 +165,6 @@ class Game {
     update(deltaTime) {
         if (this.gameState === 'gameover' || this.gameState === 'setup') return;
 
-        // --- 核心修改: 更新 Matter.js 引擎 ---
-        // Matter.js 期望以毫秒为单位的 delta
         Matter.Engine.update(this.engine, deltaTime * 1000);
 
         this.handleEdgeScrolling(deltaTime);
@@ -178,7 +174,6 @@ class Game {
         const allAiUnits = [...this.ai.units];
         const allUnits = [...allPlayerUnits, ...allAiUnits];
 
-        // --- 核心新增: 同步游戏对象和物理实体 ---
         allUnits.forEach(unit => {
             if (unit.body) {
                 unit.x = unit.body.position.x;
@@ -207,7 +202,6 @@ class Game {
 
         this.explosions = this.explosions.filter(e => !e.update(deltaTime));
         
-        // --- 核心修改: 根据单位HP移除单位及其物理实体 ---
         this.player.units = this.player.units.filter(u => this.filterDeadUnits(u));
         this.ai.units = this.ai.units.filter(u => this.filterDeadUnits(u));
         this.selectedUnits = this.selectedUnits.filter(u => u.hp > 0);
@@ -217,14 +211,13 @@ class Game {
         if (this.gameState === 'playing') this.checkWinConditions();
     }
 
-    // --- 核心新增: 用于过滤死亡单位并从物理世界中移除它们 ---
     filterDeadUnits(unit) {
         if (unit.hp > 0) {
             return true;
         }
         if (unit.body) {
             Matter.World.remove(this.engine.world, unit.body);
-            unit.body = null; // 清除引用
+            unit.body = null;
         }
         return false;
     }
@@ -388,19 +381,10 @@ class Game {
                 targetEnemy = enemy;break;
             }
         }
-        let delay = 0;
-        const delayIncrement = 5;
-
+        
         if (targetEnemy) {
             this.selectedUnits.forEach(unit => {
-                setTimeout(() => {
-                    if (unit && unit.hp > 0) {
-                        unit.path = [];
-                        unit.moveTargetPos = null;
-                        unit.target = targetEnemy;
-                    }
-                }, delay);
-                delay += delayIncrement;
+                unit.target = targetEnemy;
             });
 
         } else {
@@ -411,7 +395,7 @@ class Game {
 
     tryDeployUnit(worldPos, unitType) {
         const cost = UNIT_TYPES[unitType].cost;
-        if (this.player.canAfford(cost) && worldPos.x < (this.map.width * TILE_SIZE) / 5) {
+        if (this.player.canAfford(cost) && worldPos.x < (this.map.width * TILE_SIZE) / 3) {
             const gridX = Math.floor(worldPos.x / TILE_SIZE);
             const gridY = Math.floor(worldPos.y / TILE_SIZE);
             const tile = this.map.getTile(gridX, gridY);
@@ -424,7 +408,7 @@ class Game {
             } else { this.ui.showGameMessage("该单位无法部署在此地形上！"); }
         } else {
             if(!this.player.canAfford(cost)) { this.ui.showGameMessage("资源不足！"); }
-            else { this.ui.showGameMessage("只能在左侧1/5区域部署！"); }
+            else { this.ui.showGameMessage("只能在左侧1/3区域部署！"); }
         }
     }
 
@@ -444,18 +428,22 @@ class Game {
         });
     }
     
+    /**
+     * --- 核心修复 (问题 #1): 分散寻路计算以避免卡顿 ---
+     */
     issueGroupMoveCommand(targetPos, map) {
         if (this.selectedUnits.length === 0) return;
         
-        const formation = this.calculateFormation(this.selectedUnits.length, targetPos, TILE_SIZE * 2);
+        const formation = this.calculateFormation(this.selectedUnits, targetPos, TILE_SIZE * 2);
         const sortedUnits = [...this.selectedUnits].sort((a, b) => getDistance(a, targetPos) - getDistance(b, targetPos));
 
         let delay = 0;
-        const delayIncrement = 5;
+        const delayIncrement = 5; // 每个单位的寻路计算延迟10毫秒
 
         sortedUnits.forEach((unit, index) => {
             const unitTargetPos = formation[index] || targetPos;
             
+            // 使用 setTimeout 将昂贵的寻路计算分散到多个帧
             setTimeout(() => {
                 if (unit && unit.hp > 0) {
                      unit.issueMoveCommand(unitTargetPos, map, false);
@@ -466,23 +454,53 @@ class Game {
         });
     }
 
-    calculateFormation(count, center, spacing) {
-        const positions = [];
-        const cols = Math.ceil(Math.sqrt(count));
-        const rows = Math.ceil(count / cols);
-        
-        const startX = center.x - ((cols - 1) * spacing) / 2;
-        const startY = center.y - ((rows - 1) * spacing) / 2;
 
-        for (let i = 0; i < count; i++) {
-            const row = Math.floor(i / cols);
-            const col = i % cols;
-            positions.push({
-                x: startX + col * spacing,
-                y: startY + row * spacing
-            });
+    calculateFormation(units, targetPos, spacing) {
+        // 如果没有单位，直接返回空数组
+        if (units.length === 0) return [];
+        
+        // 获取单位的原始边界框
+        let minX = Math.min(...units.map(u => u.x));
+        let maxX = Math.max(...units.map(u => u.x));
+        let minY = Math.min(...units.map(u => u.y));
+        let maxY = Math.max(...units.map(u => u.y));
+        
+        // 计算原始布局的中心点
+        const originalCenter = {
+            x: (minX + maxX) / 2,
+            y: (minY + maxY) / 2
+        };
+        
+        // 计算相对于原始中心点的偏移量
+        const offsets = units.map(unit => ({
+            x: unit.x - originalCenter.x,
+            y: unit.y - originalCenter.y
+        }));
+        
+        // 计算原始布局的边界半径
+        const originalRadius = Math.max(
+            ...units.map(unit => 
+                Math.sqrt(
+                    Math.pow(unit.x - originalCenter.x, 2) + 
+                    Math.pow(unit.y - originalCenter.y, 2)
+                )
+            )
+        );
+        
+        // 避免除以零的情况
+        if (originalRadius === 0) {
+            return units.map(() => ({ ...targetPos }));
         }
-        return positions;
+        
+        // 计算缩放因子，使外围单位更靠近中心
+        // 使用平方根函数使缩放更加平滑
+        const scaleFactor = 0.8; // 可以调整这个值来控制紧凑程度
+        
+        // 根据偏移量和缩放因子计算新的位置
+        return offsets.map(offset => ({
+            x: targetPos.x + offset.x * scaleFactor,
+            y: targetPos.y + offset.y * scaleFactor
+        }));
     }
 
     getMousePos(e) { const rect = this.canvas.getBoundingClientRect(); const scaleX = this.canvas.width / rect.width; const scaleY = this.canvas.height / rect.height; return { x: (e.clientX - rect.left) * scaleX, y: (e.clientY - rect.top) * scaleY }; }
@@ -509,7 +527,7 @@ class Game {
         if (this.globalMousePos.y > window.innerHeight - edgeMargin) this.camera.y += scrollSpeed * deltaTime;
     }
 
-    handleProjectileHit(p) { this.explosions.push(new Explosion(p.x, p.y, p.stats.splashRadius || 10)); if (p.target.hp > 0) p.target.takeDamage(p.stats.damage); if (p.stats.splashRadius > 0) { const allTargets = [...this.player.units, ...this.ai.units, this.playerBase, this.aiBase].filter(Boolean); allTargets.forEach(entity => { if (entity.owner !== p.owner && entity.id !== p.target.id && entity.hp > 0) { const entityPos = { x: entity.pixelX || entity.x, y: entity.pixelY || entity.y }; const distance = getDistance(entityPos, p); if (distance < p.stats.splashRadius) { const splashDamage = p.stats.damage * (1 - distance / p.stats.splashRadius); entity.takeDamage(splashDamage); } } }); } }
+    handleProjectileHit(p) { this.explosions.push(new Explosion(p.x, p.y, p.stats.splashRadius || 2)); if (p.target.hp > 0) p.target.takeDamage(p.stats.damage); if (p.stats.splashRadius > 0) { const allTargets = [...this.player.units, ...this.ai.units, this.playerBase, this.aiBase].filter(Boolean); allTargets.forEach(entity => { if (entity.owner !== p.owner && entity.id !== p.target.id && entity.hp > 0) { const entityPos = { x: entity.pixelX || entity.x, y: entity.pixelY || entity.y }; const distance = getDistance(entityPos, p); if (distance < p.stats.splashRadius) { const splashDamage = p.stats.damage * (1 - distance / p.stats.splashRadius); entity.takeDamage(splashDamage); } } }); } }
     startGame() { if (this.gameState === 'deployment') this.gameState = 'playing'; }
     checkWinConditions() { 
         if (this.gameState !== 'playing') return; 

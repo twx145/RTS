@@ -13,7 +13,7 @@ class Node {
 
 function findPath(map, start, end, moveType) {
     // 对于空中单位，路径就是起点到终点的直线
-    if (moveType === 'air') {
+    if (moveType === 'air'|| moveType === 'ground' ) {
         // A* 算法需要一系列节点，所以即使是直线，也返回包含起点和终点的数组
         return [start, end];
     }

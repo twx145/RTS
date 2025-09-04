@@ -52,11 +52,12 @@ class Unit {
         }
 
         const body = Matter.Bodies.circle(x, y, radius, {
-            frictionAir: 0.4,
+            // --- 核心修复 (问题 #2): 增加物理阻尼和容错，提高稳定性 ---
+            frictionAir: 0.2,   // 增加空气阻力，让单位更快稳定下来
             friction: 0.01,
-            restitution: 0.01,
-            // --- 核心修复 (问题 #3): 根据单位HP设置质量 ---
-            mass: this.stats.hp*this.stats.hp / 100,
+            restitution: 0.1,
+            slop: 0.05,         // 允许微小的重叠，减少抖动和弹射
+            mass: this.stats.hp / 10,
             label: `${this.owner}_${this.type}`,
             collisionFilter: {
                 category: category,
@@ -68,9 +69,6 @@ class Unit {
         return body;
     }
 
-    /**
-     * --- 核心修复 (问题 #2): 重构整个update方法以解决移动与攻击的逻辑冲突 ---
-     */
     update(deltaTime, enemyUnits, map, enemyBase, game) {
         if (this.attackCooldown > 0) this.attackCooldown -= deltaTime;
         if (this.findTargetCooldown > 0) this.findTargetCooldown -= deltaTime;
@@ -83,20 +81,20 @@ class Unit {
             return;
         }
         
-        // --- 决策阶段 ---
-        // 1. 优先处理现有目标
+        if (!this.target && this.findTargetCooldown <= 0) {
+            this.findTarget(enemyBase, enemyUnits, game);
+            this.findTargetCooldown = 0.5 + Math.random() * 0.2;
+        }
+        
         if (this.target && this.target.hp > 0) {
             const targetPos = { x: this.target.pixelX || this.target.x, y: this.target.pixelY || this.target.y };
             const distanceToTarget = getDistance(this, targetPos);
             
-            // 1a. 如果在射程内，则停止移动并攻击
             if (distanceToTarget <= this.stats.range) {
-                // 停止移动
                 this.path = [];
                 this.moveTargetPos = null;
                 if (this.body) Matter.Body.setVelocity(this.body, { x: 0, y: 0 });
 
-                // 转向并攻击
                 this.setTargetAngle(targetPos);
                 let angleDiff = Math.abs(this.angle - this.targetAngle);
                 if (angleDiff > Math.PI) angleDiff = 2 * Math.PI - angleDiff;
@@ -105,35 +103,21 @@ class Unit {
                     this.attack(game);
                 }
 
-            // 1b. 如果在射程外，则向目标移动
             } else {
-                // 仅在没有路径时才创建新路径，避免每帧都重新寻路
                 if (!this.path.length && !this.moveTargetPos) {
                      this.issueMoveCommand(targetPos, game.map, true);
                 }
             }
         } else {
-            // 2. 目标已死亡或不存在，清空目标并尝试自主索敌
             this.target = null;
-            if (this.path.length === 0 && !this.moveTargetPos && this.findTargetCooldown <= 0) {
-                this.findTarget(enemyBase, enemyUnits, game);
-                this.findTargetCooldown = 0.5 + Math.random() * 0.2;
-                
-                // 如果索敌后仍无目标，飞行单位进入巡逻模式
-                if (!this.target && this.stats.moveType === 'air' && (this.type === 'fighter_jet' || this.type === 'recon_drone')) {
-                    this.handleLoitering(deltaTime);
-                }
+            if (this.path.length === 0 && this.stats.moveType === 'air' && (this.type === 'fighter_jet' || this.type === 'recon_drone')) {
+                this.handleLoitering(deltaTime);
             }
         }
 
-        // --- 执行阶段 ---
-        // 3. 根据决策结果处理移动
         this.handleMovement(deltaTime, map);
     }
     
-    /**
-     * --- 核心修复 (问题 #1): 增加到达目的地的停止逻辑 ---
-     */
     handleMovement(deltaTime, map) {
         if (this.path.length > 0 && !this.moveTargetPos) {
             this.findSmoothedPathTarget(map);
@@ -143,24 +127,20 @@ class Unit {
             this.setTargetAngle(this.moveTargetPos);
             const distanceToNode = getDistance(this, this.moveTargetPos);
             
-            // 如果已到达路径节点
-            if (distanceToNode < TILE_SIZE * 0.75) { // 增大到达判定范围
-                // 如果这是路径的最后一个节点，则停止
+            if (distanceToNode < TILE_SIZE * 0.75) {
                 if (this.currentPathIndex >= this.path.length - 1) {
                     this.path = [];
                     this.moveTargetPos = null;
-                    if (this.body) Matter.Body.setVelocity(this.body, { x: 0, y: 0 }); // 强制停止
+                    if (this.body) Matter.Body.setVelocity(this.body, { x: 0, y: 0 });
 
                     if (this.stats.special === 'SETUP_TO_FIRE') {
                         this.isSettingUp = true;
                         this.setupTimer = 2.0;
                     }
                 } else {
-                    // 否则，寻找下一个平滑路径节点
                     this.moveTargetPos = null; 
                 }
             } else {
-                // 未到达节点，继续移动
                 this.move(deltaTime);
             }
         }
