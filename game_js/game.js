@@ -383,15 +383,18 @@ class Game {
         }
         
         if (targetEnemy) {
+            // --- 核心修复: 使用 setTarget 方法 ---
             this.selectedUnits.forEach(unit => {
-                unit.target = targetEnemy;
+                unit.setTarget(targetEnemy);
             });
 
         } else {
-            this.selectedUnits.forEach(unit => unit.target = null);
+            // --- 核心修复: 使用 setTarget 方法 ---
+            this.selectedUnits.forEach(unit => unit.setTarget(null));
             this.issueGroupMoveCommand(worldPos, this.map);
         }
     }
+
 
     tryDeployUnit(worldPos, unitType) {
         const cost = UNIT_TYPES[unitType].cost;

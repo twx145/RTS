@@ -87,7 +87,7 @@ class AIController {
         aiUnits.forEach(unit => {
             if (!unit.target && unit.path.length === 0 && unit.findTargetCooldown <= 0) {
                 // 单位自主索敌现在使用 Matter.Query，无需传递参数
-                unit.findTarget(this.playerBase, playerUnits, window.game);
+                unit.setTarget(this.playerBase);
             }
         });
     }
@@ -106,7 +106,7 @@ class AIController {
         this.attackWave.forEach(unit => {
             if (unit.hp > 0 && !unit.target && unit.path.length === 0) {
                  setTimeout(() => {
-                    if (unit && unit.hp > 0) unit.issueMoveCommand(targetPoint, map);
+                    if (unit && unit.hp > 0) unit.setTarget(this.playerBase);
                  }, delay);
                  delay += delayIncrement;
             }
@@ -159,7 +159,7 @@ class AIController {
         this.attackWave.forEach(unit => {
             if (unit.hp > 0) {
                 setTimeout(() => {
-                    if (unit && unit.hp > 0) unit.target = priorityTarget;
+                    if (unit && unit.hp > 0) unit.setTarget(priorityTarget);
                 }, delay);
                 delay += delayIncrement;
             }
@@ -196,7 +196,7 @@ class AIController {
                 const dist = getDistance(aiUnit, weakestPlayerUnit);
                 if (dist <= aiUnit.stats.range) {
                     setTimeout(() => {
-                        if (aiUnit && aiUnit.hp > 0) aiUnit.target = weakestPlayerUnit;
+                        if (aiUnit && aiUnit.hp > 0) aiUnit.setTarget(weakestPlayerUnit);
                     }, delay);
                     delay += delayIncrement;
                 }

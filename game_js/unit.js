@@ -52,11 +52,10 @@ class Unit {
         }
 
         const body = Matter.Bodies.circle(x, y, radius, {
-            // --- 核心修复 (问题 #2): 增加物理阻尼和容错，提高稳定性 ---
-            frictionAir: 0.2,   // 增加空气阻力，让单位更快稳定下来
+            frictionAir: 0.2,
             friction: 0.01,
             restitution: 0.1,
-            slop: 0.05,         // 允许微小的重叠，减少抖动和弹射
+            slop: 0.05,
             mass: this.stats.hp / 10,
             label: `${this.owner}_${this.type}`,
             collisionFilter: {
@@ -68,6 +67,37 @@ class Unit {
         Matter.Body.setAngle(body, this.angle);
         return body;
     }
+
+    /**
+     * --- 核心修复: 新增 setTarget 方法，用于验证和设置目标 ---
+     * @param {Unit | Base | null} newTarget - 新的目标
+     */
+    setTarget(newTarget) {
+        // 如果新目标为空，则直接清空目标
+        if (!newTarget) {
+            this.target = null;
+            return;
+        }
+
+        // 确定目标的移动类型
+        let targetMoveType = 'ground'; // 默认为地面（例如基地）
+        if (newTarget instanceof Unit) {
+            targetMoveType = newTarget.stats.moveType;
+        } else if (newTarget instanceof Base) {
+            // 基地被视为地面目标
+            targetMoveType = 'ground';
+        }
+        
+        // 验证该单位是否可以攻击这种类型的目标
+        if (this.stats.canTarget.includes(targetMoveType)) {
+            this.target = newTarget;
+        } else {
+            // 如果不能攻击，则忽略该指令（可以选择性地在这里添加提示信息）
+            // console.log(`${this.type} cannot target ${targetMoveType} units.`);
+            this.target = null; // 确保不会设置非法目标
+        }
+    }
+
 
     update(deltaTime, enemyUnits, map, enemyBase, game) {
         if (this.attackCooldown > 0) this.attackCooldown -= deltaTime;
@@ -109,7 +139,7 @@ class Unit {
                 }
             }
         } else {
-            this.target = null;
+            this.setTarget(null); // 使用 setTarget 清空目标
             if (this.path.length === 0 && this.stats.moveType === 'air' && (this.type === 'fighter_jet' || this.type === 'recon_drone')) {
                 this.handleLoitering(deltaTime);
             }
@@ -183,7 +213,7 @@ class Unit {
 
     issueMoveCommand(targetPos, map, isEngaging = false) {
         if (!isEngaging) {
-            this.target = null;
+            this.setTarget(null); // 使用 setTarget 清空目标
         }
         this.isLoitering = false;
         this.isSettingUp = false;
@@ -322,7 +352,9 @@ class Unit {
                 closestTarget = enemyBase;
             }
         }
-        this.target = closestTarget;
+        
+        // --- 核心修复: 使用 setTarget 方法来赋值 ---
+        this.setTarget(closestTarget);
     }
     
     attack(game) { 
