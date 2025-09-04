@@ -17,7 +17,7 @@ class AIController {
         let manpowerToSpend = this.player.manpower;
 
         if (this.difficulty === 'hard' || this.difficulty === 'hell') {
-            manpowerToSpend *= 0.7;
+            manpowerToSpend *= 0.8;
         }
 
         const rallyPointX = mapWidth - 5 - Math.random() * (mapWidth / 4);

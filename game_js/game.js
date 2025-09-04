@@ -90,7 +90,7 @@ class Game {
 
         const initialManpower = 50;
         this.player = new Player('player', '玩家', initialManpower);
-        const aiManpower = settings.aiDifficulty === 'hell' ? Math.round(initialManpower * 1.5) : initialManpower;
+        const aiManpower = settings.aiDifficulty === 'hell' ? Math.round(initialManpower * 2.0) : initialManpower;
         this.ai = new Player('ai', '电脑', aiManpower, true, {}, settings.aiDifficulty);
         
         this.ui = new UI(this);
@@ -411,7 +411,7 @@ class Game {
 
     tryDeployUnit(worldPos, unitType) {
         const cost = UNIT_TYPES[unitType].cost;
-        if (this.player.canAfford(cost) && worldPos.x < (this.map.width * TILE_SIZE) / 3) {
+        if (this.player.canAfford(cost) && worldPos.x < (this.map.width * TILE_SIZE) / 5) {
             const gridX = Math.floor(worldPos.x / TILE_SIZE);
             const gridY = Math.floor(worldPos.y / TILE_SIZE);
             const tile = this.map.getTile(gridX, gridY);
@@ -424,7 +424,7 @@ class Game {
             } else { this.ui.showGameMessage("该单位无法部署在此地形上！"); }
         } else {
             if(!this.player.canAfford(cost)) { this.ui.showGameMessage("资源不足！"); }
-            else { this.ui.showGameMessage("只能在左侧1/3区域部署！"); }
+            else { this.ui.showGameMessage("只能在左侧1/5区域部署！"); }
         }
     }
 
