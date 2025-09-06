@@ -19,9 +19,6 @@ class Player {
             this.aiController.update(this.units, enemyPlayer.units, map, deltaTime);
         }
     }
-    deductManpower(cost) {
-        this.manpower -= cost;
-    }
     
     canAfford(unitCost) {
         return this.manpower >= unitCost;
@@ -29,5 +26,9 @@ class Player {
     
     deductManpower(amount) {
         this.manpower -= amount;
+    }
+
+    addManpower(amount) {
+        this.manpower += amount;
     }
 }

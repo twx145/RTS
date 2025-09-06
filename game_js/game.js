@@ -558,7 +558,7 @@ class Game {
 
             // 5. 更新UI以显示返还后的资源
             this.ui.update();
-            this.ui.showGameMessage(`已撤销部署: ${lastUnit.type}`);
+            this.ui.showGameMessage(`已撤销部署: ${UNIT_TYPES[lastUnit.type].name}`);
         }
     }
     handleEdgeScrolling(deltaTime) {
