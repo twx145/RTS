@@ -283,11 +283,23 @@ class Game {
         this.canvas.addEventListener('mouseup', (e) => this.handleMouseUp(e));
         this.canvas.addEventListener('wheel', (e) => this.handleWheel(e), { passive: false });
         this.canvas.addEventListener('contextmenu', (e) => e.preventDefault());
-        
-        window.addEventListener('keydown', (e) => {
+             window.addEventListener('keydown', (e) => {
             if (e.key === 'Escape') {
                 this.selectedUnits = [];
                 this.ui.clearDeploymentSelection();
+            } 
+            else if (e.key === 'r' || e.key === 'R') {
+                if (this.gameState === 'deployment') {
+                    this.undoLastDeployment();
+                }
+            }
+            else if (e.key === 'q' || e.key === 'Q') {
+                if (this.gameState === 'playing' && this.selectedUnits.length > 0) {
+                    this.selectedUnits.forEach(unit => {
+                        unit.stop();
+                    });
+                    this.ui.showGameMessage("单位已停下");
+                }
             }
         });
         this.canvas.addEventListener('touchstart', (e) => this.handleTouchStart(e), { passive: false });
@@ -524,7 +536,31 @@ class Game {
     handleTouchMove(e) { e.preventDefault(); for (const touch of e.changedTouches) { this.activeTouches.set(touch.identifier, this.getTouchPos(touch)); } const touches = Array.from(this.activeTouches.values()); if (touches.length === 2) { const currentCenter = { x: (touches[0].x + touches[1].x) / 2, y: (touches[0].y + touches[1].y) / 2 }; const currentDistance = getDistance(touches[0], touches[1]); if (this.lastTouchCenter) { const dx = currentCenter.x - this.lastTouchCenter.x; const dy = currentCenter.y - this.lastTouchCenter.y; this.camera.x -= dx / this.camera.zoom; this.camera.y -= dy / this.camera.zoom; } if (this.lastTouchDistance > 0) { const zoomFactor = this.lastTouchDistance / currentDistance; this.zoomAtPoint(zoomFactor, currentCenter); } this.lastTouchCenter = currentCenter; this.lastTouchDistance = currentDistance; } }
     handleTouchEnd(e) { for (const touch of e.changedTouches) { this.activeTouches.delete(touch.identifier); } this.updateTouchState(); }
     updateTouchState() { if (this.activeTouches.size < 2) { this.lastTouchDistance = 0; this.lastTouchCenter = null; } }
+    undoLastDeployment() {
+        // 1. 检查玩家是否部署过单位
+        if (this.player.units.length === 0) {
+            this.ui.showGameMessage("没有可撤销的部署");
+            return;
+        }
 
+        // 2. 从玩家单位数组中移除最后一个单位
+        const lastUnit = this.player.units.pop();
+
+        if (lastUnit) {
+            // 3. 从物理引擎中移除该单位的碰撞体，非常重要！
+            if (lastUnit.body) {
+                Matter.World.remove(this.engine.world, lastUnit.body);
+            }
+
+            // 4. 获取该单位的成本，并返还给玩家
+            const cost = UNIT_TYPES[lastUnit.type].cost;
+            this.player.addManpower(cost); // 我们将在下一步创建这个方法
+
+            // 5. 更新UI以显示返还后的资源
+            this.ui.update();
+            this.ui.showGameMessage(`已撤销部署: ${lastUnit.type}`);
+        }
+    }
     handleEdgeScrolling(deltaTime) {
         if (this.isDraggingMap || this.isDragging || this.activeTouches.size > 0) return;
         

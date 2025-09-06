@@ -1,15 +1,12 @@
 class Player {
-    constructor(id, name, manpower, isAI = false, baseArea, aiDifficulty = 'medium') {
+    constructor(id, name, initialManpower, isAI = false, aiLogic = {}, aiDifficulty = 'normal') {
         this.id = id;
         this.name = name;
-        this.manpower = manpower;
-        this.isAI = isAI;
+        this.manpower = initialManpower;
         this.units = [];
-        this.baseArea = baseArea; 
-        this.baseCaptureTimer = 0;
-
+        this.isAI = isAI;
         if (isAI) {
-            this.aiController = new AIController(this, aiDifficulty);
+            this.aiController = new AIController(this, aiLogic, aiDifficulty);
         }
     }
 
@@ -21,6 +18,9 @@ class Player {
             // 不再需要传递 spatialGrid
             this.aiController.update(this.units, enemyPlayer.units, map, deltaTime);
         }
+    }
+    deductManpower(cost) {
+        this.manpower -= cost;
     }
     
     canAfford(unitCost) {

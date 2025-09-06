@@ -290,6 +290,27 @@ class Unit {
         }
     }
 
+    stop() {
+        // 1. 清空寻路数据
+        this.path = [];
+        this.moveTargetPos = null;
+        this.currentPathIndex = 0;
+
+        // 2. 清空目标和强制移动状态
+        this.setTarget(null); // 使用 setTarget 来确保逻辑统一
+        this.isforcemoving = false;
+
+        // 3. 立即停止物理移动 (非常重要，否则单位会继续滑行)
+        if (this.body) {
+            Matter.Body.setVelocity(this.body, { x: 0, y: 0 });
+        }
+
+        // // 4. (可选) 清空其他特殊状态，让单位更彻底地“停下”
+        // this.isPatrolling = false;
+        // this.isLoitering = false;
+        // this.isSettingUp = false;
+    }
+
     calculateInterceptPoint(target) {
         const distance = getDistance(this, target);
         if (this.stats.speed <= target.stats.speed || target.stats.speed < TILE_SIZE * 0.1) {
