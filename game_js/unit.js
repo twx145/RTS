@@ -15,6 +15,7 @@ class Unit {
         this.target = null;
         this.attackCooldown = 0;
         this.findTargetCooldown = Math.random() * 0.5;
+        this.isforcemoving = false;
 
         this.path = [];
         this.currentPathIndex = 0;
@@ -104,30 +105,9 @@ class Unit {
 
 
     update(deltaTime, enemyUnits, map, enemyBase, game) {
-        if (this.isPatrolling) {
-            if (!this.patrolPoints || this.patrolPoints.length === 0) {
-                return;
-            }
-
-            const targetPoint = this.patrolPoints[this.currentPatrolPointIndex];
-
-            if (!targetPoint) {
-                return; 
-            };
-            const dx = targetPoint.x - this.x;
-            const dy = targetPoint.y - this.y;
-            const distance = Math.sqrt(dx * dx + dy * dy);
-
-            if (distance < 10) { 
-                this.currentPatrolPointIndex = (this.currentPatrolPointIndex + 1) % this.patrolPoints.length;
-            } else {
-                this.issueMoveCommand(targetPoint, map, false);
-            }
-        }
-
+        // --- 1. 通用状态更新 ---
         if (this.attackCooldown > 0) this.attackCooldown -= deltaTime;
         if (this.findTargetCooldown > 0) this.findTargetCooldown -= deltaTime;
-        
         this.updateRotation(deltaTime);
 
         if (this.isSettingUp) {
@@ -135,17 +115,22 @@ class Unit {
             if (this.setupTimer <= 0) this.isSettingUp = false;
             return;
         }
-        
-        if (!this.target && this.findTargetCooldown <= 0) {
-            this.findTarget(enemyBase, enemyUnits, game);
-            this.findTargetCooldown = 0.5 + Math.random() * 0.2;
+
+        // 如果当前目标死亡或无效，则清空目标
+        if (this.target && this.target.hp <= 0) {
+            this.setTarget(null);
+            this.isforcemoving = false; // 目标没了，强制移动也该结束了
         }
-        
-        if (this.target && this.target.hp > 0) {
+
+        // --- 2. 核心逻辑分支：强制攻击 vs 常规模式 ---
+
+        // 分支 A: 如果处于“强制攻击”模式
+        if (this.isforcemoving && this.target) {
             const targetPos = { x: this.target.pixelX || this.target.x, y: this.target.pixelY || this.target.y };
             const distanceToTarget = getDistance(this, targetPos);
-            
+
             if (distanceToTarget <= this.stats.range) {
+                // 到达射程：停止移动并发起攻击
                 this.path = [];
                 this.moveTargetPos = null;
                 if (this.body) Matter.Body.setVelocity(this.body, { x: 0, y: 0 });
@@ -157,21 +142,51 @@ class Unit {
                 if (this.attackCooldown <= 0 && !this.isSettingUp && angleDiff < 0.2) {
                     this.attack(game);
                 }
-
             } else {
+                // 未到达射程：持续向目标移动
+                // 如果没有路径，就重新计算路径（比如目标移动了）
                 if (!this.path.length && !this.moveTargetPos) {
-                     this.issueMoveCommand(targetPos, game.map, true);
+                    // 注意！这里递归调用时，也要把 isforcemoving 传进去！
+                    this.issueMoveCommand(targetPos, game.map, true, true);
                 }
             }
-        } else {
-            this.setTarget(null); // 使用 setTarget 清空目标
-            if (this.path.length === 0 && this.stats.moveType === 'air' && (this.type === 'fighter_jet' || this.type === 'recon_drone')) {
-                this.handleLoitering(deltaTime);
+        } 
+        // 分支 B: 常规模式（巡逻、自动接战、待命）
+        else {
+            // 只有在常规模式下，才进行自动索敌
+            if (!this.target && this.findTargetCooldown <= 0) {
+                this.findTarget(enemyBase, enemyUnits, game);
+                this.findTargetCooldown = 0.5 + Math.random() * 0.2;
+            }
+
+            // 如果（通过自动索敌）找到了目标，并且在射程内，则攻击
+            if (this.target) {
+                const targetPos = { x: this.target.pixelX || this.target.x, y: this.target.pixelY || this.target.y };
+                const distanceToTarget = getDistance(this, targetPos);
+                if (distanceToTarget <= this.stats.range) {
+                    // （这部分和上面类似，可以封装成函数，但为了清晰先这样写）
+                    this.setTargetAngle(targetPos);
+                    if (this.attackCooldown <= 0 && !this.isSettingUp) {
+                        this.attack(game);
+                    }
+                }
+                // 注意：这里我们不处理追击逻辑，单位只会攻击进入范围的敌人。
+            } 
+            // 如果没有目标，并且没有移动路径，则执行待命/巡逻逻辑
+            else if (this.path.length === 0) {
+                if (this.isPatrolling) {
+                    // (巡逻逻辑) ...
+                } else if (this.stats.moveType === 'air' && (this.type === 'fighter_jet' || this.type === 'recon_drone')) {
+                    this.handleLoitering(deltaTime);
+                }
             }
         }
 
-        this.handleMovement(deltaTime, map);
-    }
+    // --- 3. 统一处理移动 ---
+    // 无论在哪种模式下，只要有路径，就执行移动
+    this.handleMovement(deltaTime, map);
+    // (你原来的巡逻逻辑也可以整合到上面，或者保留在 handleMovement 之前)
+}
 
     startPatrol(points) {
         if (points && points.length > 0) {
@@ -249,7 +264,8 @@ class Unit {
         }
     }
 
-    issueMoveCommand(targetPos, map, isEngaging = false) {
+    issueMoveCommand(targetPos, map, isEngaging = false,isforcemoving = false) {
+        this.isforcemoving = isforcemoving;
         if (!isEngaging) {
             this.setTarget(null); // 使用 setTarget 清空目标
         }

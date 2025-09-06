@@ -383,14 +383,21 @@ class Game {
         }
         
         if (targetEnemy) {
-            // --- 核心修复: 使用 setTarget 方法 ---
+            // 这是强制攻击指令
+            const targetPosition = { x: targetEnemy.pixelX || targetEnemy.x, y: targetEnemy.pixelY || targetEnemy.y };
+
             this.selectedUnits.forEach(unit => {
+                // 1. 设置明确的目标
                 unit.setTarget(targetEnemy);
+                // 2. 下达移动指令，并开启“强制移动”标志！
+                // issueMoveCommand(目标位置, 地图, 是否在交战状态, 是否强制移动)
+                unit.issueMoveCommand(targetPosition, this.map, true, true);
             });
 
         } else {
+            // 这是普通的移动指令
             // --- 核心修复: 使用 setTarget 方法 ---
-            this.selectedUnits.forEach(unit => unit.setTarget(null));
+            this.selectedUnits.forEach(unit => unit.setTarget(null)); // 确保没有目标
             this.issueGroupMoveCommand(worldPos, this.map);
         }
     }

@@ -11,117 +11,81 @@ class Node {
     }
 }
 
+// 这个函数现在可以正常工作了，因为 PF 对象已经通过 <script> 标签加载了
 function findPath(map, start, end, moveType) {
-    // 对于空中单位，路径就是起点到终点的直线
-    if (moveType === 'air'|| moveType === 'ground' ) {
-        // A* 算法需要一系列节点，所以即使是直线，也返回包含起点和终点的数组
-        return [start, end];
+    if (moveType === 'air') {
+        // 对于空中单位，直接返回直线路径
+        return [{x: start.x, y: start.y}, {x: end.x, y: end.y}];
     }
-    
-    const startNode = new Node(null, start);
-    const endNode = new Node(null, end);
 
-    let openList = [];
-    let closedList = [];
+    // 1. 创建一个 pathfinding-js 的 Grid 对象
+    // 注意：这里的 new PF.Grid(...) 中的 PF 就是库提供的全局对象
+    const grid = new PF.Grid(map.width, map.height);
 
-    openList.push(startNode);
-    
-    const maxIterations = map.width * map.height * 1.5;
-    let iterations = 0;
-
-    while (openList.length > 0 && iterations < maxIterations) {
-        iterations++;
-        let currentNode = openList[0];
-        let currentIndex = 0;
-        for (let i = 1; i < openList.length; i++) {
-            if (openList[i].f < currentNode.f) {
-                currentNode = openList[i];
-                currentIndex = i;
-            }
-        }
-
-        openList.splice(currentIndex, 1);
-        closedList.push(currentNode);
-
-        if (currentNode.equals(endNode)) {
-            let path = [];
-            let current = currentNode;
-            while (current !== null) {
-                path.push(current.position);
-                current = current.parent;
-            }
-            return path.reverse();
-        }
-
-        const adjacentSquares = [
-            { x: 0, y: -1 }, { x: 0, y: 1 }, { x: -1, y: 0 }, { x: 1, y: 0 },
-            { x: -1, y: -1 }, { x: -1, y: 1 }, { x: 1, y: -1 }, { x: 1, y: 1 }
-        ];
-
-        childLoop: for (const newPosition of adjacentSquares) {
-            const nodePosition = {
-                x: currentNode.position.x + newPosition.x,
-                y: currentNode.position.y + newPosition.y,
-            };
-
-            const tile = map.getTile(nodePosition.x, nodePosition.y);
-            if (!tile || !TERRAIN_TYPES[tile.type].traversableBy.includes(moveType)) {
-                continue;
-            }
-            
-            const childNode = new Node(currentNode, nodePosition);
-            if (closedList.find(node => node.equals(childNode))) {
-                 continue childLoop;
-            }
-
-            const moveCost = (newPosition.x !== 0 && newPosition.y !== 0) ? 1.414 : 1;
-            childNode.g = currentNode.g + moveCost;
-            childNode.h = Math.sqrt(((childNode.position.x - endNode.position.x) ** 2) + ((childNode.position.y - endNode.position.y) ** 2));
-            childNode.f = childNode.g + childNode.h;
-
-            const existingNode = openList.find(node => node.equals(childNode));
-            if (existingNode && childNode.g >= existingNode.g) {
-                continue childLoop;
-            }
-            
-            if (existingNode) {
-                existingNode.parent = currentNode;
-                existingNode.g = childNode.g;
-                existingNode.f = childNode.f;
-            } else {
-                openList.push(childNode);
+    // 2. 根据你的地图数据设置障碍物
+    for (let y = 0; y < map.height; y++) {
+        for (let x = 0; x < map.width; x++) {
+            const tile = map.getTile(x, y);
+            if (tile && !TERRAIN_TYPES[tile.type].traversableBy.includes(moveType)) {
+                // 将不可通行的地块设置为障碍
+                grid.setWalkableAt(x, y, false);
             }
         }
     }
 
-    return null;
+    // 3. 创建一个 JPS 寻路器实例
+    const finder = new PF.JumpPointFinder({
+        allowDiagonal: true,      // 允许对角线移动
+        dontCrossCorners: true  // 不允许穿过墙角
+    });
+
+    // 4. 寻路，注意这里的输入是 x, y 坐标，不是 {x, y} 对象
+    const path = finder.findPath(start.x, start.y, end.x, end.y, grid);
+
+    // 5. 将结果 [ [x1, y1], [x2, y2] ] 转换为你的游戏需要的格式 [ {x, y}, {x, y} ]
+    return path.map(p => ({ x: p[0], y: p[1] }));
 }
 
-//检查两点之间是否有地形障碍（用于路径平滑）
 function isLineOfSightClear(startPos, endPos, map, moveType) {
-    // 核心修复: 空中单位永远视野清晰，无视地形
     if (moveType === 'air') {
         return true;
     }
 
-    const dx = endPos.x - startPos.x;
-    const dy = endPos.y - startPos.y;
-    const distance = Math.sqrt(dx * dx + dy * dy);
-    const step = TILE_SIZE / 2;
-    const steps = Math.ceil(distance / step);
+    const startGrid = { x: Math.floor(startPos.x / TILE_SIZE), y: Math.floor(startPos.y / TILE_SIZE) };
+    const endGrid = { x: Math.floor(endPos.x / TILE_SIZE), y: Math.floor(endPos.y / TILE_SIZE) };
 
-    for (let i = 1; i <= steps; i++) {
-        const t = i / steps;
-        const checkX = startPos.x + dx * t;
-        const checkY = startPos.y + dy * t;
+    let x0 = startGrid.x;
+    let y0 = startGrid.y;
+    const x1 = endGrid.x;
+    const y1 = endGrid.y;
 
-        const gridX = Math.floor(checkX / TILE_SIZE);
-        const gridY = Math.floor(checkY / TILE_SIZE);
+    const dx = Math.abs(x1 - x0);
+    const dy = Math.abs(y1 - y0);
+    const sx = (x0 < x1) ? 1 : -1;
+    const sy = (y0 < y1) ? 1 : -1;
+    let err = dx - dy;
 
-        const tile = map.getTile(gridX, gridY);
+    while (true) {
+        const tile = map.getTile(x0, y0);
         if (!tile || !TERRAIN_TYPES[tile.type].traversableBy.includes(moveType)) {
-            return false;
+            // 如果起点或终点本身不可通行，也算作没有视线
+            if (x0 !== startGrid.x || y0 !== startGrid.y) {
+                 return false;
+            }
+        }
+
+        if ((x0 === x1) && (y0 === y1)) break;
+
+        const e2 = 2 * err;
+        if (e2 > -dy) {
+            err -= dy;
+            x0 += sx;
+        }
+        if (e2 < dx) {
+            err += dx;
+            y0 += sy;
         }
     }
+
     return true;
 }
