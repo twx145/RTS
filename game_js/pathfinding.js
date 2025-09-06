@@ -11,38 +11,29 @@ class Node {
     }
 }
 
-// 这个函数现在可以正常工作了，因为 PF 对象已经通过 <script> 标签加载了
 function findPath(map, start, end, moveType) {
     if (moveType === 'air') {
-        // 对于空中单位，直接返回直线路径
         return [{x: start.x, y: start.y}, {x: end.x, y: end.y}];
     }
 
-    // 1. 创建一个 pathfinding-js 的 Grid 对象
-    // 注意：这里的 new PF.Grid(...) 中的 PF 就是库提供的全局对象
     const grid = new PF.Grid(map.width, map.height);
 
-    // 2. 根据你的地图数据设置障碍物
     for (let y = 0; y < map.height; y++) {
         for (let x = 0; x < map.width; x++) {
             const tile = map.getTile(x, y);
             if (tile && !TERRAIN_TYPES[tile.type].traversableBy.includes(moveType)) {
-                // 将不可通行的地块设置为障碍
                 grid.setWalkableAt(x, y, false);
             }
         }
     }
 
-    // 3. 创建一个 JPS 寻路器实例
     const finder = new PF.JumpPointFinder({
-        allowDiagonal: true,      // 允许对角线移动
-        dontCrossCorners: true  // 不允许穿过墙角
+        allowDiagonal: true,      
+        dontCrossCorners: true  
     });
 
-    // 4. 寻路，注意这里的输入是 x, y 坐标，不是 {x, y} 对象
     const path = finder.findPath(start.x, start.y, end.x, end.y, grid);
 
-    // 5. 将结果 [ [x1, y1], [x2, y2] ] 转换为你的游戏需要的格式 [ {x, y}, {x, y} ]
     return path.map(p => ({ x: p[0], y: p[1] }));
 }
 
