@@ -10,6 +10,46 @@ class AIController {
 
         this.attackWave = [];
         this.playerBase = null;
+        this.patrolPoints = []; 
+        
+        this.patrollingUnitTags = new Set();
+        this.maxPatrollingUnits = 5;
+    }
+
+    calculatePatrolPoints(map) {
+        
+        const patrolX = map.width - 50; 
+        
+        const patrolYTop = 100;
+        const patrolYBottom = map.height - 50;
+
+        this.patrolPoints = [
+            { x: patrolX, y: patrolYTop },
+            { x: patrolX, y: patrolYBottom }
+        ];
+
+        console.log("Patrol points calculated:", this.patrolPoints); // 可以在控制台输出，方便调试
+    }
+
+    assignFixedPatrolTasks(aiUnits) {
+        if (this.patrolPoints.length === 0) {
+            return;
+        }
+
+        if (this.patrollingUnitTags.size >= this.maxPatrollingUnits) {
+            return;
+        }
+
+        for (const unit of aiUnits) {
+            if (!this.patrollingUnitTags.has(unit.tag)) {
+                unit.startPatrol(this.patrolPoints);
+                this.patrollingUnitTags.add(unit.tag);
+                
+                if (this.patrollingUnitTags.size >= this.maxPatrollingUnits) {
+                    break;
+                }
+            }
+        }
     }
 
     deployUnits(mapWidth, mapHeight, TILE_SIZE, map) {
@@ -21,7 +61,7 @@ class AIController {
         }
 
         const rallyPointX = mapWidth - 5 - Math.random() * (mapWidth / 4);
-        const rallyPointY = Math.random() * mapHeight;
+        const rallyPointY = (Math.random() - 0.5) * mapHeight * 0.25 + mapHeight * 0.5;
 
         let spentManpower = 0;
         let attempts = 0;
@@ -56,7 +96,12 @@ class AIController {
         }
     }
 
-    update(aiUnits, playerUnits, map, deltaTime) { // 移除 spatialGrid
+    update(aiUnits, playerUnits, map, deltaTime) { 
+        if (this.patrolPoints.length === 0 && map) {
+            this.calculatePatrolPoints(map);
+        }
+        this.assignFixedPatrolTasks(aiUnits);
+
         if (playerUnits.length === 0 && (!this.playerBase || this.playerBase.hp <= 0)) return;
 
         this.macroTimer += deltaTime;

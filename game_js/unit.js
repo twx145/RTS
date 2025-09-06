@@ -37,6 +37,10 @@ class Unit {
             this.body.gameObject = this;
             Matter.World.add(window.game.engine.world, this.body);
         }
+        this.isPatrolling = false;      // 是否正在巡逻
+        this.patrolPoints = [];         // 巡逻点路径
+        this.currentPatrolPointIndex = 0; // 当前目标巡逻点的索引
+        this.tag = 'unit_' + Math.random().toString(36).slice(2);
     }
 
     createBody(x, y) {
@@ -100,6 +104,27 @@ class Unit {
 
 
     update(deltaTime, enemyUnits, map, enemyBase, game) {
+        if (this.isPatrolling) {
+            if (!this.patrolPoints || this.patrolPoints.length === 0) {
+                return;
+            }
+
+            const targetPoint = this.patrolPoints[this.currentPatrolPointIndex];
+
+            if (!targetPoint) {
+                return; 
+            };
+            const dx = targetPoint.x - this.x;
+            const dy = targetPoint.y - this.y;
+            const distance = Math.sqrt(dx * dx + dy * dy);
+
+            if (distance < 10) { 
+                this.currentPatrolPointIndex = (this.currentPatrolPointIndex + 1) % this.patrolPoints.length;
+            } else {
+                this.issueMoveCommand(targetPoint, map, false);
+            }
+        }
+
         if (this.attackCooldown > 0) this.attackCooldown -= deltaTime;
         if (this.findTargetCooldown > 0) this.findTargetCooldown -= deltaTime;
         
@@ -146,6 +171,19 @@ class Unit {
         }
 
         this.handleMovement(deltaTime, map);
+    }
+
+    startPatrol(points) {
+        if (points && points.length > 0) {
+            this.isPatrolling = true;
+            this.patrolPoints = points;
+            this.currentPatrolPointIndex = 0;
+        }
+    }
+
+    stopPatrol() {
+        this.isPatrolling = false;
+        this.patrolPoints = [];
     }
     
     handleMovement(deltaTime, map) {
