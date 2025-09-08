@@ -30,6 +30,9 @@ class Game {
         this.camera = { x: 0, y: 0, zoom: 1.2, minZoom: 1, maxZoom: 4.0 };
         this.isDraggingMap = false;
         this.lastDragPos = { x: 0, y: 0 };
+        
+        // --- 新增: 初始化编队数组 ---
+        this.controlGroups = Array.from({ length: 10 }, () => []);
 
         this.activeTouches = new Map();
         this.lastTouchDistance = 0;
@@ -728,8 +731,9 @@ class Game {
         this.canvas.addEventListener('mouseup', (e) => this.handleMouseUp(e));
         this.canvas.addEventListener('wheel', (e) => this.handleWheel(e), { passive: false });
         this.canvas.addEventListener('contextmenu', (e) => e.preventDefault());
-        this.canvas.addEventListener('contextmenu', (e) => e.preventDefault());
-             window.addEventListener('keydown', (e) => {
+
+        // --- 修改: 扩展键盘监听以包含新功能 ---
+        window.addEventListener('keydown', (e) => {
             if (e.key === 'Escape') {
                 this.selectedUnits = [];
                 this.ui.clearDeploymentSelection();
@@ -747,7 +751,69 @@ class Game {
                     this.ui.showGameMessage("单位已停下");
                 }
             }
+            // --- 新增: T键选中同类单位 ---
+            else if (e.key === 't' || e.key === 'T') {
+                if (this.selectedUnits.length > 0) {
+                    const typeToSelect = this.selectedUnits[0].type;
+                    this.ui.clearDeploymentSelection(); // 清空部署选择
+                    this.selectedUnits = this.player.units.filter(unit => unit.type === typeToSelect && unit.hp > 0);
+                }
+            }
+            // --- 新增: 数字键处理编队 ---
+            else if (e.key >= '0' && e.key <= '9') {
+                const groupNumber = parseInt(e.key, 10);
+
+                // Ctrl + 数字: 分配编队
+                if (e.ctrlKey) {
+                    e.preventDefault(); // 阻止浏览器默认行为，如Ctrl+1切换标签页
+                    const unitsToAssign = this.selectedUnits;
+
+                    // 如果没有选中单位，则是清空/解散编队
+                    if (unitsToAssign.length === 0) {
+                        this.controlGroups[groupNumber].forEach(unit => {
+                            if (unit) unit.controlGroup = null;
+                        });
+                        this.controlGroups[groupNumber] = [];
+                        this.ui.showGameMessage(`${groupNumber} 号队伍已解散`);
+                        return;
+                    }
+                    
+                    // 遍历要分配的单位，将它们从旧的编队中移除
+                    unitsToAssign.forEach(unit => {
+                        if (unit.controlGroup !== null && unit.controlGroup !== groupNumber) {
+                            this.controlGroups[unit.controlGroup] = this.controlGroups[unit.controlGroup].filter(u => u.id !== unit.id);
+                        }
+                    });
+
+                    // 清理目标编队中不再被包含的单位
+                    this.controlGroups[groupNumber].forEach(oldUnit => {
+                        if (!unitsToAssign.includes(oldUnit)) {
+                             oldUnit.controlGroup = null;
+                        }
+                    });
+
+                    // 分配新单位到编队
+                    this.controlGroups[groupNumber] = [...unitsToAssign];
+                    this.controlGroups[groupNumber].forEach(unit => {
+                        unit.controlGroup = groupNumber;
+                    });
+                    
+                    this.ui.showGameMessage(`部队已编入 ${groupNumber} 号队伍`);
+
+                } 
+                // 单独按数字键: 选中编队
+                else {
+                    // 每次选择时都过滤掉死亡单位
+                    this.controlGroups[groupNumber] = this.controlGroups[groupNumber].filter(u => u.hp > 0);
+
+                    if (this.controlGroups[groupNumber].length > 0) {
+                        this.ui.clearDeploymentSelection(); // 清理部署状态
+                        this.selectedUnits = [...this.controlGroups[groupNumber]];
+                    }
+                }
+            }
         });
+
         this.canvas.addEventListener('touchstart', (e) => this.handleTouchStart(e), { passive: false });
         this.canvas.addEventListener('touchmove', (e) => this.handleTouchMove(e), { passive: false });
         this.canvas.addEventListener('touchend', (e) => this.handleTouchEnd(e));

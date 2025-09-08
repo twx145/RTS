@@ -23,6 +23,9 @@ class Unit {
         this.angle = Math.random() * Math.PI * 2;
         this.targetAngle = this.angle;
         this.rotationSpeed = Math.PI * 2.0;
+        
+        // --- 新增: 为单位添加编队属性 ---
+        this.controlGroup = null;
 
         this.isLoitering = false;
         this.loiterCenter = null;
@@ -478,6 +481,28 @@ class Unit {
         }
         ctx.restore();
 
+        // --- 新增: 绘制编队指示器 ---
+        // 这段逻辑必须放在 ctx.restore() 之后，以防止指示器跟着单位旋转
+        if (this.controlGroup !== null) {
+            const indicatorSize = 12 / zoom;
+            const offsetX = (TILE_SIZE * this.stats.drawScale / 2) * 0.8;
+            const offsetY = -(TILE_SIZE * this.stats.drawScale / 2) * 0.8;
+
+            const indicatorX = this.x + offsetX;
+            const indicatorY = this.y + offsetY;
+
+            // 蓝色方块背景
+            ctx.fillStyle = 'rgba(0, 100, 255, 0.9)';
+            ctx.fillRect(indicatorX, indicatorY, indicatorSize, indicatorSize);
+
+            // 编队数字
+            ctx.fillStyle = 'white';
+            ctx.font = `bold ${indicatorSize * 0.9}px Arial`;
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText(this.controlGroup, indicatorX + indicatorSize / 2, indicatorY + indicatorSize / 2 + 1 / zoom);
+        }
+        
         if (isSelected) {
             ctx.strokeStyle = this.owner === 'player' ? 'yellow' : 'orange';
             ctx.lineWidth = 2 / zoom;
