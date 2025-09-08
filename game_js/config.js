@@ -110,7 +110,7 @@ const UNIT_TYPES = {
         moveType: 'ground', special: 'SETUP_TO_FIRE', canTarget: ['ground','amphibious','sea'], imageSrc: '../assets/pics/howitzer.png', drawScale: 4 * DRAW_SCALE_FACTOR,
         ammoType: 'shell', ammoSpeed: 15 * TILE_SIZE * AMMOSPEED, ammoSplashRadius: 1.5 * TILE_SIZE,
         description: '超远程地面压制火力，但需要部署才能开火。',
-        isCrushable: true,
+        canCrush: true,
         counters: { '步兵': 1.8, '装甲': 1.2, '飞行': 0, '海军': 1.2 } // 对固定目标和慢速单位是毁灭性的
     },
     sam_launcher: {
@@ -119,7 +119,7 @@ const UNIT_TYPES = {
         moveType: 'ground', special: 'SETUP_TO_FIRE', canTarget: ['air'], imageSrc: '../assets/pics/sam_launcher.png', drawScale: 3 * DRAW_SCALE_FACTOR,
         ammoType: 'missile', ammoSpeed: 20 * TILE_SIZE * AMMOSPEED, ammoSplashRadius: 0.5 * TILE_SIZE,
         description: '远程防空武器，对战斗机和轰炸机是致命威胁。',
-        isCrushable: true,
+        canCrush: true,
         counters: { '步兵': 0, '装甲': 0, '飞行': 3.0, '海军': 0 } // 飞机的天敌，对地毫无还手之力
     },
     destroyer: {
