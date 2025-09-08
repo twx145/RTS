@@ -28,7 +28,7 @@ const UNIT_TYPES = {
     // --- 步兵 ---
     assault_infantry: {
         unitClass: '步兵', icon: '👨‍✈️', name: '突击步兵',
-        cost: 1, hp: 100, attack: 15, defense: 5, range: 4 * TILE_SIZE, speed: 1.5, attackSpeed: 1.2, visionRange: 4 * TILE_SIZE * 1.5,
+        cost: 1, hp: 100, attack: 5, defense: 5, range: 4 * TILE_SIZE, speed: 1.5, attackSpeed: 1.2, visionRange: 4 * TILE_SIZE * 1.5,
         moveType: 'ground', canTarget: ['ground','amphibious','sea'], imageSrc: '../assets/pics/assault_infantry.png', drawScale: 1.5 * DRAW_SCALE_FACTOR,
         ammoType: 'bullet', ammoSpeed: 20 * TILE_SIZE * AMMOSPEED, ammoSplashRadius: 0,
         description: '基础作战单位，廉价且灵活。',
@@ -46,7 +46,7 @@ const UNIT_TYPES = {
     },
     anti_tank_trooper: {
         unitClass: '步兵', icon: '🚀', name: '反坦克兵',
-        cost: 2, hp: 90, attack: 25, defense: 5, range: 5 * TILE_SIZE, speed: 1.3, attackSpeed: 2.5, visionRange: 5 * TILE_SIZE * 1.5,
+        cost: 2, hp: 90, attack: 15, defense: 5, range: 5 * TILE_SIZE, speed: 1.3, attackSpeed: 2.5, visionRange: 5 * TILE_SIZE * 1.5,
         moveType: 'ground', canTarget: ['ground','amphibious','sea'], imageSrc: '../assets/pics/anti_tank_trooper.png', drawScale: 1.5 * DRAW_SCALE_FACTOR,
         ammoType: 'shell', ammoSpeed: 12 * TILE_SIZE * AMMOSPEED, ammoSplashRadius: 0.5 * TILE_SIZE,
         description: '携带火箭筒，能有效对抗敌方装甲单位。',
