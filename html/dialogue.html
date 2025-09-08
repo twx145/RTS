@@ -4,7 +4,8 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>神盾计划 - 剧情对话</title>
-    <link rel="stylesheet" href="css/dialogue.css">
+    <link rel="stylesheet" href="../css/dialogue.css">
+    <link rel="stylesheet" href="../css/alert.css">
 </head>
 <body>
     <!-- 背景容器 -->
@@ -46,14 +47,37 @@
         </div>
     </div>
     
+    
+    <!-- 提示对话框 -->
+    <div id="alert-dialog" class="Mmodal">
+        <div class="Mmodal-content">
+            <h3 id="alert-title">提示</h3>
+            <p id="alert-message"></p>
+            <div class="Mmodal-buttons">
+                <button id="alert-ok" class="primary-btn">确定</button>
+            </div>
+        </div>
+    </div>
+    <!-- 确认对话框 -->
+    <div id="confirm-dialog" class="Mmodal">
+        <div class="Mmodal-content">
+            <h3 id="confirm-title">确认操作</h3>
+            <p id="confirm-message">您确定要执行此操作吗？</p>
+            <div class="Mmodal-buttons">
+                <button id="confirm-yes" class="danger-btn">确定</button>
+                <button id="confirm-no" class="secondary-btn">取消</button>
+            </div>
+        </div>
+    </div>
     <!-- 音频元素 -->
     <audio id="bgm" loop></audio>
     <audio id="voice"></audio>
-    
-    <script src="game_js/config.js"></script><!-- 修改 引入config.js -->
-    <script src="data/script.js"></script>
-    <script src="js/saveManager.js"></script>
-    <script src="js/loading.js"></script>
-    <script src="js/dialogue.js"></script>
+
+    <script src="../js/alert.js"></script>
+    <script src="../game_js/config.js"></script><!-- 修改 引入config.js -->
+    <script src="../data/script.js"></script>
+    <script src="../js/saveManager.js"></script>
+    <script src="../js/loading.js"></script>
+    <script src="../js/dialogue.js"></script>
 </body>
 </html>

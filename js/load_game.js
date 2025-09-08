@@ -1,4 +1,3 @@
-// 当前用户
 let currentUser = null;
 let scriptData = null; // 存储脚本数据
 
@@ -41,8 +40,8 @@ async function loadScriptData() {
 // 设置随机背景
 function setRandomBackground() {
     const backgrounds = [
-        'url("assets/backgrounds/bg.png")',
-        // 'url("assets/backgrounds/training_ground.jpg")',
+        'url("../assets/backgrounds/bg.png")',
+        'url("../assets/backgrounds/bg2.png")',
         // 'url("assets/backgrounds/border_area.jpg")',
         // 'url("assets/backgrounds/command_center.jpg")',
         // 'url("assets/backgrounds/forest.jpg")'
@@ -107,12 +106,8 @@ function updateSaveSlot(slot, saveData) {
         dateEl.textContent = "-";
         dialogEl.textContent = "-";
         thumbnail.style.backgroundImage = '';
-        
-        // 隐藏删除按钮
         deleteBtn.style.display = 'none';
         deleteBtn.onclick = null;
-        
-        // 移除点击事件
         saveSlot.onclick = null;
     }
 }
@@ -124,14 +119,14 @@ function updateThumbnail(thumbnail, saveData) {
         if (chapter.scenes && chapter.scenes[saveData.scene]) {
             const scene = chapter.scenes[saveData.scene];
             if (scene.background) {
-                thumbnail.style.backgroundImage = `url('assets/backgrounds/${scene.background}')`;
+                thumbnail.style.backgroundImage = `url('../assets/backgrounds/${scene.background}')`;
                 return;
             }
         }
     }
     
     // 如果无法获取背景，使用默认背景
-    thumbnail.style.backgroundImage = 'url("assets/backgrounds/default_save.jpg")';
+    thumbnail.style.backgroundImage = 'url("../assets/backgrounds/bg.png")';
 }
 
 // 获取对话文本
@@ -207,7 +202,7 @@ function loadGame(slot) {
 function bindEvents() {
     // 返回主菜单按钮
     document.getElementById('btn-back').addEventListener('click', () => {
-        window.location.href = 'index.html';
+        window.location.href = '../index.html';
     });
     
     // 删除所有存档按钮

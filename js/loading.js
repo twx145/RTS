@@ -1,4 +1,3 @@
-// 加载页面逻辑
 class LoadingManager {
     constructor() {
         this.progress = 0;
@@ -46,7 +45,7 @@ class LoadingManager {
     setRandomTip() {
         const loadingtip = document.getElementById('loading-tip');
         if(loadingtip)
-            loadingtip.textContent = this.tips[1];//Math.floor(Math.random() * this.tips.length)];
+            loadingtip.textContent = this.tips[Math.floor(Math.random() * this.tips.length)];
     }
     
     determineResources() {//修改
@@ -86,10 +85,10 @@ class LoadingManager {
             if (this.loadingParams.new === 'true') {
                 this.setPreviewInfo('剧情加载中', '正在准备第一章剧情内容');
                 this.resourcesToLoad = [
-                    { type: 'script', url: 'data/script.js' },
-                    { type: 'image', url: 'assets/backgrounds/bg.png' },
-                    { type: 'image', url: 'assets/characters/eva.jpg' },
-                    { type: 'image', url: 'assets/characters/tanaka.jpg' }
+                    { type: 'script', url: '../data/script.js' },
+                    { type: 'image', url: '../assets/backgrounds/bg.png' },
+                    { type: 'image', url: '../assets/characters/eva.jpg' },
+                    { type: 'image', url: '../assets/characters/tanaka.jpg' }
                 ];
             } 
             // 如果是从游戏返回，加载之前场景的资源
@@ -134,13 +133,13 @@ class LoadingManager {
             // 游戏页面需要加载的资源
             this.setPreviewInfo('游戏加载中', '正在准备战场环境');
             this.resourcesToLoad = [
-                { type: 'image', url: 'assets/backgrounds/bg.png' },
+                { type: 'image', url: '../assets/backgrounds/bg.png' },
                 // { type: 'image', url: 'assets/pics/infantry.png' },
                 // { type: 'image', url: 'assets/pics/tank.png' },
                 // { type: 'image', url: 'assets/pics/artillery.png' },
-                { type: 'script', url: 'game_js/game.js' },
-                { type: 'script', url: 'game_js/map.js' },
-                { type: 'script', url: 'game_js/unit.js' }
+                { type: 'script', url: '../game_js/game.js' },
+                { type: 'script', url: '../game_js/map.js' },
+                { type: 'script', url: '../game_js/unit.js' }
             ];
         }
         
@@ -156,18 +155,18 @@ class LoadingManager {
             if (scene) {
                 this.setPreviewInfo(chapter.title,'剧情加载中');
                 // 加载场景背景
-                this.resourcesToLoad.push({type: 'image', url: `assets/backgrounds/${scene.background}`});
+                this.resourcesToLoad.push({type: 'image', url: `../assets/backgrounds/${scene.background}`});
                 // 加载当前对话的角色立绘
                 const dialog = scene.dialogs[progress.dialog];
                 if (dialog) {
                     if (dialog.characterLeft) {
-                        this.resourcesToLoad.push({type: 'image',url: `assets/characters/${dialog.characterLeft.image}`});
+                        this.resourcesToLoad.push({type: 'image',url: `../assets/characters/${dialog.characterLeft.image}`});
                     }
                     if (dialog.characterCenter) {
-                        this.resourcesToLoad.push({type: 'image',url: `assets/characters/${dialog.characterCenter.image}`});
+                        this.resourcesToLoad.push({type: 'image',url: `../assets/characters/${dialog.characterCenter.image}`});
                     }
                     if (dialog.characterRight) {
-                        this.resourcesToLoad.push({type: 'image',url: `assets/characters/${dialog.characterRight.image}`});
+                        this.resourcesToLoad.push({type: 'image',url: `../assets/characters/${dialog.characterRight.image}`});
                     }
                 }
             }
@@ -178,9 +177,9 @@ class LoadingManager {
         // 加载默认资源
         this.setPreviewInfo('剧情加载中', '正在准备剧情内容');
         this.resourcesToLoad = [
-            { type: 'script', url: 'data/script.js' },
-            { type: 'image', url: 'assets/backgrounds/bg.png' },
-            { type: 'image', url: 'assets/characters/commander_normal.png' }
+            { type: 'script', url: '../data/script.js' },
+            { type: 'image', url: '../assets/backgrounds/bg.png' },
+            { type: 'image', url: '../assets/characters/commander_normal.png' }
         ];
     }
 
@@ -192,25 +191,25 @@ class LoadingManager {
             const scene = chapter.scenes[saveData.scene];
             if (scene) {
                 // 加载场景背景
-                this.resourcesToLoad.push({type: 'image', url: `assets/backgrounds/${scene.background}`});
+                this.resourcesToLoad.push({type: 'image', url: `../assets/backgrounds/${scene.background}`});
                 // 设置预览背景
-                document.getElementById('scene-preview').style.backgroundImage = `url('assets/backgrounds/${scene.background}')`;
+                document.getElementById('scene-preview').style.backgroundImage = `url('../assets/backgrounds/${scene.background}')`;
             }
         }
         // 加载游戏资源
         this.resourcesToLoad.push(
-            { type: 'image', url: 'assets/backgrounds/bg.png' },
-            { type: 'image', url: 'assets/units/infantry.png' },
-            { type: 'image', url: 'assets/units/tank.png' },
-            { type: 'image', url: 'assets/units/artillery.png' },
-            { type: 'script', url: 'game_js/game.js' },
-            { type: 'script', url: 'game_js/map.js' },
-            { type: 'script', url: 'game_js/unit.js' }
+            { type: 'image', url: '../assets/backgrounds/bg.png' },
+            { type: 'image', url: '../assets/units/infantry.png' },
+            { type: 'image', url: '../assets/units/tank.png' },
+            { type: 'image', url: '../assets/units/artillery.png' },
+            { type: 'script', url: '../game_js/game.js' },
+            { type: 'script', url: '../game_js/map.js' },
+            { type: 'script', url: '../game_js/unit.js' }
         );
     }
     
     setPreviewInfo(title, description) {
-        document.getElementById('preview-title').textContent = title;
+        document.getElementById('preview-title').textContent = title||'失败';
         document.getElementById('preview-description').textContent = description;
     }
     

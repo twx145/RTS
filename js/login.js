@@ -135,7 +135,7 @@ function showLoadingAnimation() {
             clearInterval(interval);
             // 跳转到首页
             setTimeout(() => {
-                window.location.href = 'index.html';
+                window.location.href = '../index.html';
             }, 200);
         }
     }, 100);
@@ -240,6 +240,6 @@ window.addEventListener('DOMContentLoaded', () => {
     });
     const currentUser = sessionStorage.getItem('currentUser');
     if (currentUser) {
-        window.location.href = 'index.html';
+        window.location.href = '../index.html';
     }
 });

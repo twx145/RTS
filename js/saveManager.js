@@ -1,3 +1,4 @@
+let Slot = null;
 // 存档管理 - 多用户支持
 // 获取当前用户
 function getCurrentUser() {
@@ -20,7 +21,7 @@ function getUserSaves() {
             return JSON.parse(savesJson);
         } catch (e) {
             console.error("读取用户存档失败", e);
-            alert("读取用户存档失败");
+            showAlert("读取失败","读取用户存档失败");
             return {};
         }
     }
@@ -35,27 +36,33 @@ function saveUserSaves(saves) {
 }
 
 // 保存游戏
-function saveGame(slot) {//修改
+function checkSaveGame(slot){
     const userSaves = getUserSaves();
     const existingSave = userSaves[slot];
-    
+    Slot = slot;
     // 如果有现有存档，请求确认
-    if (existingSave && !confirm(`存档位 ${slot} 已有存档，是否覆盖？`)) {
+    if (existingSave) {
+        showConfirmDialog(
+            '覆盖存档',
+            `存档位 ${slot} 已有存档，是否覆盖？`,
+            saveGame
+        );
         return;
-    }
-    
+    }saveGame();
+}
+
+function saveGame() {
+    const userSaves = getUserSaves();
     const saveData = {
         chapter: gameState.currentChapter,
         scene: gameState.currentScene,
         dialog: gameState.currentDialog,
         timestamp: new Date().getTime(),
-        // 新增：保存游戏状态
         gameState: {
             currentChapter: gameState.currentChapter,
             currentScene: gameState.currentScene,
             currentDialog: gameState.currentDialog
         },
-        // 新增：保存游戏设置
         gameMode: window.game?.gameMode,
         mapId: window.game?.map?.id,
         gameSpeed: window.game?.gameSpeedModifier,
@@ -63,11 +70,10 @@ function saveGame(slot) {//修改
     };
     
     // 更新用户存档
-    userSaves[slot] = saveData;
+    userSaves[Slot] = saveData;
     saveUserSaves(userSaves);
-    
     // 显示保存成功提示
-    alert(`游戏已保存到存档位 ${slot}！`);
+    showAlert('保存成功',`游戏已保存到存档位 ${Slot}！`);
     hideModal();
 }
 
@@ -124,8 +130,6 @@ function loadGameState(saveData) {
             }
         }
     }
-    
-    // 存档无效，开始新游戏
-    alert("存档数据无效，开始新游戏。");
+    showAlert("存档出错","存档数据无效，开始新游戏。");
     playChapter(0, 0, 0);
 }

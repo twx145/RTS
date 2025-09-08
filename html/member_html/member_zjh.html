@@ -4,14 +4,14 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>张敬涵 - 神盾计划开发团队成员</title>
-    <link rel="stylesheet" href="../css/member_style.css">
+    <link rel="stylesheet" href="../../css/member_style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
-<body style="background-image: url('../assets/member_image/bg_zjh.jpg');">
+<body style="background-image: url('../../assets/member_image/bg_zjh.jpg');">
     <div class="container">
         <a href="../team.html" class="back-btn">返回团队页面</a>
         <div class="member-header">
-            <img src="../assets/member_image/member_zjh.jpg" alt="张敬涵" class="member-main-photo">
+            <img src="../../assets/member_image/member_zjh.jpg" alt="张敬涵" class="member-main-photo">
             <div class="member-info">
                 <h1>张敬涵</h1>
                 <p class="member-role">项目文档/剧情策划</p>
@@ -34,13 +34,12 @@
     </div>
 
     <script>
-        document.body.style.setProperty('--before-bg', 'transparent');//修改 背景透明度
-        // 防止未登录直接访问(修改 暂时停用)
-        // window.addEventListener('DOMContentLoaded', () => {
-        //     if (!sessionStorage.getItem('currentUser')) {
-        //         window.location.href = '../login.html';
-        //     }
-        // });
+        document.body.style.setProperty('--before-bg', 'transparent');
+        window.addEventListener('DOMContentLoaded', () => {
+            if (!sessionStorage.getItem('currentUser')) {
+                window.location.href = '../login.html';
+            }
+        });
     </script>
 </body>
 </html>

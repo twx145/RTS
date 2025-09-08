@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>开发团队 - 神盾计划</title>
-    <link rel="stylesheet" href="css/team_style.css">
+    <link rel="stylesheet" href="../css/team_style.css">
 </head>
 <body>
     <div class="container">
@@ -23,59 +23,58 @@
               
         <div class="team-grid">
             <div class="member-card">
-                <img src="assets/member_image/member_twx.jpg" alt="佟文轩" class="member-photo">
+                <img src="../assets/member_image/member_twx.jpg" alt="佟文轩" class="member-photo">
                 <h3 class="member-name">佟文轩</h3>
                 <p class="member-role">组长/主程序员</p>
-                <a href="html/member_twx.html" class="member-link">查看详情</a>
+                <a href="member_html/member_twx.html" class="member-link">查看详情</a>
             </div>
             
             <div class="member-card">
-                <img src="assets/member_image/member_gtx.jpg" alt="高天翔" class="member-photo">
+                <img src="../assets/member_image/member_gtx.jpg" alt="高天翔" class="member-photo">
                 <h3 class="member-name">高天翔</h3>
                 <p class="member-role">主程序员/网站编辑</p>
-                <a href="html/member_gtx.html" class="member-link">查看详情</a>
+                <a href="member_html/member_gtx.html" class="member-link">查看详情</a>
             </div>
 
             <div class="member-card">
-                <img src="assets/member_image/member_zjh.jpg" alt="张敬涵" class="member-photo">
+                <img src="../assets/member_image/member_zjh.jpg" alt="张敬涵" class="member-photo">
                 <h3 class="member-name">张敬涵</h3>
                 <p class="member-role">项目文档/剧情策划</p>
-                <a href="html/member_zjh.html" class="member-link">查看详情</a>
+                <a href="member_html/member_zjh.html" class="member-link">查看详情</a>
             </div>
             
             <div class="member-card">
-                <img src="assets/member_image/member_hyf.jpg" alt="胡云帆" class="member-photo">
+                <img src="../assets/member_image/member_hyf.jpg" alt="胡云帆" class="member-photo">
                 <h3 class="member-name">胡云帆</h3>
                 <p class="member-role">CIO/视频剪辑/程序员</p>
-                <a href="html/member_hyf.html" class="member-link">查看详情</a>
+                <a href="member_html/member_hyf.html" class="member-link">查看详情</a>
             </div>
             
             <div class="member-card">
-                <img src="assets/member_image/member_wkj.jpg" alt="王克坚" class="member-photo">
+                <img src="../assets/member_image/member_wkj.jpg" alt="王克坚" class="member-photo">
                 <h3 class="member-name">王克坚</h3>
                 <p class="member-role">网站测试/程序员</p>
-                <a href="html/member_wkj.html" class="member-link">查看详情</a>
+                <a href="member_html/member_wkj.html" class="member-link">查看详情</a>
             </div>
             
             <div class="member-card">
-                <img src="assets/member_image/member_dxy.jpg" alt="代欣怡" class="member-photo">
+                <img src="../assets/member_image/member_dxy.jpg" alt="代欣怡" class="member-photo">
                 <h3 class="member-name">代欣怡</h3>
                 <p class="member-role">主美/原画师</p>
-                <a href="html/member_dxy.html" class="member-link">查看详情</a>
+                <a href="member_html/member_dxy.html" class="member-link">查看详情</a>
             </div>
 
         </div>
 
-        <a href="index.html" class="back-btn">返回主菜单</a>
+        <a href="../index.html" class="back-btn">返回主菜单</a>
     </div>
 
     <script>
-        // 防止未登录直接访问(暂时停用)
-        // window.addEventListener('DOMContentLoaded', () => {
-        //     if (!sessionStorage.getItem('currentUser')) {
-        //         window.location.href = '../login.html';
-        //     }
-        // });
+        window.addEventListener('DOMContentLoaded', () => {
+            if (!sessionStorage.getItem('currentUser')) {
+                window.location.href = 'login.html';
+            }
+        });
     </script>
 </body>
 </html>

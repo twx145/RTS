@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>代欣怡 - 神盾计划开发团队成员</title>
-    <link rel="stylesheet" href="../css/member_style.css">
+    <link rel="stylesheet" href="../../css/member_style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
 <body>
@@ -12,7 +12,7 @@
     <div class="container">
         <a href="../team.html" class="back-btn">返回团队页面</a>
         <div class="member-header">
-            <img src="../assets/member_image/member_dxy.jpg" alt="代欣怡" class="member-main-photo">
+            <img src="../../assets/member_image/member_dxy.jpg" alt="代欣怡" class="member-main-photo">
             <div class="member-info">
                 <h1>代欣怡</h1>
                 <p class="member-role">主美/原画师</p>
@@ -40,12 +40,11 @@
     </div>
 
     <script>
-        // 防止未登录直接访问(修改 暂时停用)
-        // window.addEventListener('DOMContentLoaded', () => {
-        //     if (!sessionStorage.getItem('currentUser')) {
-        //         window.location.href = '../login.html';
-        //     }
-        // });
+        window.addEventListener('DOMContentLoaded', () => {
+            if (!sessionStorage.getItem('currentUser')) {
+                window.location.href = '../login.html';
+            }
+        });
     </script>
 </body>
 </html>

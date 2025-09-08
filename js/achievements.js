@@ -3,7 +3,7 @@ document.addEventListener('DOMContentLoaded', function() {
     // 检查用户是否登录
     const currentUser = sessionStorage.getItem('currentUser');
     if (!currentUser) {
-        window.location.href = './login.html';
+        window.location.href = '../login.html';
         return;
     }
     const user = JSON.parse(currentUser);

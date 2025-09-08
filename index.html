@@ -1,10 +1,43 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>神盾计划-主菜单</title>
-    <link rel="stylesheet" href="./css/index_style.css">
+    <link rel="stylesheet" href="css/index_style.css">
+    <style>
+        /* 添加加载提示样式 */
+        #loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 9999;
+            color: white;
+            font-size: 24px;
+            flex-direction: column;
+            display: none;
+        }
+        
+        .loading-spinner {
+            width: 50px;
+            height: 50px;
+            border: 5px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            border-top-color: #fff;
+            animation: spin 1s ease-in-out infinite;
+            margin-bottom: 20px;
+        }
+        
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+    </style>
 </head>
 <body>
     <div class="container">
@@ -12,28 +45,107 @@
             <img src="assets/logo.png" alt="神盾计划 Logo" id="game-logo">
         </div>
         <!-- 主菜单按钮 -->
-        <!-- 将原来的链接改为跳转到加载页面 -->
-        <a class="menu-btn" href="loading.html?target=dialogue.html&new=true">开始新游戏</a>
-        <a class="menu-btn" href="load_game.html">读取存档</a>
-        <a class="menu-btn" href="achievements.html">成就</a>
-        <a class="menu-btn" href="settings.html">设置</a>
-        <a class="menu-btn" href="team.html">开发组成员</a>
-        <a class="menu-btn" id="btnExit">退出游戏</a>
+        <a class="menu-btn sound-btn" href="html/loading.html?target=dialogue.html&new=true" data-delay="500">开始新游戏</a>
+        <a class="menu-btn sound-btn" href="html/load_game.html" data-delay="500">读取存档</a>
+        <a class="menu-btn sound-btn" href="html/achievements.html" data-delay="500">成就</a>
+        <a class="menu-btn sound-btn" href="html/settings.html" data-delay="500">设置</a>
+        <a class="menu-btn sound-btn" href="html/team.html" data-delay="500">开发组成员</a>
+        <a class="menu-btn sound-btn" id="btnExit" data-delay="500">退出游戏</a>
     </div>
 
+    <!-- 添加加载提示 -->
+    <div id="loading-overlay">
+        <div class="loading-spinner"></div>
+        <div>加载中...</div>
+    </div>
+
+    <!-- 添加音效元素 -->
+    <audio id="buttonSound" src="assets/sounds/button_click2.wav" preload="auto"></audio>
+
     <script>
-        // 退出游戏按钮
-        document.getElementById('btnExit').addEventListener('click', () => {
-            // 清除会话
-            sessionStorage.removeItem('currentUser');
-            // 返回登录页
-            window.location.href = './login.html';
+        // 音效管理器
+        const SoundManager = {
+            // 播放音效并返回Promise
+            playSound: function(soundId) {
+                return new Promise((resolve) => {
+                    const sound = document.getElementById(soundId);
+                    if (!sound) {
+                        resolve();
+                        return;
+                    }
+                    
+                    // 设置音量
+                    const savedVolume = localStorage.getItem('sfxVolume') || 85;
+                    sound.volume = savedVolume / 100;
+                    
+                    // 播放音效
+                    sound.currentTime = 0;
+                    const playPromise = sound.play();
+                    
+                    if (playPromise !== undefined) {
+                        playPromise.catch(e => {
+                            console.log("音效播放失败:", e);
+                            resolve();
+                        });
+                    }
+                    
+                    // 音效结束后resolve
+                    sound.onended = () => {
+                        resolve();
+                    };
+                    
+                    // 设置超时，防止音效无法正常结束
+                    setTimeout(() => {
+                        resolve();
+                    }, 1000); // 最长等待2秒
+                });
+            },
+            
+            // 带延迟的页面跳转
+            navigateWithSound: function(url, soundId = 'buttonSound', delay = 0) {
+                // 显示加载提示
+                document.getElementById('loading-overlay').style.display = 'flex';
+                
+                // 播放音效并等待
+                this.playSound(soundId).then(() => {
+                    // 音效播放完成后等待额外延迟
+                    return new Promise(resolve => setTimeout(resolve, delay));
+                }).then(() => {
+                    // 进行页面跳转
+                    window.location.href = url;
+                });
+            }
+        };
+
+        // 为所有带有sound-btn类的元素添加点击音效和延迟跳转
+        document.addEventListener('DOMContentLoaded', function() {
+            const buttons = document.querySelectorAll('.sound-btn');
+            buttons.forEach(button => {
+                button.addEventListener('click', function(e) {
+                    // 如果是退出按钮，特殊处理
+                    if (this.id === 'btnExit') {
+                        e.preventDefault();
+                        SoundManager.playSound('buttonSound').then(() => {
+                            sessionStorage.removeItem('currentUser');
+                            window.location.href = 'html/login.html';
+                        });
+                        return;
+                    }
+                    
+                    // 其他按钮
+                    if (this.href) {
+                        e.preventDefault();
+                        const delay = parseInt(this.getAttribute('data-delay')) || 0;
+                        SoundManager.navigateWithSound(this.href, 'buttonSound', delay);
+                    }
+                });
+            });
         });
 
-        // 防止未登录直接访问
+        // 原有的检查用户登录状态代码
         window.addEventListener('DOMContentLoaded', () => {
             if (!sessionStorage.getItem('currentUser')) {
-                window.location.href = './login.html';
+                window.location.href = 'html/login.html';
             }
         });
     </script>

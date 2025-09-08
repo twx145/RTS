@@ -15,7 +15,8 @@ class GameMap {
     load(mapData) {
         this.width = mapData.width;
         this.height = mapData.height;
-        const terrainMap = { 'g': 'grass', 'f': 'forest', 'r': 'road', 'w': 'water', 'b': 'building' };
+        const terrainMap = { 'g': 'grass', 'f': 'forest', 'r': 'road', 'w': 'water', 'b': 'building',
+            'd': 'desert','i': 'ice','s': 'snow','m': 'mountain','x': 'deep_water'};
         this.grid = Array(this.height).fill(null).map(() => Array(this.width).fill(null));
         for (let y = 0; y < this.height; y++) {
             const rowString = mapData.grid[y] || '';

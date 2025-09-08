@@ -224,9 +224,9 @@ window.addEventListener('DOMContentLoaded', () => {
             // 这里添加保存游戏逻辑
             const saveData = window.game.getSaveData();
             localStorage.setItem('ShenDun_save', JSON.stringify(saveData));
-            alert('游戏已保存！');
+            showAlert('提示', '游戏已保存！');
         } else {
-            alert('没有游戏进度可保存！');
+            showAlert('提示', '没有游戏进度可保存！');
         }
     });
 
@@ -234,24 +234,23 @@ window.addEventListener('DOMContentLoaded', () => {
     loadGameBtn.addEventListener('click', function() {
         const saveData = localStorage.getItem('ShenDun_save');
         if (saveData) {
-            if (confirm('加载存档将丢失当前进度，确定要继续吗？')) {
+            showConfirmDialog('确认', '加载存档将丢失当前进度，确定要继续吗？', function() {
                 // 这里添加读取存档逻辑
                 window.game.loadSaveData(JSON.parse(saveData));
                 settingsMenu.style.display = 'none';
-            }
+            }, 'main');
         } else {
-            alert('没有找到存档！');
+            showAlert('提示', '没有找到存档！');
         }
     });
 
     // 跳过当前关卡
     skipScenarioBtn.addEventListener('click', function() {
-        if (window.game  ) {/*&& window.game.gameState === 'playing'*/
-            if (confirm('确定要跳过当前关卡吗？')) {
-                // 这里添加跳过关卡逻辑
+        if (window.game) {
+            showConfirmDialog('确认', '确定要跳过当前关卡吗？', function() {
                 window.game.skipCurrentScenario();
                 settingsMenu.style.display = 'none';
-            }
+            }, 'game');
         } else {
             alert('当前没有正在进行的关卡！');
         }
@@ -259,25 +258,26 @@ window.addEventListener('DOMContentLoaded', () => {
 
     // 返回主菜单
     returnMainBtn.addEventListener('click', function() {
-        if (confirm('确定要返回主菜单吗？未保存的进度将会丢失。')) {
+        showConfirmDialog('确认', '确定要返回主菜单吗？未保存的进度将会丢失。', function() {
             // 这里添加返回主菜单逻辑
             if (window.game && window.game.returnToMainMenu) {
                 window.game.returnToMainMenu();
             } else {
                 window.location.href = 'index.html';
             }
-        }
+        }, 'main');
     });
 
     // 退出游戏
     exitGameBtn.addEventListener('click', function() {
-        if (confirm('确定要退出游戏吗？')) {
+        showConfirmDialog('确认', '确定要退出游戏吗？', function() {
             // 这里添加退出游戏逻辑
             if (window.game && window.game.cleanup) {
                 window.game.cleanup();
             }
             window.close();
-        }
+            window.location.href = 'index.html';
+        }, 'main');
     });
 
     // 点击菜单外部关闭菜单

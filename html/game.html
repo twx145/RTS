@@ -5,8 +5,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>神盾计划 - 实时战略游戏</title>
     <link rel="icon" href="data:,">
-    <link rel="stylesheet" href="css/game_style.css">
-    <link rel="stylesheet" href="css/achievements.css">
+    <link rel="stylesheet" href="../css/game_style.css">
+    <link rel="stylesheet" href="../css/achievements.css">
+    <link rel="stylesheet" href="../css/alert.css">
 </head>
 <body>
     <div id="game-wrapper">
@@ -201,24 +202,47 @@
             <button id="close-settings" class="menu-button">关闭</button>
         </div>
     </div>
+
+    <!-- 确认对话框 -->
+    <div id="confirm-dialog" class="Mmodal">
+        <div class="Mmodal-content">
+            <h3 id="confirm-title">确认操作</h3>
+            <p id="confirm-message">您确定要执行此操作吗？</p>
+            <div class="Mmodal-buttons">
+                <button id="confirm-yes" class="danger-btn">确定</button>
+                <button id="confirm-no" class="secondary-btn">取消</button>
+            </div>
+        </div>
+    </div>
+    <!-- 提示对话框 -->
+    <div id="alert-dialog" class="Mmodal">
+        <div class="Mmodal-content">
+            <h3 id="alert-title">提示</h3>
+            <p id="alert-message"></p>
+            <div class="Mmodal-buttons">
+                <button id="alert-ok" class="primary-btn">确定</button>
+            </div>
+        </div>
+    </div>
     
-    <script src="lib/matter.min.js"></script>
-    <script src="lib/pathfinding-browser.min.js"></script>
-    <script src="data/script.js"></script>
-    <script src="game_js/config.js"></script>
-    <script src="game_js/maps-data.js"></script>
-    <script src="game_js/utils.js"></script>
-    <script src="game_js/pathfinding.js"></script>
-    <script src="game_js/projectile.js"></script>
-    <script src="game_js/base.js"></script>
-    <script src="game_js/unit.js"></script>
-    <script src="game_js/map.js"></script>
-    <script src="game_js/fog-of-war.js"></script>
-    <script src="js/saveGame.js"></script>
-    <script src="game_js/ui.js"></script>
-    <script src="game_js/ai.js"></script>
-    <script src="game_js/player.js"></script>
-    <script src="game_js/game.js"></script>
-    <script src="game_js/main.js"></script>
+    <script src="../js/alert.js"></script>
+    <script src="../lib/matter.min.js"></script>
+    <script src="../data/script.js"></script>
+    <script src="../game_js/config.js"></script>
+    <script src="../game_js/maps-data.js"></script>
+    <script src="../game_js/arctic-buildings.js"></script>
+    <script src="../game_js/utils.js"></script>
+    <script src="../game_js/pathfinding.js"></script>
+    <script src="../game_js/projectile.js"></script>
+    <script src="../game_js/base.js"></script>
+    <script src="../game_js/unit.js"></script>
+    <script src="../game_js/map.js"></script>
+    <script src="../game_js/fog-of-war.js"></script>
+    <script src="../js/saveGame.js"></script>
+    <script src="../game_js/ui.js"></script>
+    <script src="../game_js/ai.js"></script>
+    <script src="../game_js/player.js"></script>
+    <script src="../game_js/game.js"></script>
+    <script src="../game_js/main.js"></script>
 </body>
 </html>

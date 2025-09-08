@@ -42,6 +42,13 @@ class Unit {
         this.patrolPoints = [];         // 巡逻点路径
         this.currentPatrolPointIndex = 0; // 当前目标巡逻点的索引
         this.tag = 'unit_' + Math.random().toString(36).slice(2);
+
+        // 新增：特殊单位属性
+        this.isEscortUnit = false;      // 是否是护送单位
+        this.destination = null;        // 护送单位的目的地
+        this.isTargetUnit = false;      // 是否是目标单位（刺杀模式）
+        this.isSpecialBuilding = false; // 是否是特殊建筑（目标模式）
+        this.buildingType = null;       // 建筑类型
     }
 
     createBody(x, y) {
@@ -103,6 +110,27 @@ class Unit {
         }
     }
 
+    // 新增：设置护送单位
+    setAsEscortUnit(destination) {
+        this.isEscortUnit = true;
+        this.destination = destination;
+        this.stats.speed = 0.5; // 护送单位移动较慢
+    }
+
+    // 新增：设置目标单位
+    setAsTargetUnit() {
+        this.isTargetUnit = true;
+        this.stats.hp *= 1.5; // 目标单位有更多生命值
+        this.hp = this.stats.hp;
+    }
+
+    // 新增：设置特殊建筑
+    setAsSpecialBuilding(buildingType) {
+        this.isSpecialBuilding = true;
+        this.buildingType = buildingType;
+        this.stats.hp *= 2; // 特殊建筑有更多生命值
+        this.hp = this.stats.hp;
+    }
 
     update(deltaTime, enemyUnits, map, enemyBase, game) {
         // --- 1. 通用状态更新 ---
@@ -186,7 +214,83 @@ class Unit {
     // 无论在哪种模式下，只要有路径，就执行移动
     this.handleMovement(deltaTime, map);
     // (你原来的巡逻逻辑也可以整合到上面，或者保留在 handleMovement 之前)
-}
+    }
+
+     // 新增：护送单位行为
+    updateEscortBehavior(deltaTime, game) {
+        // 如果已经到达目的地，不需要做任何事情
+        if (this.destination && getDistance(this, this.destination) < TILE_SIZE * 2) {
+            return;
+        }
+        
+        // 如果没有路径或已经完成路径，计算新路径
+        if (this.path.length === 0 && this.destination) {
+            this.issueMoveCommand(this.destination, game.map, false, false);
+        }
+        
+        // 处理移动
+        this.handleMovement(deltaTime, game.map);
+    }
+
+    // 新增：目标单位行为
+    updateTargetUnitBehavior(deltaTime, enemyUnits, game) {
+        // 目标单位会尝试逃离敌人
+        const closestEnemy = this.findClosestEnemy(enemyUnits);
+        
+        if (closestEnemy && getDistance(this, closestEnemy) < TILE_SIZE * 10) {
+            // 逃离最近的敌人
+            const fleeDirection = {
+                x: this.x - closestEnemy.x,
+                y: this.y - closestEnemy.y
+            };
+            
+            const distance = Math.sqrt(fleeDirection.x * fleeDirection.x + fleeDirection.y * fleeDirection.y);
+            if (distance > 0) {
+                const normalizedDir = {
+                    x: fleeDirection.x / distance,
+                    y: fleeDirection.y / distance
+                };
+                
+                const fleeTarget = {
+                    x: this.x + normalizedDir.x * TILE_SIZE * 15,
+                    y: this.y + normalizedDir.y * TILE_SIZE * 15
+                };
+                
+                // 如果没有路径或已经完成路径，计算新路径
+                if (this.path.length === 0) {
+                    this.issueMoveCommand(fleeTarget, game.map, false, false);
+                }
+            }
+        } else {
+            // 没有威胁，停止移动
+            if (this.body) {
+                Matter.Body.setVelocity(this.body, { x: 0, y: 0 });
+            }
+            this.path = [];
+            this.moveTargetPos = null;
+        }
+        
+        // 处理移动
+        this.handleMovement(deltaTime, game.map);
+    }
+
+    // 新增：找到最近的敌人
+    findClosestEnemy(enemyUnits) {
+        let closestEnemy = null;
+        let minDistance = Infinity;
+        
+        for (const enemy of enemyUnits) {
+            if (enemy.hp <= 0) continue;
+            
+            const distance = getDistance(this, enemy);
+            if (distance < minDistance) {
+                minDistance = distance;
+                closestEnemy = enemy;
+            }
+        }
+        
+        return closestEnemy;
+    }
 
     startPatrol(points) {
         if (points && points.length > 0) {
@@ -353,6 +457,22 @@ class Unit {
         ctx.translate(this.x, this.y);
         ctx.rotate(this.angle + Math.PI / 2);
         const size = TILE_SIZE * this.stats.drawScale;
+
+         // 新增：特殊单位外观
+        if (this.isEscortUnit) {
+            // 护送单位有特殊外观
+            ctx.fillStyle = 'rgba(0, 255, 0, 0.3)';
+            ctx.beginPath();
+            ctx.arc(0, 0, size / 2, 0, Math.PI * 2);
+            ctx.fill();
+        } else if (this.isTargetUnit) {
+            // 目标单位有特殊外观
+            ctx.fillStyle = 'rgba(255, 165, 0, 0.3)';
+            ctx.beginPath();
+            ctx.arc(0, 0, size / 2, 0, Math.PI * 2);
+            ctx.fill();
+        }
+
         if (this.image) {
             ctx.drawImage(this.image, -size / 2, -size / 2, size, size);
         }
@@ -381,6 +501,20 @@ class Unit {
                 }
             }
         }
+
+        // 新增：特殊单位标记
+        if (this.isEscortUnit) {
+            ctx.fillStyle = 'green';
+            ctx.beginPath();
+            ctx.arc(this.x, this.y + TILE_SIZE * this.stats.drawScale / 2 + 10 / zoom, 5 / zoom, 0, Math.PI * 2);
+            ctx.fill();
+        } else if (this.isTargetUnit) {
+            ctx.fillStyle = 'orange';
+            ctx.beginPath();
+            ctx.arc(this.x, this.y + TILE_SIZE * this.stats.drawScale / 2 + 10 / zoom, 5 / zoom, 0, Math.PI * 2);
+            ctx.fill();
+        }
+
         const hpBarWidth = TILE_SIZE * this.stats.hp / UNIT_TYPES.assault_infantry.hp * 0.9;
         const hpBarHeight = 5 / zoom; 
         const hpBarYOffset = TILE_SIZE * this.stats.drawScale / 2 + 5 / zoom;

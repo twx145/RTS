@@ -91,7 +91,7 @@ async function loadScript() {
         gameState.scriptData = window.scriptData;
     } catch (error) {
         console.error('加载对话脚本失败:', error);
-        alert('无法加载游戏数据，请刷新页面重试。');
+        showAlert('无法加载游戏数据','请刷新页面重试。');
     }
 }
 
@@ -106,7 +106,7 @@ function bindEvents() {
     domElements.btnAuto.addEventListener('click', toggleAutoPlay);
     domElements.btnFastForward.addEventListener('click', toggleFastForward);
     domElements.btnToggleDialog.addEventListener('click', toggleDialogVisibility);
-    domElements.btnMenu.addEventListener('click', goToMainMenu);
+    domElements.btnMenu.addEventListener('click', checkGoToMainMenu);
     
     // 模态框事件
     domElements.modalCancel.addEventListener('click', hideModal);
@@ -118,7 +118,7 @@ function bindEvents() {
 // 处理点击事件
 function handleClick(e) {
     // 如果点击的是功能按钮区域或模态框，不处理对话继续
-    if (e.target.closest('#function-buttons') || e.target.closest('.modal')) return;
+    if (e.target.closest('#function-buttons') || e.target.closest('.modal') || e.target.closest('.Mmodal')) return;
     
     //修改 如果对话框是隐藏状态，先显示对话框
     if (domElements.dialogContainer.classList.contains('hidden')) {
@@ -172,15 +172,12 @@ function playScene(sceneIndex, dialogIndex = 0) {
     gameState.currentScene = sceneIndex;
     gameState.currentDialog = dialogIndex;
     
-    // 设置背景
-    // domElements.backgroundContainer.style.backgroundImage = `url('assets/backgrounds/${scene.background}')`;
-    // 背景没找全,先用bg.png
-
-    domElements.backgroundContainer.style.backgroundImage = `url('assets/backgrounds/bg.png')`;
+    // 修改 设置背景
+    domElements.backgroundContainer.style.backgroundImage = `url('../assets/backgrounds/${scene.background}')`;
     
     // 播放背景音乐
     if (scene.bgm) {
-        domElements.bgm.src = `assets/bgm/${scene.bgm}`;
+        domElements.bgm.src = `../assets/bgm/${scene.bgm}`;
         domElements.bgm.play().catch(e => console.log("自动播放被阻止，需要用户交互"));
     }
     
@@ -222,7 +219,7 @@ function playDialog(sceneIndex, dialogIndex) {
     
     // 播放语音
     if (dialog.voice) {
-        domElements.voice.src = `assets/voices/${dialog.voice}`;
+        domElements.voice.src = `../assets/voices/${dialog.voice}`;
         domElements.voice.play().catch(e => console.log("语音播放失败"));
     }
     
@@ -258,7 +255,12 @@ function handleAction(action) {
                 availableUnits: action.availableUnits || Object.keys(UNIT_TYPES),
                 enableFogOfWar: action.enableFogOfWar !== false , // 默认启用
                 aiDifficulty: action.aiDifficulty || 'medium',
-                gameMode: action.gameMode || 'annihilation'
+                gameMode: action.gameMode || 'annihilation',
+                // 新增：支持目标模式、刺杀模式和护送模式的参数
+                objectives: action.objectives || null,
+                escortUnit: action.escortUnit || null,
+                targetUnit: action.targetUnit || null,
+                destination: action.destination || null
             };
             localStorage.setItem('ShenDun_dialogue_settings', JSON.stringify(gameSettings));
             window.location.href = `loading.html?target=game.html&fromDialogue=true&user=${JSON.parse(currentUser).username}`;
@@ -270,13 +272,13 @@ function handleAction(action) {
             
         case 'change_background':
             // 更改背景
-            domElements.backgroundContainer.style.backgroundImage = `url('assets/backgrounds/${action.background}')`;
+            domElements.backgroundContainer.style.backgroundImage = `url('../assets/backgrounds/${action.background}')`;
             nextDialog();
             break;
             
         case 'play_sound':
             // 播放音效
-            const sound = new Audio(`assets/sounds/${action.sound}`);
+            const sound = new Audio(`../assets/sounds/${action.sound}`);
             sound.play();
             nextDialog();
             break;
@@ -296,19 +298,19 @@ function updateCharacters(dialog) {
     
     // 设置左侧角色
     if (dialog.characterLeft) {
-        domElements.characterLeft.style.backgroundImage = `url('assets/characters/${dialog.characterLeft.image}')`;
+        domElements.characterLeft.style.backgroundImage = `url('../assets/characters/${dialog.characterLeft.image}')`;
         domElements.characterLeft.style.opacity = 1;
     }
     
     // 设置中间角色
     if (dialog.characterCenter) {
-        domElements.characterCenter.style.backgroundImage = `url('assets/characters/${dialog.characterCenter.image}')`;
+        domElements.characterCenter.style.backgroundImage = `url('../assets/characters/${dialog.characterCenter.image}')`;
         domElements.characterCenter.style.opacity = 1;
     }
     
     // 设置右侧角色
     if (dialog.characterRight) {
-        domElements.characterRight.style.backgroundImage = `url('assets/characters/${dialog.characterRight.image}')`;
+        domElements.characterRight.style.backgroundImage = `url('../assets/characters/${dialog.characterRight.image}')`;
         domElements.characterRight.style.opacity = 1;
     }
 }
@@ -394,7 +396,7 @@ function showSaveModal() {
             slot.textContent = '空存档';
         }
         
-        slot.addEventListener('click', () => saveGame(i));
+        slot.addEventListener('click', () => checkSaveGame(i));
         domElements.saveSlots.appendChild(slot);
     }
     
@@ -480,10 +482,15 @@ function toggleDialogVisibility() {
 }
 
 // 返回主菜单
+function checkGoToMainMenu(){
+    showConfirmDialog(
+        '返回主菜单',
+        '确定要返回主菜单吗？未保存的进度将会丢失。',
+        goToMainMenu
+    );
+}
 function goToMainMenu() {
-    if (confirm("确定要返回主菜单吗？未保存的进度将会丢失。")) {
-        window.location.href = 'index.html';
-    }
+    window.location.href = '../index.html';
 }
 
 // 语音播放结束处理
@@ -494,9 +501,10 @@ function onVoiceEnded() {
 // 显示结局
 function showEnding() {
     // 根据游戏进度显示不同的结局
-    alert("游戏结束！感谢您的游玩。");
-    window.location.href = 'index.html';
+    domElements.backgroundContainer.style.backgroundImage = `url('../assets/backgrounds/bg.png')`;
+    showAlert('游戏结束','感谢您的游玩。');
+    window.location.href = '../index.html';
 }
 
 // 初始化游戏
-document.addEventListener('DOMContentLoaded', initGame);
+document.addEventListener('DOMContentLoaded',initGame());

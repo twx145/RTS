@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>神盾计划 - 设置</title>
+    <link rel="stylesheet" href="../css/settings.css">
+    <link rel="stylesheet" href="../css/alert.css">
+</head>
+<body>
+    <div class="container">
+        <div class="logo">
+            <img src="../assets/logo.png" alt="神盾计划 Logo" id="game-logo">
+        </div>
+        <h1>游戏设置</h1>
+        <div class="settings-tabs">
+            <button class="tab-btn active" data-tab="audio">音频设置</button>
+            <!-- <button class="tab-btn" data-tab="display">显示设置</button> -->
+            <!-- <button class="tab-btn" data-tab="gameplay">游戏设置</button> -->
+            <button class="tab-btn" data-tab="system">系统</button>
+        </div>
+        
+        <div class="settings-content">
+            <!-- 音频设置 -->
+            <div class="tab-pane active" id="audio-tab">
+                <div class="setting-group">
+                    <h3>音量控制</h3>
+                    
+                    <div class="slider-setting">
+                        <label>主音量</label>
+                        <div class="slider-container">
+                            <input type="range" min="0" max="100" value="100" class="volume-slider" id="master-volume">
+                            <span class="slider-value" id="master-volume-value">100%</span>
+                        </div>
+                    </div>
+                    
+                    <div class="slider-setting">
+                        <label>背景音乐</label>
+                        <div class="slider-container">
+                            <input type="range" min="0" max="100" value="80" class="volume-slider" id="bgm-volume">
+                            <span class="slider-value" id="bgm-volume-value">80%</span>
+                        </div>
+                    </div>
+                    
+                    <div class="slider-setting">
+                        <label>人声音量</label>
+                        <div class="slider-container">
+                            <input type="range" min="0" max="100" value="90" class="volume-slider" id="voice-volume">
+                            <span class="slider-value" id="voice-volume-value">90%</span>
+                        </div>
+                    </div>
+                    
+                    <div class="slider-setting">
+                        <label>音效音量</label>
+                        <div class="slider-container">
+                            <input type="range" min="0" max="100" value="85" class="volume-slider" id="sfx-volume">
+                            <span class="slider-value" id="sfx-volume-value">85%</span>
+                        </div>
+                    </div>
+                    
+                    <div class="slider-setting">
+                        <label>游戏音量</label>
+                        <div class="slider-container">
+                            <input type="range" min="0" max="100" value="75" class="volume-slider" id="game-volume">
+                            <span class="slider-value" id="game-volume-value">75%</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 显示设置 -->
+            <div class="tab-pane" id="display-tab">
+                <div class="setting-group">
+                    <h3>文本显示</h3>
+                    
+                    <div class="slider-setting">
+                        <label>文字显示速度</label>
+                        <div class="slider-container">
+                            <input type="range" min="1" max="10" value="5" class="speed-slider" id="text-speed">
+                            <span class="slider-value" id="text-speed-value">中速</span>
+                        </div>
+                    </div>
+                    
+                    <div class="slider-setting">
+                        <label>自动模式速度</label>
+                        <div class="slider-container">
+                            <input type="range" min="1" max="10" value="5" class="speed-slider" id="auto-speed">
+                            <span class="slider-value" id="auto-speed-value">中速</span>
+                        </div>
+                    </div>
+                    
+                    <div class="slider-setting">
+                        <label>文本框透明度</label>
+                        <div class="slider-container">
+                            <input type="range" min="20" max="100" value="85" class="opacity-slider" id="textbox-opacity">
+                            <span class="slider-value" id="textbox-opacity-value">85%</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="setting-group">
+                    <h3>画面设置</h3>
+                    
+                    <div class="checkbox-setting">
+                        <input type="checkbox" id="fullscreen-mode" checked>
+                        <label for="fullscreen-mode">全屏模式</label>
+                    </div>
+                    
+                    <div class="checkbox-setting">
+                        <input type="checkbox" id="vsync-enabled" checked>
+                        <label for="vsync-enabled">垂直同步</label>
+                    </div>
+                    
+                    <div class="select-setting">
+                        <label for="resolution-select">分辨率</label>
+                        <select id="resolution-select">
+                            <option value="1920x1080" selected>1920x1080</option>
+                            <option value="1600x900">1600x900</option>
+                            <option value="1366x768">1366x768</option>
+                            <option value="1280x720">1280x720</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 游戏设置 -->
+            <div class="tab-pane" id="gameplay-tab">
+                <div class="setting-group">
+                    <h3>游戏选项</h3>
+                    
+                    <div class="checkbox-setting">
+                        <input type="checkbox" id="skip-read-text" checked>
+                        <label for="skip-read-text">跳过已读文本</label>
+                    </div>
+                    
+                    <div class="checkbox-setting">
+                        <input type="checkbox" id="auto-save-enabled" checked>
+                        <label for="auto-save-enabled">启用自动存档</label>
+                    </div>
+                    
+                    <div class="select-setting">
+                        <label for="language-select">游戏语言</label>
+                        <select id="language-select">
+                            <option value="zh-CN" selected>简体中文</option>
+                            <option value="en-US">English</option>
+                            <option value="ja-JP">日本語</option>
+                        </select>
+                    </div>
+                    
+                    <div class="select-setting">
+                        <label for="text-language-select">文本语言</label>
+                        <select id="text-language-select">
+                            <option value="zh-CN" selected>简体中文</option>
+                            <option value="en-US">English</option>
+                            <option value="ja-JP">日本語</option>
+                        </select>
+                    </div>
+                    
+                    <div class="select-setting">
+                        <label for="voice-language-select">语音语言</label>
+                        <select id="voice-language-select">
+                            <option value="zh-CN" selected>简体中文</option>
+                            <option value="en-US">English</option>
+                            <option value="ja-JP">日本語</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <div class="setting-group">
+                    <h3>控制设置</h3>
+                    
+                    <div class="slider-setting">
+                        <label>鼠标灵敏度</label>
+                        <div class="slider-container">
+                            <input type="range" min="1" max="10" value="5" class="sensitivity-slider" id="mouse-sensitivity">
+                            <span class="slider-value" id="mouse-sensitivity-value">中等</span>
+                        </div>
+                    </div>
+                    
+                    <div class="slider-setting">
+                        <label>滚轮灵敏度</label>
+                        <div class="slider-container">
+                            <input type="range" min="1" max="10" value="5" class="sensitivity-slider" id="scroll-sensitivity">
+                            <span class="slider-value" id="scroll-sensitivity-value">中等</span>
+                        </div>
+                    </div>
+                    
+                    <div class="checkbox-setting">
+                        <input type="checkbox" id="invert-mouse" checked>
+                        <label for="invert-mouse">反转鼠标</label>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 系统设置 -->
+            <div class="tab-pane" id="system-tab">
+                <div class="setting-group">
+                    <h3>系统选项</h3>
+                    
+                    <div class="button-setting">
+                        <button id="reset-settings" class="danger-btn">恢复默认设置</button>
+                        <p class="setting-description">将所有设置恢复为初始状态</p>
+                    </div>
+                    
+                    <div class="button-setting">
+                        <button id="clear-cache" class="danger-btn">清除所有缓存</button>
+                        <p class="setting-description">清除游戏缓存数据，包括临时文件和设置</p>
+                    </div>
+                    
+                    <div class="button-setting">
+                        <button id="clear-saves" class="danger-btn">清除所有存档</button>
+                        <p class="setting-description">永久删除所有游戏存档</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="settings-buttons">
+            <button id="save-settings" class="primary-btn">保存设置</button>
+            <button id="cancel-settings" class="secondary-btn">取消</button>
+            <a class="back-btn" href="../index.html">返回主菜单</a>
+        </div>
+    </div>
+
+    <!-- 确认对话框 -->
+    <div id="confirm-dialog" class="Mmodal">
+        <div class="Mmodal-content">
+            <h3 id="confirm-title">确认操作</h3>
+            <p id="confirm-message">您确定要执行此操作吗？</p>
+            <div class="Mmodal-buttons">
+                <button id="confirm-yes" class="danger-btn">确定</button>
+                <button id="confirm-no" class="secondary-btn">取消</button>
+            </div>
+        </div>
+    </div>
+    <!-- 提示对话框 -->
+    <div id="alert-dialog" class="Mmodal">
+        <div class="Mmodal-content">
+            <h3 id="alert-title">提示</h3>
+            <p id="alert-message"></p>
+            <div class="Mmodal-buttons">
+                <button id="alert-ok" class="primary-btn">确定</button>
+            </div>
+        </div>
+    </div>
+    <script src="../js/alert.js"></script>
+    <script src="../js/settings.js"></script>
+</body>
+</html>

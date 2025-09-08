@@ -203,7 +203,7 @@
         </a>
         
         <div class="profile-header">
-            <img src="../assets/member_image/member_hyf.jpg" alt="我的照片" class="profile-pic">
+            <img src="../../assets/member_image/member_hyf.jpg" alt="我的照片" class="profile-pic">
             <div class="name">胡云帆</div>
             <div class="title">CIO/视频剪辑/程序员</div>
             
@@ -346,6 +346,11 @@
                 container.style.opacity = '1';
                 container.style.transform = 'translateY(0)';
             }, 150);
+        });
+        window.addEventListener('DOMContentLoaded', () => {
+            if (!sessionStorage.getItem('currentUser')) {
+                window.location.href = '../login.html';
+            }
         });
     </script>
 </body>

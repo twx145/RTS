@@ -1,4 +1,3 @@
-//修改所有的action为单独的dialog
 window.scriptData = {
   "title": "神盾计划",
   "chapters": [
@@ -9,7 +8,7 @@ window.scriptData = {
         {
           "id": "scene1_1",
           "name": "任务简报",
-          "background": "bg.png",
+          "background": "bg2.png",
           "bgm": "briefing_bgm.mp3",
           "dialogs": [
             {
@@ -25,13 +24,14 @@ window.scriptData = {
               "characterLeft": {"image": "eva.jpg","expression": "serious"},
             },
             {
-              "action": {"type": "jump_to_game",
+              "action": {
+                "type": "jump_to_game",
                 "description": "开始第一章任务",
-                mapId: "map01", // 指定地图
-                availableUnits: ["assault_infantry", "sniper", "main_battle_tank"], // 限制可用兵种
-                enableFogOfWar: false, // 启用战争迷雾
-                aiDifficulty: "medium", // AI难度
-                gameMode: "annihilation" // 游戏模式
+                "mapId": "map_chapter1", // 修改为第一章地图ID
+                "availableUnits": ["assault_infantry", "sniper", "main_battle_tank"],
+                "enableFogOfWar": false,
+                "aiDifficulty": "medium",
+                "gameMode": "annihilation"
               }
             }
           ]
@@ -53,7 +53,7 @@ window.scriptData = {
         {
           "id": "scene1_3",
           "name": "任务结束",
-          "background": "bg.png",
+          "background": "bg2.png",
           "bgm": "intel_bgm.mp3",
           "dialogs": [
             {
@@ -98,14 +98,23 @@ window.scriptData = {
               "characterLeft": {"image": "eva.jpg","expression": "serious"} 
             },
             {
-              "action": {"type": "jump_to_game","description": "开始第二章任务"}
+              "action": {
+                "type": "jump_to_game",
+                "description": "开始第二章任务",
+                "mapId": "map_chapter2", // 修改为第二章地图ID
+                "availableUnits": ["assault_infantry", "sniper", "anti_tank_trooper", "light_tank"],
+                "enableFogOfWar": false,
+                "aiDifficulty": "medium",
+                "gameMode": "objective", // 目标模式：摧毁特定建筑
+                "objectives": ["destroy_building:barracks", "destroy_building:armory", "destroy_building:command_center"]
+              }
             }
           ]
         },
         {
           "id": "scene2_2",
           "name": "任务结束",
-          "background": "bg.png",
+          "background": "bg2.png",
           "bgm": "intel_bgm.mp3",
           "dialogs": [
             {
@@ -150,14 +159,23 @@ window.scriptData = {
               "characterLeft": {"image": "eva.jpg","expression": "serious"}
             },
             {
-              "action": {"type": "jump_to_game","description": "开始第三章任务"}
+              "action": {
+                "type": "jump_to_game",
+                "description": "开始第三章任务",
+                "mapId": "map_chapter3", // 修改为第三章地图ID
+                "availableUnits": ["assault_infantry", "sniper", "anti_tank_trooper", "main_battle_tank", "fighter_jet", "howitzer"],
+                "enableFogOfWar": false,
+                "aiDifficulty": "medium",
+                "gameMode": "assassination", // 刺杀模式：消灭特定单位
+                "targetUnit": "assault_infantry"
+              }
             }
           ]
         },
         {
           "id": "scene3_2",
           "name": "毒蛇的狂言",
-          "background": "bg.png",
+          "background": "bg2.png",
           "bgm": "battle_bgm.mp3",
           "dialogs": [
             {
@@ -210,7 +228,16 @@ window.scriptData = {
               "characterLeft": {"image": "eva.jpg","expression": "serious"}
             },
             {
-              "action": {"type": "jump_to_game","description": "开始第四章任务"}
+              action: {
+                  "type": "jump_to_game",
+                  "description": "开始第四章任务",
+                  "mapId": "map_chapter4",
+                  "availableUnits": ["assault_infantry", "sniper", "anti_tank_trooper", "main_battle_tank", "amphibious_tank", "fighter_jet", "howitzer"],
+                  "enableFogOfWar": false,
+                  "aiDifficulty": "medium",
+                  "gameMode": "objective_arctic", // 特殊游戏模式
+                  "objectives": ["destroy_building:power_station_1", "destroy_building:power_station_2", "destroy_building:power_station_3", "destroy_building:control_tower"]
+              }
             }
           ]
         },
@@ -262,7 +289,17 @@ window.scriptData = {
               "characterLeft": {"image": "eva.jpg","expression": "serious"}
             },
             {
-              "action": {"type": "jump_to_game","description": "开始第五章任务"}
+              "action": {
+                "type": "jump_to_game",
+                "description": "开始第五章任务",
+                "mapId": "map_chapter5_1", // 修改为第五章第一部分地图ID
+                "availableUnits": ["assault_infantry", "sniper", "anti_tank_trooper", "main_battle_tank", "light_tank", "fighter_jet", "attack_helicopter"],
+                "enableFogOfWar": false,
+                "aiDifficulty": "medium",
+                "gameMode": "escort", // 护送模式：保护充能车到达目的地
+                "escortUnit": "sam_launcher",
+                "destination": {x: 65, y: 55} // 离子炮阵地坐标
+              }
             }
           ]
         },
@@ -285,14 +322,23 @@ window.scriptData = {
               "characterLeft": {"image": "eva.jpg","expression": "serious"}
             },
             {
-              "action": {"type": "jump_to_game","description": "进入终局混战"}
+              "action": {
+                "type": "jump_to_game",
+                "description": "进入终局混战",
+                "mapId": "map_chapter5_2", // 修改为第五章第二部分地图ID
+                "availableUnits": ["assault_infantry", "sniper", "anti_tank_trooper", "main_battle_tank", "amphibious_tank", "destroyer", "submarine", "fighter_jet"],
+                "enableFogOfWar": false,
+                "aiDifficulty": "medium",
+                "gameMode": "objective", // 目标模式：引导残骸坠入海沟
+                "objectives": ["guide_debris:sea_trench"]
+              }
             }
           ]
         }
       ]
     }
   ]
-}
+};
 // 成就数据
 const ACHIEVEMENTS = {
     '初战告捷': {
@@ -360,7 +406,7 @@ const ACHIEVEMENTS = {
         type: '战术',
         description: '兵贵神速，你的进攻让敌人措手不及',
         points: 20,
-        condition: '在困难或地狱难度下，于1分钟内完成任一关卡',
+        condition: '于1分钟内完成任一关卡',
         icon: '⚡',
         unlocked: false,
         unlockTime: null
