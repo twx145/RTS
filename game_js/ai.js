@@ -107,7 +107,8 @@ class AIController {
         this.macroTimer += deltaTime;
         this.microTimer += deltaTime;
 
-        this.runSimpleLogic(aiUnits, playerUnits); // 传入 playerUnits
+        // 基础索敌逻辑保持高频率运行，但不再下达移动指令，仅用于防御
+        // this.runSimpleLogic(aiUnits, playerUnits, map); // 移动指令由下面的宏观逻辑下达
 
         if (this.macroTimer >= this.macroInterval) {
             switch (this.difficulty) {
@@ -116,25 +117,35 @@ class AIController {
                     break;
                 case 'hard':
                 case 'hell':
-                    this.runHardLogic(aiUnits, playerUnits, map); // 传入 playerUnits
+                    this.runHardLogic(aiUnits, playerUnits, map);
+                    break;
+                default: // 包含 simple 难度
+                    this.runSimpleAttackLogic(aiUnits, map);
                     break;
             }
             this.macroTimer = 0;
         }
         
         if (this.difficulty === 'hell' && this.microTimer >= this.microInterval) {
-            this.runHellMicro(aiUnits, playerUnits); // 传入 playerUnits
+            this.runHellMicro(aiUnits, playerUnits, map);
             this.microTimer = 0;
         }
     }
+    
+    // simple难度的进攻逻辑
+    runSimpleAttackLogic(aiUnits, map) {
+        if (!this.playerBase || this.playerBase.hp <= 0) return;
 
-    runSimpleLogic(aiUnits, playerUnits) { // 移除 spatialGrid
-        aiUnits.forEach(unit => {
-            if (!unit.target && unit.path.length === 0 && unit.findTargetCooldown <= 0) {
-                // 单位自主索敌现在使用 Matter.Query，无需传递参数
-                unit.setTarget(this.playerBase);
-            }
-        });
+        const availableUnits = aiUnits.filter(u => !u.target && u.path.length === 0);
+        if (availableUnits.length > 0) {
+            const target = this.playerBase;
+            const targetPosition = { x: target.pixelX, y: target.pixelY };
+            
+            availableUnits.forEach(unit => {
+                unit.setTarget(target);
+                unit.issueMoveCommand(targetPosition, map, true, false);
+            });
+        }
     }
 
     runMediumLogic(aiUnits, map) {
@@ -144,21 +155,24 @@ class AIController {
             this.attackWave = aiUnits.filter(u => !u.target && u.path.length === 0).slice(0, 5); 
         }
         
-        const targetPoint = { x: this.playerBase.pixelX, y: this.playerBase.pixelY };
+        const target = this.playerBase;
+        const targetPoint = { x: target.pixelX, y: target.pixelY };
         
         let delay = 0;
         const delayIncrement = 10;
         this.attackWave.forEach(unit => {
             if (unit.hp > 0 && !unit.target && unit.path.length === 0) {
                  setTimeout(() => {
-                    if (unit && unit.hp > 0) unit.setTarget(this.playerBase);
+                    if (unit && unit.hp > 0) {
+                        unit.setTarget(target);
+                        unit.issueMoveCommand(targetPoint, map, true, false);
+                    }
                  }, delay);
                  delay += delayIncrement;
             }
         });
     }
 
-    // --- 核心重构: 使用 Matter.Query ---
     runHardLogic(aiUnits, playerUnits, map) {
         if (aiUnits.length === 0) return;
         
@@ -193,6 +207,8 @@ class AIController {
                 priorityTarget = nearbyEnemies[0];
             }
         }
+        
+        if (!priorityTarget) return;
 
         const livingAttackWave = this.attackWave.filter(u => u.hp > 0);
         if (livingAttackWave.length < 4) {
@@ -204,15 +220,21 @@ class AIController {
         this.attackWave.forEach(unit => {
             if (unit.hp > 0) {
                 setTimeout(() => {
-                    if (unit && unit.hp > 0) unit.setTarget(priorityTarget);
+                    if (unit && unit.hp > 0 && priorityTarget && priorityTarget.hp > 0) {
+                        unit.setTarget(priorityTarget);
+                        const targetPosition = { 
+                            x: priorityTarget.pixelX || priorityTarget.x, 
+                            y: priorityTarget.pixelY || priorityTarget.y 
+                        };
+                        unit.issueMoveCommand(targetPosition, map, true, false);
+                    }
                 }, delay);
                 delay += delayIncrement;
             }
         });
     }
 
-    // --- 核心重构: 使用 Matter.Query ---
-    runHellMicro(aiUnits, playerUnits) {
+    runHellMicro(aiUnits, playerUnits, map) {
         if (aiUnits.length === 0) return;
 
         const centerOfMass = aiUnits.reduce((acc, unit) => ({x: acc.x + unit.x, y: acc.y + unit.y}), {x: 0, y: 0});
@@ -239,9 +261,13 @@ class AIController {
             const delayIncrement = 5;
             aiUnits.forEach(aiUnit => {
                 const dist = getDistance(aiUnit, weakestPlayerUnit);
-                if (dist <= aiUnit.stats.range) {
+                // 让超出射程的单位移动过去
+                if (dist > aiUnit.stats.range) {
                     setTimeout(() => {
-                        if (aiUnit && aiUnit.hp > 0) aiUnit.setTarget(weakestPlayerUnit);
+                        if (aiUnit && aiUnit.hp > 0 && weakestPlayerUnit && weakestPlayerUnit.hp > 0) {
+                            aiUnit.setTarget(weakestPlayerUnit);
+                            aiUnit.issueMoveCommand({ x: weakestPlayerUnit.x, y: weakestPlayerUnit.y }, map, true, false);
+                        }
                     }, delay);
                     delay += delayIncrement;
                 }

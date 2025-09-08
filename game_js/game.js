@@ -849,7 +849,10 @@ class Game {
                 unit.setTarget(targetEnemy);
                 // 2. 下达移动指令，并开启“强制移动”标志！
                 // issueMoveCommand(目标位置, 地图, 是否在交战状态, 是否强制移动)
-                unit.issueMoveCommand(targetPosition, this.map, true, true);
+                if (unit.target) {
+                    // 3. 只有合法的单位才下达移动攻击指令！
+                    unit.issueMoveCommand(targetPosition, this.map, true, true);
+                }
             });
 
         } else {
@@ -902,6 +905,8 @@ class Game {
     /**
      * --- 核心修复 (问题 #1): 分散寻路计算以避免卡顿 ---
      */
+    // game.js
+
     issueGroupMoveCommand(targetPos, map) {
         if (this.selectedUnits.length === 0) return;
         
@@ -909,15 +914,16 @@ class Game {
         const sortedUnits = [...this.selectedUnits].sort((a, b) => getDistance(a, targetPos) - getDistance(b, targetPos));
 
         let delay = 0;
-        const delayIncrement = 5; // 每个单位的寻路计算延迟10毫秒
+        const delayIncrement = 5;
 
         sortedUnits.forEach((unit, index) => {
             const unitTargetPos = formation[index] || targetPos;
             
-            // 使用 setTimeout 将昂贵的寻路计算分散到多个帧
             setTimeout(() => {
                 if (unit && unit.hp > 0) {
-                     unit.issueMoveCommand(unitTargetPos, map, false);
+                     // *** 核心修复 ***
+                     // 明确告诉单位：这不是攻击移动(isEngaging: false)，但这是强制移动(isforcemoving: true)
+                     unit.issueMoveCommand(unitTargetPos, map, false, true);
                 }
             }, delay);
 
