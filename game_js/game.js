@@ -203,7 +203,7 @@ class Game {
                 break;
                 
             case 'map_chapter3': // 新京都市战场
-                focusPoint = { x: TILE_SIZE * 15, y: TILE_SIZE * 30 };
+                focusPoint = { x: TILE_SIZE * 15, y: TILE_SIZE * 35 };
                 zoomLevel = 1.5;
                 break;
                 
@@ -223,17 +223,17 @@ class Game {
                 break;
                 
             case 'map_new_01': // 十字路口冲突
-                focusPoint = { x: TILE_SIZE * 40, y: TILE_SIZE * 30 };
+                // focusPoint = { x: TILE_SIZE * 40, y: TILE_SIZE * 30 };
                 zoomLevel = 1.3;
                 break;
                 
             case 'map01': // 双子桥
-                focusPoint = { x: TILE_SIZE * 50, y: TILE_SIZE * 30 };
+                // focusPoint = { x: TILE_SIZE * 50, y: TILE_SIZE * 30 };
                 zoomLevel = 1.1;
                 break;
                 
             case 'map_new': // 新手地图
-                focusPoint = { x: TILE_SIZE * 5, y: TILE_SIZE * 5 };
+                // focusPoint = { x: TILE_SIZE * 5, y: TILE_SIZE * 5 };
                 zoomLevel = 1.8;
                 break;
                 
@@ -519,7 +519,7 @@ class Game {
         if ((this.escortUnit && this.escortUnit.hp > 0)  || this.skip){
             const distance = getDistance(this.escortUnit, this.escortUnit.destination);
             
-            if ((distance < TILE_SIZE * 2) || this.skip) {
+            if ((distance < TILE_SIZE * 0.4) || this.skip) {
                 // 到达目的地
                 this.levelCompleted = true;
                 this.checkLightningStrikeAchievement();
@@ -822,10 +822,60 @@ class Game {
         }
     }
     
+    // 在 game.js 的 handleRightClick 方法中添加对北极建筑物的处理
     handleRightClick(x, y) {
         if (this.selectedUnits.length > 0) {
             const worldPos = this.screenToWorld(x, y);
-            this.issueCommandForSelectedUnits(worldPos);
+            
+            // 1. 首先检查是否点击了北极建筑物
+            if (this.arcticBuildingsManager) {
+                const building = this.arcticBuildingsManager.findBuildingAt(
+                    Math.floor(worldPos.x / TILE_SIZE),
+                    Math.floor(worldPos.y / TILE_SIZE)
+                );
+                
+                if (building && !building.isDestroyed) {
+                    // 命令选中的单位攻击建筑物
+                    this.selectedUnits.forEach(unit => {
+                        // 设置建筑物为目标
+                        unit.setTarget(building);
+                        // 下达移动指令，开启"强制移动"标志
+                        unit.issueMoveCommand(
+                            { x: building.pixelX, y: building.pixelY },
+                            this.map,
+                            true,
+                            true
+                        );
+                    });
+                    return; // 已处理建筑物点击，直接返回
+                }
+            }
+            // 2. 如果没有点击建筑物，则按原来的逻辑处理
+            let targetEnemy = null;
+            const allEnemies = [...this.ai.units, this.aiBase].filter(Boolean);
+            for (const enemy of allEnemies) {
+                const enemyPos = { x: enemy.pixelX || enemy.x, y: enemy.pixelY || enemy.y };
+                const clickRadius = (enemy instanceof Base) ? (enemy.width * TILE_SIZE / 2) : (enemy.stats.drawScale * TILE_SIZE / 2);
+                if (getDistance(worldPos, enemyPos) < clickRadius) {
+                    targetEnemy = enemy;break;
+                }
+            }
+            
+            if (targetEnemy) {
+                // 这是强制攻击指令
+                const targetPosition = { x: targetEnemy.pixelX || targetEnemy.x, y: targetEnemy.pixelY || targetEnemy.y };
+
+                this.selectedUnits.forEach(unit => {
+                    // 1. 设置明确的目标
+                    unit.setTarget(targetEnemy);
+                    // 2. 下达移动指令，并开启"强制移动"标志
+                    unit.issueMoveCommand(targetPosition, this.map, true, true);
+                });
+            } else {
+                // 这是普通的移动指令
+                this.selectedUnits.forEach(unit => unit.setTarget(null)); // 确保没有目标
+                this.issueGroupMoveCommand(worldPos, this.map);
+            }
         }
     }
 
@@ -905,8 +955,6 @@ class Game {
     /**
      * --- 核心修复 (问题 #1): 分散寻路计算以避免卡顿 ---
      */
-    // game.js
-
     issueGroupMoveCommand(targetPos, map) {
         if (this.selectedUnits.length === 0) return;
         
@@ -983,7 +1031,18 @@ class Game {
     worldToScreen(worldX, worldY) { return { x: (worldX - this.camera.x) * this.camera.zoom, y: (worldY - this.camera.y) * this.camera.zoom }; }
     screenToWorld(screenX, screenY) { return { x: screenX / this.camera.zoom + this.camera.x, y: screenY / this.camera.zoom + this.camera.y }; }
     constrainCamera() { if (!this.map) return; const mapWidthPixels = this.map.width * TILE_SIZE; const mapHeightPixels = this.map.height * TILE_SIZE; const viewWidth = this.canvas.width / this.camera.zoom; const viewHeight = this.canvas.height / this.camera.zoom; this.camera.x = Math.max(0, Math.min(this.camera.x, mapWidthPixels - viewWidth)); this.camera.y = Math.max(0, Math.min(this.camera.y, mapHeightPixels - viewHeight)); }
-    handleWheel(e) { e.preventDefault(); const zoomFactor = e.deltaY > 0 ? 1.01 : 0.99; this.zoomAtPoint(zoomFactor, this.getMousePos(e)); }
+    handleWheel(e) {
+        e.preventDefault();
+        if (e.ctrlKey) {
+            const zoomFactor = e.deltaY > 0 ? 1.01: 0.99; 
+            this.zoomAtPoint(zoomFactor, this.getMousePos(e));
+        } else {
+            // 这是平移操作 (触控板双指滑动 或 鼠标滚轮上下/左右滚动)
+            // 使用 deltaX 和 deltaY 来移动镜头
+            this.camera.x += e.deltaX / this.camera.zoom;
+            this.camera.y += e.deltaY / this.camera.zoom;
+        }
+    }
     zoomAtPoint(factor, point) { const oldZoom = this.camera.zoom; const newZoom = Math.max(this.camera.minZoom, Math.min(this.camera.maxZoom, oldZoom / factor)); if (newZoom === oldZoom) return; const worldMouseX = point.x / oldZoom + this.camera.x; const worldMouseY = point.y / oldZoom + this.camera.y; this.camera.zoom = newZoom; this.camera.x = worldMouseX - point.x / newZoom; this.camera.y = worldMouseY - point.y / newZoom; }
     handleTouchStart(e) { e.preventDefault(); for (const touch of e.changedTouches) { this.activeTouches.set(touch.identifier, this.getTouchPos(touch)); } this.updateTouchState(); }
     getTouchPos(touch) { const rect = this.canvas.getBoundingClientRect(); const scaleX = this.canvas.width / rect.width; const scaleY = this.canvas.height / rect.height; return { x: (touch.clientX - rect.left) * scaleX, y: (touch.clientY - rect.top) * scaleY }; }
@@ -1083,7 +1142,6 @@ class Game {
                     this.endGame(this.player);
                 }
                 break; 
-            // 新增：目标模式、刺杀模式和护送模式的胜利条件在updateObjectives中处理
             case 'objective':
             case 'objective_arctic':
             case 'assassination':
@@ -1101,7 +1159,7 @@ class Game {
     endGame(winner) {
         if (this.gameState === 'gameover') return; 
         this.gameState = 'gameover';
-
+        this.checkAchievements();
         console.log(`${winner.name} 获胜!`);
         this.ui.showWinner(winner.name);
         localStorage.removeItem('ShenDun_dialogue_settings');

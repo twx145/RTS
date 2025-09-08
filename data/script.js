@@ -298,7 +298,7 @@ window.scriptData = {
                 "aiDifficulty": "medium",
                 "gameMode": "escort", // 护送模式：保护充能车到达目的地
                 "escortUnit": "sam_launcher",
-                "destination": {x: 65, y: 55} // 离子炮阵地坐标
+                "destination": {x: 65, y: 45} // 离子炮阵地坐标
               }
             }
           ]

@@ -5,7 +5,7 @@ class ArcticBuildingsManager {
         this.controlTower = null;
         this.powerStations = [];
         this.healRate = 200; // 每秒恢复的生命值
-        this.healInterval = 1000; // 恢复间隔(毫秒)
+        this.healInterval = 2000; // 恢复间隔(毫秒)
         this.lastHealTime = 0;
     }
 
@@ -29,23 +29,23 @@ class ArcticBuildingsManager {
 
         // 根据地图设计时的坐标找到建筑物
         // 控制塔 (中央)
-        const controlTowerPos = { x: 35, y: 35 };
+        const controlTowerPos = { x: 37, y: 37 };
         this.controlTower = this.createBuilding('control_tower', controlTowerPos, 5000);
         this.buildings.push(this.controlTower);
 
-        // 能源站1 (左上)
+        // 能源站1 (上)
         const powerStation1Pos = { x: 38, y: 15 };
         const powerStation1 = this.createBuilding('power_station', powerStation1Pos, 2000);
         this.powerStations.push(powerStation1);
         this.buildings.push(powerStation1);
 
-        // 能源站2 (右上)
+        // 能源站2 (右)
         const powerStation2Pos = { x: 60, y: 38 };
         const powerStation2 = this.createBuilding('power_station', powerStation2Pos, 2000);
         this.powerStations.push(powerStation2);
         this.buildings.push(powerStation2);
 
-        // 能源站3 (下方)
+        // 能源站3 (下)
         const powerStation3Pos = { x: 38, y: 60 };
         const powerStation3 = this.createBuilding('power_station', powerStation3Pos, 2000);
         this.powerStations.push(powerStation3);
@@ -54,8 +54,8 @@ class ArcticBuildingsManager {
 
     createBuilding(type, gridPos, maxHp) {
         // 确定建筑物尺寸
-        const gridWidth = type === 'control_tower' ? 11 : 5;
-        const gridHeight = type === 'control_tower' ? 11 : 5;
+        const gridWidth = type === 'control_tower' ? 7 : 5;
+        const gridHeight = type === 'control_tower' ? 7 : 5;
         
         // 计算像素中心点
         const pixelX = (gridPos.x + gridWidth / 2) * TILE_SIZE;
@@ -79,7 +79,7 @@ class ArcticBuildingsManager {
             
             // 绘制方法
             draw: function(ctx, zoom) {
-                const size = type === 'control_tower' ? TILE_SIZE * 11 : TILE_SIZE * 5;
+                const size = type === 'control_tower' ? TILE_SIZE * 7 : TILE_SIZE * 5;
                 
                 // 绘制建筑物基底
                 ctx.fillStyle = type === 'control_tower' ? '#FFD700' : '#00BFFF';
@@ -191,7 +191,7 @@ class ArcticBuildingsManager {
         const currentTime = Date.now();
         
         // 定期为主控塔恢复生命值
-        if (currentTime - this.lastHealTime > this.healInterval &&this.game.gameMode === 'playing') {
+        if (currentTime - this.lastHealTime > this.healInterval &&this.game.gameState === 'playing') {
             this.healControlTower();
             this.lastHealTime = currentTime;
         }

@@ -120,7 +120,6 @@ const MAP_DEFINITIONS = [
             return grid.map(row => row.join(''));
         })()
     },
-    
     // 第二章：峡谷中的秘密 - 安第斯山脉基地
     {
         id: 'map_chapter2',
@@ -174,7 +173,6 @@ const MAP_DEFINITIONS = [
             return grid.map(row => row.join(''));
         })()
     },
-    
     // 第三章：霓虹下的战争 - 新京都市区
     {
         id: 'map_chapter3',
@@ -227,7 +225,6 @@ const MAP_DEFINITIONS = [
             return grid.map(row => row.join(''));
         })()
     },
-    
     // 第四章：冰封地狱 - 北极天锤基地
     {
         id: 'map_chapter4',
@@ -287,7 +284,6 @@ const MAP_DEFINITIONS = [
             return grid.map(row => row.join(''));
         })()
     },
-    
     // 第五章：零时决战 - 离子炮阵地
     {
         id: 'map_chapter5_1',
@@ -338,7 +334,6 @@ const MAP_DEFINITIONS = [
             return grid.map(row => row.join(''));
         })()
     },
-    
     // 终局：海上平台
     {
         id: 'map_chapter5_2',

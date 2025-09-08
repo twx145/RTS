@@ -38,16 +38,17 @@ class Unit {
             this.body.gameObject = this;
             Matter.World.add(window.game.engine.world, this.body);
         }
-        this.isPatrolling = false;
-        this.patrolPoints = [];
-        this.currentPatrolPointIndex = 0;
+        this.isPatrolling = false;      // 是否正在巡逻
+        this.patrolPoints = [];         // 巡逻点路径
+        this.currentPatrolPointIndex = 0; // 当前目标巡逻点的索引
         this.tag = 'unit_' + Math.random().toString(36).slice(2);
 
-        this.isEscortUnit = false;
-        this.destination = null;
-        this.isTargetUnit = false;
-        this.isSpecialBuilding = false;
-        this.buildingType = null;
+        // 新增：特殊单位属性
+        this.isEscortUnit = false;      // 是否是护送单位
+        this.destination = null;        // 护送单位的目的地
+        this.isTargetUnit = false;      // 是否是目标单位（刺杀模式）
+        this.isSpecialBuilding = false; // 是否是特殊建筑（目标模式）
+        this.buildingType = null;       // 建筑类型
     }
 
     createBody(x, y) {
@@ -78,61 +79,60 @@ class Unit {
         Matter.Body.setAngle(body, this.angle);
         return body;
     }
-    
+
+    /**
+     * --- 核心修复: 新增 setTarget 方法，用于验证和设置目标 ---
+     * @param {Unit | Base | null} newTarget - 新的目标
+     */
     setTarget(newTarget) {
+        // 如果新目标为空，则直接清空目标
         if (!newTarget) {
             this.target = null;
             return;
         }
 
-        let targetMoveType = 'ground';
+        // 确定目标的移动类型
+        let targetMoveType = 'ground'; // 默认为地面（例如基地）
         if (newTarget instanceof Unit) {
             targetMoveType = newTarget.stats.moveType;
         } else if (newTarget instanceof Base) {
+            // 基地被视为地面目标
             targetMoveType = 'ground';
         }
         
+        // 验证该单位是否可以攻击这种类型的目标
         if (this.stats.canTarget.includes(targetMoveType)) {
             this.target = newTarget;
         } else {
-            this.target = null;
+            // 如果不能攻击，则忽略该指令（可以选择性地在这里添加提示信息）
+            // console.log(`${this.type} cannot target ${targetMoveType} units.`);
+            this.target = null; // 确保不会设置非法目标
         }
     }
 
+    // 新增：设置护送单位
     setAsEscortUnit(destination) {
         this.isEscortUnit = true;
         this.destination = destination;
-        this.stats.speed = 0.5;
+        this.stats.speed = 0.5; // 护送单位移动较慢
     }
 
+    // 新增：设置目标单位
     setAsTargetUnit() {
         this.isTargetUnit = true;
-        this.stats.hp *= 1.5;
+        this.stats.hp *= 1.5; // 目标单位有更多生命值
         this.hp = this.stats.hp;
     }
 
+    // 新增：设置特殊建筑
     setAsSpecialBuilding(buildingType) {
         this.isSpecialBuilding = true;
         this.buildingType = buildingType;
-        this.stats.hp *= 2;
+        this.stats.hp *= 2; // 特殊建筑有更多生命值
         this.hp = this.stats.hp;
     }
 
-    // unit.js
-
-    // unit.js
-
     update(deltaTime, enemyUnits, map, enemyBase, game) {
-        // --- 0. 特殊单位逻辑优先 ---
-        if (this.isEscortUnit) {
-            this.updateEscortBehavior(deltaTime, game);
-            return;
-        }
-        if (this.isTargetUnit) {
-            this.updateTargetUnitBehavior(deltaTime, enemyUnits, game);
-            return;
-        }
-
         // --- 1. 通用状态更新 ---
         if (this.attackCooldown > 0) this.attackCooldown -= deltaTime;
         if (this.findTargetCooldown > 0) this.findTargetCooldown -= deltaTime;
@@ -144,91 +144,137 @@ class Unit {
             return;
         }
 
+        // 如果当前目标死亡或无效，则清空目标
         if (this.target && this.target.hp <= 0) {
             this.setTarget(null);
-            // 目标死亡后，如果不是强制移动到某一点，就取消强制状态
-            if (this.path.length === 0) {
-                this.isforcemoving = false;
-            }
+            this.isforcemoving = false; // 目标没了，强制移动也该结束了
         }
-        
-        // --- 2. 核心决策逻辑 (新!) ---
 
-        // A. 如果有目标 (无论是玩家指定的还是自己找的)
-        if (this.target) {
+        // --- 2. 核心逻辑分支：强制攻击 vs 常规模式 ---
+
+        // 分支 A: 如果处于“强制攻击”模式
+        if (this.isforcemoving && this.target) {
             const targetPos = { x: this.target.pixelX || this.target.x, y: this.target.pixelY || this.target.y };
             const distanceToTarget = getDistance(this, targetPos);
 
-            // A1. 在射程内 -> 攻击
             if (distanceToTarget <= this.stats.range) {
-                // 停下所有移动
-                if (this.path.length > 0) {
-                    this.stop();
-                }
-                
-                // 转向并攻击
+                // 到达射程：停止移动并发起攻击
+                this.path = [];
+                this.moveTargetPos = null;
+                if (this.body) Matter.Body.setVelocity(this.body, { x: 0, y: 0 });
+
                 this.setTargetAngle(targetPos);
                 let angleDiff = Math.abs(this.angle - this.targetAngle);
                 if (angleDiff > Math.PI) angleDiff = 2 * Math.PI - angleDiff;
-
+            
                 if (this.attackCooldown <= 0 && !this.isSettingUp && angleDiff < 0.2) {
                     this.attack(game);
                 }
-            } 
-            // A2. 在射程外 -> 继续移动 (由 handleMovement 处理)
-            // 不需要额外代码，因为 issueMoveCommand 已经设置了路径
+            } else {
+                // 未到达射程：持续向目标移动
+                // 如果没有路径，就重新计算路径（比如目标移动了）
+                if (!this.path.length && !this.moveTargetPos) {
+                    // 注意！这里递归调用时，也要把 isforcemoving 传进去！
+                    this.issueMoveCommand(targetPos, game.map, true, true);
+                }
+            }
         } 
-        // B. 如果没有目标
+        // 分支 B: 常规模式（巡逻、自动接战、待命）
         else {
-            // B1. 如果不是在强制移动去一个地点，就可以自主索敌
-            if (!this.isforcemoving && this.findTargetCooldown <= 0) {
+            // 只有在常规模式下，才进行自动索敌
+            if (!this.target && this.findTargetCooldown <= 0) {
                 this.findTarget(enemyBase, enemyUnits, game);
                 this.findTargetCooldown = 0.5 + Math.random() * 0.2;
             }
-            // B2. 如果是在强制移动去一个地点，则什么都不做，让 handleMovement 继续执行
-        }
-        
-        // C. 到达强制移动目的地后，清除状态
-        if (this.isforcemoving && !this.target && this.path.length === 0) {
-            this.isforcemoving = false;
+
+            // 如果（通过自动索敌）找到了目标，并且在射程内，则攻击
+            if (this.target) {
+                const targetPos = { x: this.target.pixelX || this.target.x, y: this.target.pixelY || this.target.y };
+                const distanceToTarget = getDistance(this, targetPos);
+                if (distanceToTarget <= this.stats.range) {
+                    // （这部分和上面类似，可以封装成函数，但为了清晰先这样写）
+                    this.setTargetAngle(targetPos);
+                    if (this.attackCooldown <= 0 && !this.isSettingUp) {
+                        this.attack(game);
+                    }
+                }
+                // 注意：这里我们不处理追击逻辑，单位只会攻击进入范围的敌人。
+            } 
+            // 如果没有目标，并且没有移动路径，则执行待命/巡逻逻辑
+            else if (this.path.length === 0) {
+                if (this.isPatrolling) {
+                    // (巡逻逻辑) ...
+                } else if (this.stats.moveType === 'air' && (this.type === 'fighter_jet' || this.type === 'recon_drone')) {
+                    this.handleLoitering(deltaTime);
+                }
+            }
         }
 
-        // --- 3. 统一处理移动 ---
-        // 无论在哪种模式下，只要有路径，就执行移动
-        this.handleMovement(deltaTime, map);
+    // --- 3. 统一处理移动 ---
+    // 无论在哪种模式下，只要有路径，就执行移动
+    this.handleMovement(deltaTime, map);
+    // (你原来的巡逻逻辑也可以整合到上面，或者保留在 handleMovement 之前)
     }
-    
+
+     // 新增：护送单位行为
     updateEscortBehavior(deltaTime, game) {
+        // 如果已经到达目的地，不需要做任何事情
         if (this.destination && getDistance(this, this.destination) < TILE_SIZE * 2) {
             return;
         }
+        
+        // 如果没有路径或已经完成路径，计算新路径
         if (this.path.length === 0 && this.destination) {
             this.issueMoveCommand(this.destination, game.map, false, false);
         }
+        
+        // 处理移动
         this.handleMovement(deltaTime, game.map);
     }
 
+    // 新增：目标单位行为
     updateTargetUnitBehavior(deltaTime, enemyUnits, game) {
+        // 目标单位会尝试逃离敌人
         const closestEnemy = this.findClosestEnemy(enemyUnits);
         
         if (closestEnemy && getDistance(this, closestEnemy) < TILE_SIZE * 10) {
-            const fleeDirection = { x: this.x - closestEnemy.x, y: this.y - closestEnemy.y };
+            // 逃离最近的敌人
+            const fleeDirection = {
+                x: this.x - closestEnemy.x,
+                y: this.y - closestEnemy.y
+            };
+            
             const distance = Math.sqrt(fleeDirection.x * fleeDirection.x + fleeDirection.y * fleeDirection.y);
             if (distance > 0) {
-                const normalizedDir = { x: fleeDirection.x / distance, y: fleeDirection.y / distance };
-                const fleeTarget = { x: this.x + normalizedDir.x * TILE_SIZE * 15, y: this.y + normalizedDir.y * TILE_SIZE * 15 };
+                const normalizedDir = {
+                    x: fleeDirection.x / distance,
+                    y: fleeDirection.y / distance
+                };
+                
+                const fleeTarget = {
+                    x: this.x + normalizedDir.x * TILE_SIZE * 15,
+                    y: this.y + normalizedDir.y * TILE_SIZE * 15
+                };
+                
+                // 如果没有路径或已经完成路径，计算新路径
                 if (this.path.length === 0) {
                     this.issueMoveCommand(fleeTarget, game.map, false, false);
                 }
             }
         } else {
-            if (this.body) Matter.Body.setVelocity(this.body, { x: 0, y: 0 });
+            // 没有威胁，停止移动
+            if (this.body) {
+                Matter.Body.setVelocity(this.body, { x: 0, y: 0 });
+            }
             this.path = [];
             this.moveTargetPos = null;
         }
+        
+        // 处理移动
         this.handleMovement(deltaTime, game.map);
     }
 
+    // 新增：找到最近的敌人
     findClosestEnemy(enemyUnits) {
         let closestEnemy = null;
         let minDistance = Infinity;
@@ -242,6 +288,7 @@ class Unit {
                 closestEnemy = enemy;
             }
         }
+        
         return closestEnemy;
     }
 
@@ -321,10 +368,10 @@ class Unit {
         }
     }
 
-    issueMoveCommand(targetPos, map, isEngaging = false, isforcemoving = false) {
+    issueMoveCommand(targetPos, map, isEngaging = false,isforcemoving = false) {
         this.isforcemoving = isforcemoving;
         if (!isEngaging) {
-            this.setTarget(null);
+            this.setTarget(null); // 使用 setTarget 清空目标
         }
         this.isLoitering = false;
         this.isSettingUp = false;
@@ -337,10 +384,6 @@ class Unit {
         
         const startGrid = { x: Math.floor(this.x / TILE_SIZE), y: Math.floor(this.y / TILE_SIZE) };
         const endGrid = { x: Math.floor(finalTargetPos.x / TILE_SIZE), y: Math.floor(finalTargetPos.y / TILE_SIZE) };
-        
-        // 寻路前先停止当前移动，避免冲量影响
-        if(this.body) Matter.Body.setVelocity(this.body, { x: 0, y: 0 });
-
         const path = findPath(map, startGrid, endGrid, this.stats.moveType);
         
         if (path && path.length > 0) {
@@ -352,14 +395,24 @@ class Unit {
     }
 
     stop() {
+        // 1. 清空寻路数据
         this.path = [];
         this.moveTargetPos = null;
         this.currentPathIndex = 0;
-        this.setTarget(null);
+
+        // 2. 清空目标和强制移动状态
+        this.setTarget(null); // 使用 setTarget 来确保逻辑统一
         this.isforcemoving = false;
+
+        // 3. 立即停止物理移动 (非常重要，否则单位会继续滑行)
         if (this.body) {
             Matter.Body.setVelocity(this.body, { x: 0, y: 0 });
         }
+
+        // // 4. (可选) 清空其他特殊状态，让单位更彻底地“停下”
+        // this.isPatrolling = false;
+        // this.isLoitering = false;
+        // this.isSettingUp = false;
     }
 
     calculateInterceptPoint(target) {
@@ -404,7 +457,22 @@ class Unit {
         ctx.translate(this.x, this.y);
         ctx.rotate(this.angle + Math.PI / 2);
         const size = TILE_SIZE * this.stats.drawScale;
-        
+
+         // 新增：特殊单位外观
+        if (this.isEscortUnit) {
+            // 护送单位有特殊外观
+            ctx.fillStyle = 'rgba(0, 255, 0, 0.3)';
+            ctx.beginPath();
+            ctx.arc(0, 0, size / 2, 0, Math.PI * 2);
+            ctx.fill();
+        } else if (this.isTargetUnit) {
+            // 目标单位有特殊外观
+            ctx.fillStyle = 'rgba(255, 165, 0, 0.3)';
+            ctx.beginPath();
+            ctx.arc(0, 0, size / 2, 0, Math.PI * 2);
+            ctx.fill();
+        }
+
         if (this.image) {
             ctx.drawImage(this.image, -size / 2, -size / 2, size, size);
         }
@@ -434,6 +502,19 @@ class Unit {
             }
         }
 
+        // 新增：特殊单位标记
+        if (this.isEscortUnit) {
+            ctx.fillStyle = 'green';
+            ctx.beginPath();
+            ctx.arc(this.x, this.y + TILE_SIZE * this.stats.drawScale / 2 + 10 / zoom, 5 / zoom, 0, Math.PI * 2);
+            ctx.fill();
+        } else if (this.isTargetUnit) {
+            ctx.fillStyle = 'orange';
+            ctx.beginPath();
+            ctx.arc(this.x, this.y + TILE_SIZE * this.stats.drawScale / 2 + 10 / zoom, 5 / zoom, 0, Math.PI * 2);
+            ctx.fill();
+        }
+
         const hpBarWidth = TILE_SIZE * this.stats.hp / UNIT_TYPES.assault_infantry.hp * 0.9;
         const hpBarHeight = 5 / zoom; 
         const hpBarYOffset = TILE_SIZE * this.stats.drawScale / 2 + 5 / zoom;
@@ -454,6 +535,7 @@ class Unit {
         };
 
         const enemyBodies = enemyUnits.map(unit => unit.body).filter(Boolean);
+
         const bodiesInRegion = Matter.Query.region(enemyBodies, searchBounds);
         const potentialTargets = bodiesInRegion.map(body => body.gameObject);
         
@@ -479,22 +561,21 @@ class Unit {
                 closestTarget = enemyBase;
             }
         }
-        
-        if (closestTarget) {
-            this.setTarget(closestTarget);
-            
-            // 核心修复：自主索敌后，如果目标在射程外，则立即发出移动指令
-            const distanceToTarget = getDistance(this, closestTarget);
-            if (distanceToTarget > this.stats.range) {
-                const targetPosition = {
-                    x: closestTarget.pixelX || closestTarget.x,
-                    y: closestTarget.pixelY || closestTarget.y
-                };
-                this.issueMoveCommand(targetPosition, game.map, true, false);
+        // 新增：检查北极建筑物
+        if (!closestTarget && game.arcticBuildingsManager && validUnitTargetTypes.includes('ground')) {
+            const arcticBuildings = game.arcticBuildingsManager.buildings;
+            for (const building of arcticBuildings) {
+                if (building.hp <= 0 || building.isDestroyed) continue;
+
+                const buildingPos = { x: building.pixelX, y: building.pixelY };
+                const distance = getDistance(this, buildingPos);
+                if (distance < minDistance) {
+                    minDistance = distance;
+                    closestTarget = building;
+                }
             }
-        } else {
-            this.setTarget(null);
         }
+        this.setTarget(closestTarget);
     }
     
     attack(game) { 
@@ -504,9 +585,7 @@ class Unit {
         game.projectiles.push(proj); 
         this.attackCooldown = this.stats.attackSpeed; 
     }
-    
     takeDamage(amount) { this.hp -= amount; if (this.hp <= 0) this.hp = 0; }
-    
     findSmoothedPathTarget(map) { 
         if (!this.path || this.path.length === 0 || this.currentPathIndex >= this.path.length) return; 
         for (let i = this.path.length - 1; i > this.currentPathIndex; i--) { 

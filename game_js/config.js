@@ -71,7 +71,7 @@ const UNIT_TYPES = {
     fighter_jet: {
         unitClass: '飞行', icon: '✈️', name: '战斗机',
         cost: 6, hp: 200, attack: 30, defense: 10, range: 8 * TILE_SIZE, speed: 5.0, attackSpeed: 2.0, visionRange: 8 * TILE_SIZE * 1.5,
-        moveType: 'air', canTarget: ['air','sea','ground'], imageSrc: '../assets/pics/fighter_jet.jpg', drawScale: 4 * DRAW_SCALE_FACTOR,
+        moveType: 'air', canTarget: ['air','sea','ground','amphibious'], imageSrc: '../assets/pics/fighter_jet.jpg', drawScale: 4 * DRAW_SCALE_FACTOR,
         ammoType: 'missile', ammoSpeed: 15 * TILE_SIZE * AMMOSPEED, ammoSplashRadius: 0, counters: { air: 1.8 },
         description: '夺取制空权的王者，专门猎杀敌方飞行单位。'
     },
@@ -106,14 +106,14 @@ const UNIT_TYPES = {
     destroyer: {
         unitClass: '海军', icon: '🚢', name: '驱逐舰',
         cost: 8, hp: 600, attack: 70, defense: 30, range: 9 * TILE_SIZE, speed: 1.5, attackSpeed: 2.8, visionRange: 9 * TILE_SIZE * 1.5,
-        moveType: 'sea', canTarget: ['ground', 'sea', 'air'], imageSrc: '../assets/pics/destroyer.png', drawScale: 10 * DRAW_SCALE_FACTOR,
+        moveType: 'sea', canTarget: ['ground', 'sea', 'air','amphibious'], imageSrc: '../assets/pics/destroyer.png', drawScale: 10 * DRAW_SCALE_FACTOR,
         ammoType: 'missile', ammoSpeed: 30 * TILE_SIZE * AMMOSPEED, ammoSplashRadius: 1.5 * TILE_SIZE,
         description: '功能全面的主力战舰，可以攻击来自海陆空的任何敌人。'
     },
     submarine: {
         unitClass: '海军', icon: '🌊', name: '潜艇',
         cost: 7, hp: 400, attack: 90, defense: 15, range: 8 * TILE_SIZE, speed: 1.8, attackSpeed: 3.5, visionRange: 8 * TILE_SIZE * 1.5,
-        moveType: 'sea', canTarget: ['sea'], imageSrc: '../assets/pics/submarine.png', drawScale: 7 * DRAW_SCALE_FACTOR,
+        moveType: 'sea', canTarget: ['sea','amphibious'], imageSrc: '../assets/pics/submarine.png', drawScale: 7 * DRAW_SCALE_FACTOR,
         ammoType: 'missile', ammoSpeed: 20 * TILE_SIZE * AMMOSPEED, ammoSplashRadius: 0,
         description: '水下杀手，擅长对敌方潜艇和潜水船进行攻击。'
     },
