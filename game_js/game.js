@@ -129,7 +129,7 @@ class Game {
 
         const initialManpower = 50;
         this.player = new Player('player', '玩家', initialManpower);
-        const aiManpower = settings.aiDifficulty === 'hell' ? Math.round(initialManpower * 1.5) : initialManpower;
+        const aiManpower = settings.aiDifficulty === 'hell' ? Math.round(initialManpower * 2.5) : initialManpower * 1.5;
         this.ai = new Player('ai', '电脑', aiManpower, true, {}, settings.aiDifficulty);
         
         this.ui = new UI(this);
@@ -1195,8 +1195,38 @@ class Game {
         if (this.globalMousePos.y > window.innerHeight - edgeMargin) this.camera.y += scrollSpeed * deltaTime;
     }
 
-    handleProjectileHit(p) { 
-        this.explosions.push(new Explosion(p.x, p.y, p.stats.splashRadius || 2)); 
+    requestAssistance(attackedUnit, attacker) {
+        // 定义增援范围，可以根据需要调整
+        const ASSISTANCE_RADIUS = 10 * TILE_SIZE; 
+        
+        // 获取所有潜在的友军单位 (这里我们只处理玩家单位的互相协助)
+        const potentialAllies = this.player.units;
+
+        for (const ally of potentialAllies) {
+            // 排除自己、已死亡、或正在强制移动/已有目标的单位
+            if (ally.id === attackedUnit.id || 
+                ally.hp <= 0 || 
+                ally.isforcemoving || 
+                ally.target) {
+                continue;
+            }
+
+            const distance = getDistance(ally, attackedUnit);
+
+            // 如果友军在增援范围内
+            if (distance <= ASSISTANCE_RADIUS) {
+                // 1. 设置新的目标为攻击者
+                ally.setTarget(attacker);
+                
+                // 2. 下达一个非强制的攻击移动指令，让它自动去反击
+                // issueMoveCommand(目标位置, 地图, 是否是攻击移动, 是否是强制移动)
+                ally.issueMoveCommand({ x: attacker.x, y: attacker.y }, this.map, true, false);
+            }
+        }
+    }
+
+    handleProjectileHit(p) {
+        this.explosions.push(new Explosion(p.x, p.y, p.stats.splashRadius || 2));
         if (this.arcticBuildingsManager) {
             const targetGridX = Math.floor(p.target.x / TILE_SIZE);
             const targetGridY = Math.floor(p.target.y / TILE_SIZE);
@@ -1204,23 +1234,25 @@ class Game {
                 return;
             }
         }
-        
-        // --- 修改: 调用 takeDamage 时传入攻击者 (p.owner) ---
-        if (p.target.hp > 0) p.target.takeDamage(p.stats.damage, p.owner); 
-        
-        if (p.stats.splashRadius > 0) { 
-            const allTargets = [...this.player.units, ...this.ai.units, this.playerBase, this.aiBase].filter(Boolean); 
-            allTargets.forEach(entity => { 
-                if (entity.owner !== p.owner.owner && entity.id !== p.target.id && entity.hp > 0) { 
-                    const entityPos = { x: entity.pixelX || entity.x, y: entity.pixelY || entity.y }; 
-                    const distance = getDistance(entityPos, p); if (distance < p.stats.splashRadius) { 
+
+        // 修改: p.owner 现在是攻击单位的实例，可以直接传递
+        if (p.target.hp > 0) p.target.takeDamage(p.stats.damage, p.owner);
+
+        if (p.stats.splashRadius > 0) {
+            const allTargets = [...this.player.units, ...this.ai.units, this.playerBase, this.aiBase].filter(Boolean);
+            allTargets.forEach(entity => {
+                // --- 修改: p.owner.owner -> p.owner.owner ---
+                // 这里需要注意，p.owner 是 Unit 实例，它的 owner 才是 'player' 或 'ai'
+                if (entity.owner !== p.owner.owner && entity.id !== p.target.id && entity.hp > 0) {
+                    const entityPos = { x: entity.pixelX || entity.x, y: entity.pixelY || entity.y };
+                    const distance = getDistance(entityPos, p);
+                    if (distance < p.stats.splashRadius) {
                         const splashDamage = p.stats.damage * (1 - distance / p.stats.splashRadius);
-                        // 溅射伤害也应用克制逻辑
-                        entity.takeDamage(splashDamage, p.owner); 
-                    } 
-                } 
-            }); 
-        } 
+                        entity.takeDamage(splashDamage, p.owner);
+                    }
+                }
+            });
+        }
     }
     startGame() { if (this.gameState === 'deployment') this.gameState = 'playing'; }
     checkWinConditions() { 

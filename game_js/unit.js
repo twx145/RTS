@@ -127,63 +127,82 @@ class Unit {
     }
 
     update(deltaTime, enemyUnits, map, enemyBase, game) {
-        // --- 1. 通用状态更新 ---
+        // --- 1. 通用状态更新 (始终执行) ---
         if (this.attackCooldown > 0) this.attackCooldown -= deltaTime;
         if (this.findTargetCooldown > 0) this.findTargetCooldown -= deltaTime;
-        // --- 新增: 更新碾压冷却 ---
         if (this.crushDamageCooldown > 0) this.crushDamageCooldown -= deltaTime;
-
         this.updateRotation(deltaTime);
 
-        // ... (其余 update 逻辑保持不变)
         if (this.isSettingUp) {
             this.setupTimer -= deltaTime;
             if (this.setupTimer <= 0) this.isSettingUp = false;
             return;
         }
 
+        // 如果当前目标死亡或无效，则清空目标
         if (this.target && this.target.hp <= 0) {
             this.setTarget(null);
-            this.isforcemoving = false;
+            // 注意: 只有在目标死亡时，才解除对该目标的强制攻击状态
+            if (this.isforcemoving) {
+                 this.isforcemoving = false;
+            }
         }
 
-        if (this.isforcemoving && this.target) {
-            const targetPos = { x: this.target.pixelX || this.target.x, y: this.target.pixelY || this.target.y };
-            const distanceToTarget = getDistance(this, targetPos);
-            if (distanceToTarget <= this.stats.range) {
-                this.path = [];
-                this.moveTargetPos = null;
-                if (this.body) Matter.Body.setVelocity(this.body, { x: 0, y: 0 });
+        // --- 2. 核心逻辑分支：强制移动 vs. 常规模式 ---
 
-                this.setTargetAngle(targetPos);
-                let angleDiff = Math.abs(this.angle - this.targetAngle);
-                if (angleDiff > Math.PI) angleDiff = 2 * Math.PI - angleDiff;
-            
-                if (this.attackCooldown <= 0 && !this.isSettingUp && angleDiff < 0.2) {
-                    this.attack(game);
-                }
-            } else {
-                if (!this.path.length && !this.moveTargetPos) {
-                    this.issueMoveCommand(targetPos, game.map, true, true);
+        // 分支 A: 如果处于“强制移动”状态 (无论是否有目标)
+        if (this.isforcemoving) {
+            // 在强制移动模式下，单位只会攻击其明确指定的 `target`
+            // 如果 `target` 为 null（即强制移动到地点），则不会进行任何攻击
+            if (this.target) {
+                const targetPos = { x: this.target.pixelX || this.target.x, y: this.target.pixelY || this.target.y };
+                const distanceToTarget = getDistance(this, targetPos);
+
+                if (distanceToTarget <= this.stats.range) {
+                    // 到达射程：停止移动并发起攻击
+                    this.path = [];
+                    this.moveTargetPos = null;
+                    if (this.body) Matter.Body.setVelocity(this.body, { x: 0, y: 0 });
+                    this.setTargetAngle(targetPos);
+                    
+                    if (this.attackCooldown <= 0 && !this.isSettingUp) {
+                        this.attack(game);
+                    }
                 }
             }
+            // 如果是强制移动到地点(this.target为null)，则此处的攻击逻辑完全跳过，单位只会移动。
         } 
+        // 分支 B: 常规/智能模式 (非强制移动)
         else {
+            // a. 自动索敌
             if (!this.target && this.findTargetCooldown <= 0) {
                 this.findTarget(enemyBase, enemyUnits, game);
                 this.findTargetCooldown = 0.5 + Math.random() * 0.2;
             }
 
+            // b. 如果有目标，则决定是攻击还是追击
             if (this.target) {
                 const targetPos = { x: this.target.pixelX || this.target.x, y: this.target.pixelY || this.target.y };
                 const distanceToTarget = getDistance(this, targetPos);
+                
                 if (distanceToTarget <= this.stats.range) {
+                    // 在射程内：停止移动并攻击
+                    this.path = [];
+                    this.moveTargetPos = null;
+                    if (this.body) Matter.Body.setVelocity(this.body, { x: 0, y: 0 });
                     this.setTargetAngle(targetPos);
+
                     if (this.attackCooldown <= 0 && !this.isSettingUp) {
                         this.attack(game);
                     }
+                } else {
+                    // 超出射程：追击 (每隔一段时间重新寻路)
+                    if (!this.path.length && !this.moveTargetPos) {
+                        this.issueMoveCommand(targetPos, game.map, true, false);
+                    }
                 }
             } 
+            // c. 如果没有目标且没有路径，则执行待命行为
             else if (this.path.length === 0) {
                 if (this.isPatrolling) {
                     // (巡逻逻辑)
@@ -192,8 +211,12 @@ class Unit {
                 }
             }
         }
+
+        // --- 3. 移动处理 (始终执行) ---
+        // 无论在哪种模式下，只要有路径，就执行移动
         this.handleMovement(deltaTime, map);
     }
+
 
      // 新增：护送单位行为
     updateEscortBehavior(deltaTime, game) {
@@ -298,6 +321,7 @@ class Unit {
                     this.path = [];
                     this.moveTargetPos = null;
                     if (this.body) Matter.Body.setVelocity(this.body, { x: 0, y: 0 });
+                    this.isforcemoving = false;
 
                     if (this.stats.special === 'SETUP_TO_FIRE') {
                         this.isSettingUp = true;
@@ -586,14 +610,13 @@ class Unit {
         game.projectiles.push(proj); 
         this.attackCooldown = this.stats.attackSpeed; 
     }
+
     takeDamage(amount, attacker) {
         let finalDamage = amount;
 
-        // 如果有攻击者，且攻击者有克制定义
         if (attacker && attacker.stats.counters) {
             const targetClass = this.stats.unitClass;
             const multiplier = attacker.stats.counters[targetClass];
-            
             if (multiplier !== undefined) {
                 finalDamage *= multiplier;
             }
@@ -602,9 +625,15 @@ class Unit {
         this.hp -= finalDamage;
         if (this.hp <= 0) {
             this.hp = 0;
-            // 可以在这里触发死亡事件
+        }
+
+        if (this.hp > 0 && attacker && this.owner === 'player') {
+            if (window.game && window.game.requestAssistance) {
+                window.game.requestAssistance(this, attacker);
+            }
         }
     }
+
     findSmoothedPathTarget(map) { 
         if (!this.path || this.path.length === 0 || this.currentPathIndex >= this.path.length) return; 
         for (let i = this.path.length - 1; i > this.currentPathIndex; i--) { 
