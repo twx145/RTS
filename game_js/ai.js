@@ -13,7 +13,7 @@ class AIController {
         this.patrolPoints = []; 
         
         this.patrollingUnitTags = new Set();
-        this.maxPatrollingUnits = 5;
+        this.maxPatrollingUnits = 10;
     }
 
     calculatePatrolPoints(map) {
@@ -106,9 +106,6 @@ class AIController {
 
         this.macroTimer += deltaTime;
         this.microTimer += deltaTime;
-
-        // 基础索敌逻辑保持高频率运行，但不再下达移动指令，仅用于防御
-        // this.runSimpleLogic(aiUnits, playerUnits, map); // 移动指令由下面的宏观逻辑下达
 
         if (this.macroTimer >= this.macroInterval) {
             switch (this.difficulty) {

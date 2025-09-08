@@ -1197,7 +1197,7 @@ class Game {
 
     requestAssistance(attackedUnit, attacker) {
         // 定义增援范围，可以根据需要调整
-        const ASSISTANCE_RADIUS = 10 * TILE_SIZE; 
+        const ASSISTANCE_RADIUS = 15 * TILE_SIZE; 
         
         // 获取所有潜在的友军单位 (这里我们只处理玩家单位的互相协助)
         const potentialAllies = this.player.units;
