@@ -89,6 +89,23 @@ class Game {
         });
         this.engine.world.gravity.y = 0;
 
+        Matter.Events.on(this.engine, 'collisionStart', (event) => {
+            const pairs = event.pairs;
+            for (let i = 0; i < pairs.length; i++) {
+                const pair = pairs[i];
+                const bodyA = pair.bodyA;
+                const bodyB = pair.bodyB;
+
+                const unitA = bodyA.gameObject;
+                const unitB = bodyB.gameObject;
+
+                // 确保碰撞双方都是游戏单位
+                if (unitA instanceof Unit && unitB instanceof Unit) {
+                    this.handleUnitCollision(unitA, unitB, bodyA, bodyB);
+                }
+            }
+        });
+
         this.fogOfWar = new FogOfWar(this.map.width * TILE_SIZE, this.map.height * TILE_SIZE);
         this.camera.minZoom = Math.max(this.camera.minZoom,Math.max(this.canvas.width / this.map.width , this.canvas.height / this.map.height)/TILE_SIZE);
 
@@ -155,6 +172,31 @@ class Game {
 
         window.game = this;
         requestAnimationFrame(this.gameLoop.bind(this));
+    }
+
+    handleUnitCollision(unitA, unitB, bodyA, bodyB) {
+        // 碾压逻辑
+        let crusher = null;
+        let crushed = null;
+        let crusherBody = null;
+
+        if (unitA.stats.canCrush && unitB.stats.isCrushable) {
+            crusher = unitA;
+            crushed = unitB;
+            crusherBody = bodyA;
+        } else if (unitB.stats.canCrush && unitA.stats.isCrushable) {
+            crusher = unitB;
+            crushed = unitA;
+            crusherBody = bodyB;
+        }
+
+        if (crusher && crushed) {
+            // 检查是否为敌对单位，碾压速度是否足够，以及被碾压单位是否冷却完毕
+            if (crusher.owner !== crushed.owner && crusherBody.speed > 0.5 && crushed.crushDamageCooldown <= 0) {
+                crushed.takeDamage(CRUSH_DAMAGE, crusher);
+                crushed.crushDamageCooldown = 1.0; // 设置1秒冷却
+            }
+        }
     }
 
     createTerrainBodies() {
@@ -1154,25 +1196,27 @@ class Game {
     }
 
     handleProjectileHit(p) { 
-        // 新增：检查是否击中北极基地建筑物
         this.explosions.push(new Explosion(p.x, p.y, p.stats.splashRadius || 2)); 
         if (this.arcticBuildingsManager) {
             const targetGridX = Math.floor(p.target.x / TILE_SIZE);
             const targetGridY = Math.floor(p.target.y / TILE_SIZE);
-            
             if (this.arcticBuildingsManager.damageBuilding(targetGridX, targetGridY, p.stats.damage)) {
-                // 如果击中了建筑物，不再处理其他伤害
                 return;
             }
         }
-        if (p.target.hp > 0) p.target.takeDamage(p.stats.damage); 
+        
+        // --- 修改: 调用 takeDamage 时传入攻击者 (p.owner) ---
+        if (p.target.hp > 0) p.target.takeDamage(p.stats.damage, p.owner); 
+        
         if (p.stats.splashRadius > 0) { 
             const allTargets = [...this.player.units, ...this.ai.units, this.playerBase, this.aiBase].filter(Boolean); 
             allTargets.forEach(entity => { 
-                if (entity.owner !== p.owner && entity.id !== p.target.id && entity.hp > 0) { 
+                if (entity.owner !== p.owner.owner && entity.id !== p.target.id && entity.hp > 0) { 
                     const entityPos = { x: entity.pixelX || entity.x, y: entity.pixelY || entity.y }; 
                     const distance = getDistance(entityPos, p); if (distance < p.stats.splashRadius) { 
-                        const splashDamage = p.stats.damage * (1 - distance / p.stats.splashRadius); entity.takeDamage(splashDamage); 
+                        const splashDamage = p.stats.damage * (1 - distance / p.stats.splashRadius);
+                        // 溅射伤害也应用克制逻辑
+                        entity.takeDamage(splashDamage, p.owner); 
                     } 
                 } 
             }); 

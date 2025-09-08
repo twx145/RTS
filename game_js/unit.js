@@ -17,6 +17,9 @@ class Unit {
         this.findTargetCooldown = Math.random() * 0.5;
         this.isforcemoving = false;
 
+        // --- 新增: 碾压伤害冷却 ---
+        this.crushDamageCooldown = 0;
+
         this.path = [];
         this.currentPathIndex = 0;
         this.moveTargetPos = null;
@@ -24,7 +27,6 @@ class Unit {
         this.targetAngle = this.angle;
         this.rotationSpeed = Math.PI * 2.0;
         
-        // --- 新增: 为单位添加编队属性 ---
         this.controlGroup = null;
 
         this.isLoitering = false;
@@ -41,17 +43,16 @@ class Unit {
             this.body.gameObject = this;
             Matter.World.add(window.game.engine.world, this.body);
         }
-        this.isPatrolling = false;      // 是否正在巡逻
-        this.patrolPoints = [];         // 巡逻点路径
-        this.currentPatrolPointIndex = 0; // 当前目标巡逻点的索引
+        this.isPatrolling = false;
+        this.patrolPoints = [];
+        this.currentPatrolPointIndex = 0;
         this.tag = 'unit_' + Math.random().toString(36).slice(2);
 
-        // 新增：特殊单位属性
-        this.isEscortUnit = false;      // 是否是护送单位
-        this.destination = null;        // 护送单位的目的地
-        this.isTargetUnit = false;      // 是否是目标单位（刺杀模式）
-        this.isSpecialBuilding = false; // 是否是特殊建筑（目标模式）
-        this.buildingType = null;       // 建筑类型
+        this.isEscortUnit = false;
+        this.destination = null;
+        this.isTargetUnit = false;
+        this.isSpecialBuilding = false;
+        this.buildingType = null;
     }
 
     createBody(x, y) {
@@ -82,34 +83,24 @@ class Unit {
         Matter.Body.setAngle(body, this.angle);
         return body;
     }
-
-    /**
-     * --- 核心修复: 新增 setTarget 方法，用于验证和设置目标 ---
-     * @param {Unit | Base | null} newTarget - 新的目标
-     */
+    
     setTarget(newTarget) {
-        // 如果新目标为空，则直接清空目标
         if (!newTarget) {
             this.target = null;
             return;
         }
-
-        // 确定目标的移动类型
-        let targetMoveType = 'ground'; // 默认为地面（例如基地）
+        
+        let targetMoveType = 'ground';
         if (newTarget instanceof Unit) {
             targetMoveType = newTarget.stats.moveType;
         } else if (newTarget instanceof Base) {
-            // 基地被视为地面目标
             targetMoveType = 'ground';
         }
         
-        // 验证该单位是否可以攻击这种类型的目标
         if (this.stats.canTarget.includes(targetMoveType)) {
             this.target = newTarget;
         } else {
-            // 如果不能攻击，则忽略该指令（可以选择性地在这里添加提示信息）
-            // console.log(`${this.type} cannot target ${targetMoveType} units.`);
-            this.target = null; // 确保不会设置非法目标
+            this.target = null;
         }
     }
 
@@ -139,29 +130,27 @@ class Unit {
         // --- 1. 通用状态更新 ---
         if (this.attackCooldown > 0) this.attackCooldown -= deltaTime;
         if (this.findTargetCooldown > 0) this.findTargetCooldown -= deltaTime;
+        // --- 新增: 更新碾压冷却 ---
+        if (this.crushDamageCooldown > 0) this.crushDamageCooldown -= deltaTime;
+
         this.updateRotation(deltaTime);
 
+        // ... (其余 update 逻辑保持不变)
         if (this.isSettingUp) {
             this.setupTimer -= deltaTime;
             if (this.setupTimer <= 0) this.isSettingUp = false;
             return;
         }
 
-        // 如果当前目标死亡或无效，则清空目标
         if (this.target && this.target.hp <= 0) {
             this.setTarget(null);
-            this.isforcemoving = false; // 目标没了，强制移动也该结束了
+            this.isforcemoving = false;
         }
 
-        // --- 2. 核心逻辑分支：强制攻击 vs 常规模式 ---
-
-        // 分支 A: 如果处于“强制攻击”模式
         if (this.isforcemoving && this.target) {
             const targetPos = { x: this.target.pixelX || this.target.x, y: this.target.pixelY || this.target.y };
             const distanceToTarget = getDistance(this, targetPos);
-
             if (distanceToTarget <= this.stats.range) {
-                // 到达射程：停止移动并发起攻击
                 this.path = [];
                 this.moveTargetPos = null;
                 if (this.body) Matter.Body.setVelocity(this.body, { x: 0, y: 0 });
@@ -174,49 +163,36 @@ class Unit {
                     this.attack(game);
                 }
             } else {
-                // 未到达射程：持续向目标移动
-                // 如果没有路径，就重新计算路径（比如目标移动了）
                 if (!this.path.length && !this.moveTargetPos) {
-                    // 注意！这里递归调用时，也要把 isforcemoving 传进去！
                     this.issueMoveCommand(targetPos, game.map, true, true);
                 }
             }
         } 
-        // 分支 B: 常规模式（巡逻、自动接战、待命）
         else {
-            // 只有在常规模式下，才进行自动索敌
             if (!this.target && this.findTargetCooldown <= 0) {
                 this.findTarget(enemyBase, enemyUnits, game);
                 this.findTargetCooldown = 0.5 + Math.random() * 0.2;
             }
 
-            // 如果（通过自动索敌）找到了目标，并且在射程内，则攻击
             if (this.target) {
                 const targetPos = { x: this.target.pixelX || this.target.x, y: this.target.pixelY || this.target.y };
                 const distanceToTarget = getDistance(this, targetPos);
                 if (distanceToTarget <= this.stats.range) {
-                    // （这部分和上面类似，可以封装成函数，但为了清晰先这样写）
                     this.setTargetAngle(targetPos);
                     if (this.attackCooldown <= 0 && !this.isSettingUp) {
                         this.attack(game);
                     }
                 }
-                // 注意：这里我们不处理追击逻辑，单位只会攻击进入范围的敌人。
             } 
-            // 如果没有目标，并且没有移动路径，则执行待命/巡逻逻辑
             else if (this.path.length === 0) {
                 if (this.isPatrolling) {
-                    // (巡逻逻辑) ...
+                    // (巡逻逻辑)
                 } else if (this.stats.moveType === 'air' && (this.type === 'fighter_jet' || this.type === 'recon_drone')) {
                     this.handleLoitering(deltaTime);
                 }
             }
         }
-
-    // --- 3. 统一处理移动 ---
-    // 无论在哪种模式下，只要有路径，就执行移动
-    this.handleMovement(deltaTime, map);
-    // (你原来的巡逻逻辑也可以整合到上面，或者保留在 handleMovement 之前)
+        this.handleMovement(deltaTime, map);
     }
 
      // 新增：护送单位行为
@@ -605,12 +581,30 @@ class Unit {
     
     attack(game) { 
         if (!this.target || !this.stats.ammoType) return; 
-        const pStats = { damage: this.stats.attack, ammoType: this.stats.ammoType, ammoSpeed: this.stats.ammoSpeed, splashRadius: this.stats.ammoSplashRadius, };
-        const proj = new Projectile(this.owner, { x: this.x, y: this.y }, this.target, pStats); 
+        const pStats = { damage: this.stats.attack, ammoType: this.stats.ammoType, ammoSpeed: this.stats.ammoSpeed, splashRadius: this.stats.ammoSplashRadius };
+        const proj = new Projectile(this, { x: this.x, y: this.y }, this.target, pStats); 
         game.projectiles.push(proj); 
         this.attackCooldown = this.stats.attackSpeed; 
     }
-    takeDamage(amount) { this.hp -= amount; if (this.hp <= 0) this.hp = 0; }
+    takeDamage(amount, attacker) {
+        let finalDamage = amount;
+
+        // 如果有攻击者，且攻击者有克制定义
+        if (attacker && attacker.stats.counters) {
+            const targetClass = this.stats.unitClass;
+            const multiplier = attacker.stats.counters[targetClass];
+            
+            if (multiplier !== undefined) {
+                finalDamage *= multiplier;
+            }
+        }
+
+        this.hp -= finalDamage;
+        if (this.hp <= 0) {
+            this.hp = 0;
+            // 可以在这里触发死亡事件
+        }
+    }
     findSmoothedPathTarget(map) { 
         if (!this.path || this.path.length === 0 || this.currentPathIndex >= this.path.length) return; 
         for (let i = this.path.length - 1; i > this.currentPathIndex; i--) { 
