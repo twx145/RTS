@@ -64,7 +64,7 @@ class LoadingManager {
                     const { saveData } = JSON.parse(saveInfo);
                     // 根据存档信息设置预览
                     this.setPreviewInfo(
-                        `第${saveData.chapter + 1}章`, 
+                        `第${saveData.chapter}章`, 
                         this.getSceneName(saveData.chapter, saveData.scene)
                     );
                     // 加载存档相关的资源
@@ -80,41 +80,20 @@ class LoadingManager {
             }
         } 
         else if (this.targetPage.includes('dialogue.html')) {
-            // 对话页面需要加载的资源
-            // 如果是新游戏，加载第一章第一场景的资源
             if (this.loadingParams.new === 'true') {
-                this.setPreviewInfo('剧情加载中', '正在准备第一章剧情内容');
+                this.setPreviewInfo('剧情加载中', '正在准备教程内容');
                 this.resourcesToLoad = [
                     { type: 'script', url: '../data/script.js' },
                     { type: 'image', url: '../assets/backgrounds/bg.png' },
-                    { type: 'image', url: '../assets/characters/eva.jpg' },
-                    { type: 'image', url: '../assets/characters/tanaka.jpg' }
+                    { type: 'image', url: '../assets/characters/eva.jpg' }
                 ];
             } 
-            // 如果是从游戏返回，加载之前场景的资源
-            else if (this.loadingParams.returnFromGame === 'true') {
-                // 这里需要根据保存的进度确定要加载的资源 修改
+            else if (this.loadingParams.returnFromGame) {
                 const currentUser = sessionStorage.getItem('currentUser');
                 const tempProgress = localStorage.getItem(`ShenDun_temp_progress_${currentUser}`);
                 if (tempProgress) {
                     try {
                         const progress = JSON.parse(tempProgress);
-                        // 根据进度信息加载相应资源
-                        this.loadResourcesForProgress(progress);
-                    } catch (e) {
-                        console.error('解析进度信息失败', e);
-                        this.loadDefaultResources();
-                    }
-                } else {
-                    this.loadDefaultResources();
-                }
-            }else if (this.loadingParams.returnFromGame === 'false') {//修改，新增false
-                const currentUser = sessionStorage.getItem('currentUser');
-                const tempProgress = localStorage.getItem(`ShenDun_temp_progress_${currentUser}`);
-                if (tempProgress) {
-                    try {
-                        var progress = JSON.parse(tempProgress);
-                        progress.chapter += 1;progress.scene = progress.dialog = 0;
                         this.loadResourcesForProgress(progress);
                     } catch (e) {
                         console.error('解析进度信息失败', e);
@@ -134,9 +113,6 @@ class LoadingManager {
             this.setPreviewInfo('游戏加载中', '正在准备战场环境');
             this.resourcesToLoad = [
                 { type: 'image', url: '../assets/backgrounds/bg.png' },
-                // { type: 'image', url: 'assets/pics/infantry.png' },
-                // { type: 'image', url: 'assets/pics/tank.png' },
-                // { type: 'image', url: 'assets/pics/artillery.png' },
                 { type: 'script', url: '../game_js/game.js' },
                 { type: 'script', url: '../game_js/map.js' },
                 { type: 'script', url: '../game_js/unit.js' }
@@ -147,8 +123,6 @@ class LoadingManager {
     }
     
     loadResourcesForProgress(progress) {
-        // 根据进度信息加载相应的资源 修改
-        // 这里需要根据您的脚本结构来确定需要加载哪些资源
         const chapter = window.scriptData.chapters[progress.chapter];
         if (chapter) {
             const scene = chapter.scenes[progress.scene];
@@ -190,9 +164,7 @@ class LoadingManager {
         if (chapter) {
             const scene = chapter.scenes[saveData.scene];
             if (scene) {
-                // 加载场景背景
                 this.resourcesToLoad.push({type: 'image', url: `../assets/backgrounds/${scene.background}`});
-                // 设置预览背景
                 document.getElementById('scene-preview').style.backgroundImage = `url('../assets/backgrounds/${scene.background}')`;
             }
         }

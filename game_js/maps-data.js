@@ -1,10 +1,18 @@
-// 'g': 草地, 'f': 森林, 'r': 马路, 'w': 海洋, 'b': 建筑
+// 'g': 草地, 'f': 森林, 'r': 马路, 'w': 海洋, 'b': 建筑,...
+// 'g': 'grass', 'f': 'forest', 'r': 'road', 'w': 'water', 'b': 'building',
+// 'd': 'desert','i': 'ice','s': 'snow','m': 'mountain','x': 'deep_water'
 const MAP_DEFINITIONS = [
     {
         id: 'map_new_01',
         name: '十字路口冲突 (Crossroads Clash)',
         description: '中心道路是兵家必争之地，两侧的森林为伏击提供了可能。',
         width: 80, height: 60,
+        buildings: [
+            { type: 'observation_tower', x: 10, y: 10, width: 3, height: 3, hp: 800 },
+            { type: 'observation_tower', x: 70, y: 10, width: 3, height: 3, hp: 800 },
+            { type: 'observation_tower', x: 10, y: 50, width: 3, height: 3, hp: 800 },
+            { type: 'observation_tower', x: 70, y: 50, width: 3, height: 3, hp: 800 }
+        ],
         grid: (() => {
             const w = 80, h = 60;
             let grid = Array(h).fill(null).map(() => Array(w).fill('g'));
@@ -40,6 +48,14 @@ const MAP_DEFINITIONS = [
         name: '双子桥 (Twin Bridges) - 大地图版',
         description: '一条河流将地图一分为二，只有两座桥梁可供地面部队通过。',
         width: 100, height: 60, // 直接定义为大尺寸
+        buildings: [
+            { type: 'bridge_control', x: 20, y: 28, width: 4, height: 4, hp: 1200 },
+            { type: 'bridge_control', x: 72, y: 28, width: 4, height: 4, hp: 1200 },
+            { type: 'bunker', x: 15, y: 15, width: 3, height: 3, hp: 1000 },
+            { type: 'bunker', x: 85, y: 15, width: 3, height: 3, hp: 1000 },
+            { type: 'bunker', x: 15, y: 45, width: 3, height: 3, hp: 1000 },
+            { type: 'bunker', x: 85, y: 45, width: 3, height: 3, hp: 1000 }
+        ],
         grid: (() => {
             const w = 100, h = 60;
             let grid = Array(h).fill(null).map(() => Array(w).fill('g'));
@@ -61,20 +77,68 @@ const MAP_DEFINITIONS = [
             return grid.map(row => row.join(''));
         })()
     },
-    {//修改 增加新手map
-        id: 'map_new',
-        name: '新手地图',
-        description: '新手教学通用',
-        width: 20, height: 20,
+    // 添加教程地图
+    {
+        id: 'map_tutorial',
+        name: '训练基地',
+        description: '新手训练场地，学习基本操作和战术。',
+        width: 30, height: 30,
+        buildings: [
+            { type: 'training_target', x: 20, y: 20, width: 2, height: 2, hp: 500 },
+            { type: 'training_barrier', x: 12, y: 12, width: 2, height: 2, hp: 300 },
+            { type: 'training_barrier', x: 12, y: 18, width: 2, height: 2, hp: 300 },
+            { type: 'training_barrier', x: 18, y: 12, width: 2, height: 2, hp: 300 },
+            { type: 'training_barrier', x: 18, y: 18, width: 2, height: 2, hp: 300 }
+        ],
         grid: (() => {
-            const w = 20, h = 20;
+            const w = 30, h = 30;
             let grid = Array(h).fill(null).map(() => Array(w).fill('g'));
-            // 添加一些随机森林
-            for (let i = 0; i < 20; i++) {
-                const randX = Math.floor(Math.random() * w);
-                const randY = Math.floor(Math.random() * h);
-                if (grid[randY][randX] === 'g') grid[randY][randX] = 'f';
+            
+            // 中央训练区域 - 草地
+            for (let y = 10; y < 20; y++) {
+                for (let x = 10; x < 20; x++) {
+                    grid[y][x] = 'g';
+                }
             }
+            
+            // 左侧部署区域 - 标记为玩家区域
+            for (let y = 5; y < 25; y++) {
+                for (let x = 5; x < 10; x++) {
+                    grid[y][x] = 'r'; // 使用道路标记玩家部署区
+                }
+            }
+            
+            // 右侧目标区域 - 标记为AI区域
+            for (let y = 5; y < 25; y++) {
+                for (let x = 20; x < 25; x++) {
+                    grid[y][x] = 'f'; // 使用建筑标记AI区域
+                }
+            }
+            
+            // 中央障碍物 - 用于教学绕行和战术
+            for (let y = 12; y < 18; y++) {
+                for (let x = 12; x < 18; x++) {
+                    if (y === 14 || y === 15) continue; // 留出通道
+                    grid[y][x] = 'b'; // 森林作为障碍物
+                }
+            }
+            
+            // 简单道路连接左右区域
+            for (let y = 14; y < 16; y++) {
+                for (let x = 10; x < 20; x++) {
+                    grid[y][x] = 'r';
+                }
+            }
+            
+            // 添加一些随机小障碍
+            for (let i = 0; i < 15; i++) {
+                const randX = Math.floor(Math.random() * (w-4)) + 2;
+                const randY = Math.floor(Math.random() * (h-4)) + 2;
+                if (grid[randY][randX] === 'g') {
+                    grid[randY][randX] = 'f';
+                }
+            }
+            
             return grid.map(row => row.join(''));
         })()
     },
@@ -84,17 +148,20 @@ const MAP_DEFINITIONS = [
         name: '回声-7哨站',
         description: '撒哈拉沙漠边缘的孤立哨站，沙丘提供了有限的掩护，但视野开阔易被发现。',
         width: 60, height: 60,
+        buildings: [
+            { type: 'radar_station', x: 25, y: 25, width: 5, height: 5, hp: 1500 },
+            { type: 'communication_tower', x: 35, y: 25, width: 3, height: 5, hp: 1000 },
+            { type: 'storage_depot', x: 25, y: 35, width: 5, height: 5, hp: 1200 },
+            { type: 'barracks', x: 35, y: 35, width: 5, height: 5, hp: 1500 },
+            { type: 'watchtower', x: 46, y: 25, width: 3, height: 3, hp: 800 },
+            { type: 'watchtower', x: 54, y: 25, width: 3, height: 3, hp: 800 },
+            { type: 'watchtower', x: 46, y: 33, width: 3, height: 3, hp: 800 },
+            { type: 'watchtower', x: 54, y: 33, width: 3, height: 3, hp: 800 }
+        ],
         grid: (() => {
             const w = 60, h = 60;
             let grid = Array(h).fill(null).map(() => Array(w).fill('d'));
-            
-            // 中央哨站建筑
-            for (let y = 25; y < 36; y++) {
-                for (let x = 25; x < 36; x++) {
-                    grid[y][x] = 'b';
-                }
-            }
-            
+                        
             // 沙漠中的随机岩石(用山地表示)
             for (let i = 0; i < 80; i++) {
                 const randX = Math.floor(Math.random() * (w-10)) + 5;
@@ -126,50 +193,62 @@ const MAP_DEFINITIONS = [
         name: '安第斯秘密基地',
         description: '隐藏在安第斯山脉深处的刻耳柏洛斯基地，峡谷地形限制了机动但提供了天然防御。',
         width: 80, height: 60,
+        buildings: [
+            { type: 'barracks', x: 33, y: 28, width: 5, height: 5, hp: 1500 },
+            { type: 'armory', x: 45, y: 28, width: 5, height: 5, hp: 2000 },
+            { type: 'command_center', x:38, y: 21, width: 7, height: 7, hp: 3000 },
+            // { type: 'research_lab', x: 25, y: 30, width: 5, height: 5, hp: 1800 },
+            // { type: 'power_generator', x: 40, y: 30, width: 3, height: 3, hp: 1200 },
+            { type: 'guard_tower', x: 26, y: 15, width: 3, height: 3, hp: 800 },
+            { type: 'guard_tower', x: 52, y: 15, width: 3, height: 3, hp: 800 },
+            { type: 'guard_tower', x: 26, y: 35, width: 3, height: 3, hp: 800 },
+            { type: 'guard_tower', x: 52, y: 35, width: 3, height: 3, hp: 800 }
+        ],
         grid: (() => {
             const w = 80, h = 60;
             let grid = Array(h).fill(null).map(() => Array(w).fill('g'));
             
             // 中央峡谷
             for (let y = 0; y < h; y++) {
-                for (let x = 20; x < 60; x++) {
-                    if (x < 25 || x > 55) {
-                        grid[y][x] = 'f'; // 山脉
+                for (let x = 15; x < 65; x++) {
+                    if (x < 20 || x > 60) {
+                        grid[y][x] = 'm'; // 山脉
                     }
                 }
             }
-            
-            // 基地建筑 - 军火库、兵营和指挥中心
-            for (let y = 25; y < 35; y++) {
-                for (let x = 35; x < 45; x++) {
-                    grid[y][x] = 'b';
+            //围墙
+            for (let y = 15; y < 38; y++) {
+                for (let x = 20; x < 24; x++) {
+                    grid[y][x] = 'w';
                 }
             }
-            
-            // 兵营
-            for (let y = 20; y < 25; y++) {
-                for (let x = 30; x < 35; x++) {
-                    grid[y][x] = 'b';
+            for (let y = 15; y < 38; y++) {
+                for (let x = 57; x < 61; x++) {
+                    grid[y][x] = 'w';
                 }
             }
-            
-            // 军火库
-            for (let y = 20; y < 25; y++) {
-                for (let x = 45; x < 50; x++) {
-                    grid[y][x] = 'b';
-                }
-            }
-            
             // 河流穿过峡谷
-            for (let x = 30; x < 50; x++) {
-                grid[40][x] = 'w';
+            for (let y = 38; y < 43; y++) {
+                for (let x = 20; x < 61; x++) {
+                    grid[y][x] = 'w';
+                }
             }
-            
+            for (let y = 10; y < 15; y++) {
+                for (let x = 20; x < 61; x++) {
+                    grid[y][x] = 'w';
+                }
+            }
             // 桥梁
-            for (let x = 38; x < 42; x++) {
-                grid[40][x] = 'r';
+            for (let y = 38; y < 43; y++) {
+                for (let x = 36; x < 47; x++) {
+                    grid[y][x] = 'r';
+                }
             }
-            
+            for (let y = 10; y < 15; y++) {
+                for (let x = 36; x < 47; x++) {
+                    grid[y][x] = 'r';
+                }
+            }
             return grid.map(row => row.join(''));
         })()
     },
@@ -179,6 +258,17 @@ const MAP_DEFINITIONS = [
         name: '新京都市战场',
         description: '霓虹闪烁的现代都市，高楼大厦提供掩护但也限制了视野，街道成为天然战线。',
         width: 100, height: 80,
+        buildings: [
+            { type: 'headquarters', x: 45, y: 40, width: 7, height: 7, hp: 4000 },
+            { type: 'communication_center', x: 40, y: 35, width: 5, height: 5, hp: 2000 },
+            { type: 'skyscraper', x: 30, y: 30, width: 5, height: 8, hp: 2500 },
+            { type: 'skyscraper', x: 50, y: 30, width: 5, height: 8, hp: 2500 },
+            { type: 'shopping_mall', x: 35, y: 45, width: 7, height: 5, hp: 2200 },
+            { type: 'apartment_complex', x: 45, y: 45, width: 7, height: 5, hp: 2200 },
+            { type: 'parking_garage', x: 40, y: 50, width: 5, height: 4, hp: 1500 },
+            { type: 'checkpoint', x: 35, y: 25, width: 3, height: 3, hp: 1000 },
+            { type: 'checkpoint', x: 45, y: 25, width: 3, height: 3, hp: 1000 }
+        ],
         grid: (() => {
             const w = 100, h = 80;
             let grid = Array(h).fill(null).map(() => Array(w).fill('g'));
@@ -231,6 +321,18 @@ const MAP_DEFINITIONS = [
         name: '北极天锤控制基地',
         description: '冰天雪地的北极基地，三个能源站为主控塔提供护盾，极地环境影响移动。',
         width: 80, height: 80,
+        buildings: [
+            { type: 'control_tower', x: 37, y: 37, width: 7, height: 7, hp: 5000 },
+            { type: 'power_station', x: 38, y: 15, width: 5, height: 5, hp: 2000 },
+            { type: 'power_station', x: 60, y: 38, width: 5, height: 5, hp: 2000 },
+            { type: 'power_station', x: 38, y: 60, width: 5, height: 5, hp: 2000 },
+            { type: 'radar_dome', x: 25, y: 25, width: 5, height: 5, hp: 1500 },
+            { type: 'radar_dome', x: 50, y: 25, width: 5, height: 5, hp: 1500 },
+            { type: 'radar_dome', x: 25, y: 50, width: 5, height: 5, hp: 1500 },
+            { type: 'radar_dome', x: 50, y: 50, width: 5, height: 5, hp: 1500 },
+            { type: 'hangar', x: 20, y: 35, width: 5, height: 4, hp: 1800 },
+            { type: 'hangar', x: 55, y: 35, width: 5, height: 4, hp: 1800 }
+        ],
         grid: (() => {
             const w = 80, h = 80;
             let grid = Array(h).fill(null).map(() => Array(w).fill('i'));
@@ -290,6 +392,19 @@ const MAP_DEFINITIONS = [
         name: '离子炮阵地',
         description: '崎岖山地中的离子炮阵地，护送充能车到达指定位置是获胜关键。',
         width: 80, height: 60,
+        buildings: [
+            { type: 'ion_cannon', x: 65, y: 45, width: 7, height: 7, hp: 6000 },
+            { type: 'power_conduit', x: 60, y: 40, width: 3, height: 3, hp: 1200 },
+            { type: 'power_conduit', x: 70, y: 40, width: 3, height: 3, hp: 1200 },
+            { type: 'power_conduit', x: 60, y: 50, width: 3, height: 3, hp: 1200 },
+            { type: 'power_conduit', x: 70, y: 50, width: 3, height: 3, hp: 1200 },
+            { type: 'defense_turret', x: 62, y: 35, width: 3, height: 3, hp: 1500 },
+            { type: 'defense_turret', x: 68, y: 35, width: 3, height: 3, hp: 1500 },
+            { type: 'defense_turret', x: 62, y: 55, width: 3, height: 3, hp: 1500 },
+            { type: 'defense_turret', x: 68, y: 55, width: 3, height: 3, hp: 1500 },
+            { type: 'bunker', x: 58, y: 45, width: 3, height: 3, hp: 1000 },
+            { type: 'bunker', x: 72, y: 45, width: 3, height: 3, hp: 1000 }
+        ],
         grid: (() => {
             const w = 80, h = 60;
             let grid = Array(h).fill(null).map(() => Array(w).fill('g'));
@@ -310,14 +425,7 @@ const MAP_DEFINITIONS = [
                     }
                 }
             }
-            
-            // 离子炮阵地（右下角）
-            for (let y = h-15; y < h-5; y++) {
-                for (let x = w-15; x < w-5; x++) {
-                    grid[y][x] = 'b';
-                }
-            }
-            
+                        
             // 蜿蜒道路从左上到右下
             let roadX = 0, roadY = 0;
             while (roadX < w-16 || roadY < h-15) {
@@ -340,6 +448,21 @@ const MAP_DEFINITIONS = [
         name: '刻耳柏洛斯海上平台',
         description: '巨大的海上平台，中央是控制塔，四周是深海，只有少量通道连接。',
         width: 70, height: 70,
+        buildings: [
+            { type: 'main_control', x: 35, y: 35, width: 5, height: 5, hp: 3500 },
+            { type: 'power_generator', x: 30, y: 30, width: 3, height: 3, hp: 1500 },
+            { type: 'power_generator', x: 40, y: 30, width: 3, height: 3, hp: 1500 },
+            { type: 'hangar', x: 30, y: 40, width: 5, height: 4, hp: 2000 },
+            { type: 'hangar', x: 40, y: 40, width: 5, height: 4, hp: 2000 },
+            { type: 'research_center', x: 25, y: 35, width: 4, height: 4, hp: 1800 },
+            { type: 'research_center', x: 45, y: 35, width: 4, height: 4, hp: 1800 },
+            { type: 'missile_silo', x: 28, y: 25, width: 3, height: 4, hp: 2200 },
+            { type: 'missile_silo', x: 42, y: 25, width: 3, height: 4, hp: 2200 },
+            { type: 'aa_gun', x: 25, y: 30, width: 3, height: 3, hp: 1200 },
+            { type: 'aa_gun', x: 45, y: 30, width: 3, height: 3, hp: 1200 },
+            { type: 'aa_gun', x: 25, y: 40, width: 3, height: 3, hp: 1200 },
+            { type: 'aa_gun', x: 45, y: 40, width: 3, height: 3, hp: 1200 }
+        ],
         grid: (() => {
             const w = 70, h = 70;
             let grid = Array(h).fill(null).map(() => Array(w).fill('w'));
@@ -350,17 +473,7 @@ const MAP_DEFINITIONS = [
                     grid[y][x] = 'g';
                 }
             }
-            
-            // 平台上的建筑
-            for (let y = 25; y < 45; y++) {
-                for (let x = 25; x < 45; x++) {
-                    if ((y >= 30 && y <= 40 && x >= 30 && x <= 40) || 
-                        Math.random() > 0.7) {
-                        grid[y][x] = 'b';
-                    }
-                }
-            }
-            
+                        
             // 连接桥梁
             for (let x = 30; x < 40; x++) {
                 grid[19][x] = 'r';
@@ -372,27 +485,27 @@ const MAP_DEFINITIONS = [
             // 深海区域（地图边缘）
             for (let y = 0; y < 10; y++) {
                 for (let x = 0; x < w; x++) {
-                    grid[y][x] = 'w';
+                    grid[y][x] = 'x';
                 }
             }
             for (let y = h-10; y < h; y++) {
                 for (let x = 0; x < w; x++) {
-                    grid[y][x] = 'w';
+                    grid[y][x] = 'x';
                 }
             }
             for (let y = 0; y < h; y++) {
                 for (let x = 0; x < 10; x++) {
-                    grid[y][x] = 'w';
+                    grid[y][x] = 'x';
                 }
                 for (let x = w-10; x < w; x++) {
-                    grid[y][x] = 'w';
+                    grid[y][x] = 'x';
                 }
             }
             
             // 东南角的海沟（用深色表示，但游戏中需要特殊处理）
             for (let y = h-15; y < h-5; y++) {
                 for (let x = w-15; x < w-5; x++) {
-                    grid[y][x] = 'w';
+                    grid[y][x] = 'x';
                 }
             }
             

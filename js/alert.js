@@ -14,10 +14,14 @@ function closeConfirmDialog() {
     document.getElementById('confirm-yes').onclick = null;
 }
 // 显示提示对话框
-function showAlert(title = '提示', message) {
+function showAlert(title = '提示', message, func = null) {
     document.getElementById('alert-title').textContent = title;
     document.getElementById('alert-message').textContent = message;
     document.getElementById('alert-dialog').style.display = 'flex';
+    document.getElementById('alert-ok').onclick = function() {
+        closeAlertDialog();
+        if (func && typeof func === 'function') {func();}
+    };
 }
 // 关闭提示对话框
 function closeAlertDialog() {

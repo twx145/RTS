@@ -25,7 +25,9 @@ function initSettings(username) {
     } else {
         // 使用默认设置
         resetToDefaults();
-        saveSettings();
+        const currentUser = JSON.parse(sessionStorage.getItem('currentUser'));
+        const settings = collectSettings();
+        localStorage.setItem(`ShenDun_settings_${currentUser.username}`, JSON.stringify(settings));
     }
 }
 

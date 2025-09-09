@@ -99,6 +99,7 @@
                     <ul>
                         <li>从右侧面板选择单位类型</li>
                         <li>点击地图左侧1/3区域部署单位</li>
+                        <li><strong>R键</strong> - 在部署阶段撤销最后部署的单位</li>
                         <li>不同单位有不同的成本和能力</li>
                         <li>合理分配资源，组建均衡的部队</li>
                     </ul>
@@ -113,7 +114,6 @@
                         <li>使用鼠标中键或Ctrl+左键拖拽移动视角</li>
                         <li>使用鼠标滚轮缩放视角</li>
                         <li>鼠标移动到屏幕边缘可自动滚动视角</li>
-                        <li>按ESC键可以取消当前选择</li>
                     </ul>
                     <div class="tutorial-image-container">
                         <div class="tutorial-image-placeholder large">视角控制示意图</div>
@@ -123,23 +123,46 @@
                     <h2>单位选择与指挥</h2>
                     <p>战斗开始后，您需要指挥您的部队：</p>
                     <ul>
-                        <li>左键点击选择单个单位</li>
-                        <li>拖拽框选多个单位</li>
-                        <li>右键点击地面移动选中单位</li>
-                        <li>右键点击敌方单位进行攻击</li>
-                        <li>不同单位有各自的优势和劣势</li>
+                        <li><strong>左键点击</strong> - 选择单个单位</li>
+                        <li><strong>拖拽框选</strong> - 选择多个单位</li>
+                        <li><strong>右键点击地面</strong> - 移动选中单位</li>
+                        <li><strong>右键点击敌方单位</strong> - 攻击目标</li>
+                        <li><strong>ESC键</strong> - 取消当前选择</li>
+                        
                     </ul>
                     <div class="tutorial-image-container">
                         <div class="tutorial-image-placeholder large">单位指挥示意图</div>
                     </div>
+                    <div class="tutorial-tip">
+                        <strong>提示:</strong> 合理搭配不同单位类型，利用各自的优势和劣势。
+                    </div>
                 </div>
                 <div class="tutorial-step" data-step="5" style="display: none;">
+                    <h2>高级控制与编队系统</h2>
+                    <p>使用编队系统可以更高效地管理您的部队：</p>
+                    <ul>
+                        <li><strong>Q键</strong> - 让选中单位停止当前行动</li>
+                        <li><strong>T键</strong> - 选中与当前选择同类型的所有单位</li>
+                        <li><strong>Ctrl + 数字键(0-9)</strong> - 将选中单位分配到对应编队</li>
+                        <li><strong>数字键(0-9)</strong> - 快速选择对应编队的所有单位</li>
+                        <li><strong>Ctrl + 数字键(无选中单位)</strong> - 解散对应编队</li>
+                    </ul>
+                    <div class="tutorial-image-container">
+                        <div class="tutorial-image-placeholder large">编队系统示意图</div>
+                    </div>
+                    <div class="tutorial-tip">
+                        <strong>高级技巧:</strong> 使用编队可以快速切换不同兵种组合，应对多变战局。
+                        例如，将坦克编为1队，步兵编为2队，可以快速切换指挥。
+                    </div>
+                </div>
+                <div class="tutorial-step" data-step="6" style="display: none;">
                     <h2>游戏模式与胜利条件</h2>
                     <p>根据游戏模式不同，胜利条件也不同：</p>
                     <ul>
                         <li><strong>对攻模式</strong>: 摧毁敌方基地，同时保护自己的基地</li>
                         <li><strong>进攻模式</strong>: 摧毁敌方基地</li>
                         <li><strong>防守模式</strong>: 保护我方基地不被摧毁</li>
+                        <li><strong>特殊模式</strong>: 胜利条件随剧情而改变</li>
                     </ul>
                     <div class="tutorial-image-container">
                         <div class="tutorial-image-placeholder large">胜利条件示意图</div>
@@ -153,7 +176,7 @@
                 <div class="progress-bar">
                     <div class="progress-fill" style="width: 20%;"></div>
                 </div>
-                <div class="progress-text">步骤 1/5</div>
+                <div class="progress-text">步骤 1/6</div>
             </div>
             <div class="tutorial-controls">
                 <button id="tutorial-prev" class="tutorial-btn" disabled>上一步</button>
@@ -228,10 +251,10 @@
     <script src="../js/alert.js"></script>
     <script src="../lib/matter.min.js"></script>
     <script src="../data/script.js"></script>
+    <script src="../game_js/utils.js"></script>
     <script src="../game_js/config.js"></script>
     <script src="../game_js/maps-data.js"></script>
-    <script src="../game_js/arctic-buildings.js"></script>
-    <script src="../game_js/utils.js"></script>
+    <script src="../game_js/buildings-manager.js"></script>
     <script src="../game_js/pathfinding.js"></script>
     <script src="../game_js/projectile.js"></script>
     <script src="../game_js/base.js"></script>

@@ -41,20 +41,14 @@ window.addEventListener('DOMContentLoaded', () => {
 
     resizeGame();
     window.addEventListener('resize', resizeGame);
-
+    const dialogueSettings = localStorage.getItem('ShenDun_dialogue_settings');
     const urlParams = new URLSearchParams(window.location.search);
     const fromDialogue = urlParams.get('fromDialogue');
     const user = urlParams.get('user');
-
+    const settings = JSON.parse(dialogueSettings);
     //修改 添加教程逻辑
-    let showTutorial = true;
     let currentTutorialStep = 1;
-    const totalTutorialSteps = 5;
-
-    // 检查是否已经完成过教程
-    if (localStorage.getItem('ShenDun_tutorial_completed')) {
-        showTutorial = false;
-    }
+    const totalTutorialSteps = 6;
 
     // 教程控制函数
     function showTutorialModal() {
@@ -133,7 +127,7 @@ window.addEventListener('DOMContentLoaded', () => {
     });
 
     // 修改游戏初始化逻辑，在非对话模式且需要显示教程时显示教程
-    if (fromDialogue !== 'true' && showTutorial) {
+    if (fromDialogue !== 'true' || settings.gameMode === 'tutorial') {
         // 隐藏设置界面，显示教程
         document.getElementById('setup-screen').style.display = 'none';
         // 延迟显示教程，让资源先加载
@@ -304,15 +298,10 @@ window.addEventListener('DOMContentLoaded', () => {
             fromDialogue: true,
             user: user
         };
-        
-        // 如果有从对话传递的设置，使用它们
-        const dialogueSettings = localStorage.getItem('ShenDun_dialogue_settings');
         if (dialogueSettings) {
             try {
                 const settings = JSON.parse(dialogueSettings);
                 Object.assign(defaultSettings, settings);
-                //修改 等到游戏结束再删游戏临时存档
-                //localStorage.removeItem('ShenDun_dialogue_settings');
             } catch (e) {
                 console.error('解析对话设置失败', e);
             }

@@ -39,26 +39,18 @@ let typeInterval = null;
 async function initGame() {
     // 检查当前用户
     const currentUser = sessionStorage.getItem('currentUser');
-    if (!currentUser) {
-        // 未登录，跳转到登录页
-        window.location.href = 'login.html';
-        return;
-    }
+    if (!currentUser) {window.location.href = 'login.html';return;}
     // 加载对话脚本
     await loadScript();
-    // 检查URL参数
     const urlParams = new URLSearchParams(window.location.search);
+    // 添加失败章节检测
+    const failChapter = urlParams.get('failChapter');
+
     const isNewGame = urlParams.get('new') === 'true';
-    const returnFromGame = urlParams.get('returnFromGame') !== null;
-    // 如果是新游戏，清除自动存档
     if (isNewGame) {localStorage.removeItem(`ShenDun_savedialog_${currentUser}`);}
-    
-    // 检查是否有存档需要加载
     let saveData = null;
     if (!isNewGame) {saveData = getSaveDataFromURL() || loadAutoSave();}
-    
-    // 如果是从游戏返回，检查是否有临时进度
-    if (returnFromGame) {
+    if (urlParams.get('returnFromGame')) {
         const tempProgress = localStorage.getItem(`ShenDun_temp_progress_${currentUser}`);
         if (tempProgress) {
             try {
@@ -67,15 +59,15 @@ async function initGame() {
             } catch (e) {console.error("读取临时进度失败", e);}
         }
     }
-    
-    if (saveData) {// 加载存档
-        playChapter(saveData.chapter, saveData.scene, saveData.dialog + returnFromGame);
-    } else {playChapter(0, 0, 0);}
-    // 绑定事件监听器
+    if (failChapter) {// 播放失败章节
+        playChapter(parseInt(failChapter), 0, 0);
+    } 
+    else if (saveData) {
+        playChapter(saveData.chapter, saveData.scene, saveData.dialog );
+    }else {playChapter(0, 0, 0);}
     bindEvents();
 }
 
-// 从URL参数获取存档数据
 function getSaveDataFromURL() {
     const urlParams = new URLSearchParams(window.location.search);
     const saveSlot = urlParams.get('load');
@@ -85,7 +77,6 @@ function getSaveDataFromURL() {
     return null;
 }
 
-// 加载对话脚本
 async function loadScript() {
     try {
         gameState.scriptData = window.scriptData;
@@ -158,30 +149,20 @@ function playScene(sceneIndex, dialogIndex = 0) {
     const chapter = gameState.scriptData.chapters[gameState.currentChapter];
     const scene = chapter.scenes[sceneIndex];
     if (!scene) {
-        // 没有更多场景，尝试下一章节
         if (gameState.currentChapter + 1 < gameState.scriptData.chapters.length) {
             playChapter(gameState.currentChapter + 1, 0, 0);
         } else {
-            // 没有更多章节，游戏结束
             showEnding();
         }
         return;
     }
-    
-    // 更新游戏状态
     gameState.currentScene = sceneIndex;
     gameState.currentDialog = dialogIndex;
-    
-    // 修改 设置背景
     domElements.backgroundContainer.style.backgroundImage = `url('../assets/backgrounds/${scene.background}')`;
-    
-    // 播放背景音乐
     if (scene.bgm) {
         domElements.bgm.src = `../assets/bgm/${scene.bgm}`;
         domElements.bgm.play().catch(e => console.log("自动播放被阻止，需要用户交互"));
     }
-    
-    // 开始对话
     playDialog(sceneIndex, dialogIndex);
 }
 
@@ -189,17 +170,12 @@ function playScene(sceneIndex, dialogIndex = 0) {
 function playDialog(sceneIndex, dialogIndex) {
     const chapter = gameState.scriptData.chapters[gameState.currentChapter];
     const scene = chapter.scenes[sceneIndex];
-    
-    // 检查对话是否存在
     if (!scene || !scene.dialogs || !scene.dialogs[dialogIndex]) {
-        // 没有更多对话，尝试下一场景
         if (sceneIndex + 1 < chapter.scenes.length) {
             playScene(sceneIndex + 1, 0);
         } else if (gameState.currentChapter + 1 < gameState.scriptData.chapters.length) {
-            // 下一章节
             playChapter(gameState.currentChapter + 1, 0, 0);
         } else {
-            // 游戏结束
             showEnding();
         }
         return;
@@ -210,23 +186,13 @@ function playDialog(sceneIndex, dialogIndex) {
     // 更新游戏状态
     gameState.currentScene = sceneIndex;
     gameState.currentDialog = dialogIndex;
-        
-    // 设置角色名称
     domElements.characterName.textContent = dialog.character;
-    
-    // 设置角色立绘
     updateCharacters(dialog);
-    
-    // 播放语音
     if (dialog.voice) {
         domElements.voice.src = `../assets/voices/${dialog.voice}`;
         domElements.voice.play().catch(e => console.log("语音播放失败"));
     }
-    
-    // 显示文字（打字机效果）
     displayText(dialog.text);
-    
-    // 自动保存
     autoSave();
 
     if (dialog.action) {//修改
@@ -239,34 +205,45 @@ function playDialog(sceneIndex, dialogIndex) {
 function handleAction(action) {
     // 保存当前进度
     const currentUser = sessionStorage.getItem('currentUser');
-    const tempProgress = {
+    var tempProgress = {
         chapter: gameState.currentChapter,
         scene: gameState.currentScene,
         dialog: gameState.currentDialog,
         timestamp: new Date().getTime()
     };
-    localStorage.setItem(`ShenDun_temp_progress_${currentUser}`, JSON.stringify(tempProgress));
-
+    
     switch (action.type) {
+        case 'show_ending':
+            showEnding(action.ending);
+            break;
+            
         case 'jump_to_game':
-            // 修改 新增：保存游戏设置
+            tempProgress.dialog += 1;
+            localStorage.setItem(`ShenDun_temp_progress_${currentUser}`, JSON.stringify(tempProgress));
             const gameSettings = {
                 mapId: action.mapId || 'map_new_01', 
                 availableUnits: action.availableUnits || Object.keys(UNIT_TYPES),
-                enableFogOfWar: action.enableFogOfWar !== false , // 默认启用
+                enableFogOfWar: action.enableFogOfWar !== false ,
                 aiDifficulty: action.aiDifficulty || 'medium',
                 gameMode: action.gameMode || 'annihilation',
-                // 新增：支持目标模式、刺杀模式和护送模式的参数
                 objectives: action.objectives || null,
                 escortUnit: action.escortUnit || null,
                 targetUnit: action.targetUnit || null,
-                destination: action.destination || null
+                destination: action.destination || null,
+                playerManpower: action.playerManpower || 50,
+                aiManpower: action.aiManpower || 50
             };
             localStorage.setItem('ShenDun_dialogue_settings', JSON.stringify(gameSettings));
             window.location.href = `loading.html?target=game.html&fromDialogue=true&user=${JSON.parse(currentUser).username}`;
             break;
             
-        case 'jump_to_chapter':// 跳转到指定章节' 修改
+        case 'jump_to_chapter':
+            tempProgress = {
+                chapter: action.chapter,
+                scene: 0,dialog: 0,
+                timestamp: new Date().getTime()
+            };
+            localStorage.setItem(`ShenDun_temp_progress_${currentUser}`, JSON.stringify(tempProgress));
             window.location.href = `loading.html?target=dialogue.html&returnFromGame=false&user=${JSON.parse(currentUser).username}`;
             break;
             
@@ -387,7 +364,7 @@ function showSaveModal() {
         if (saveData) {
             slot.innerHTML = `
                 <div class="save-slot-content">
-                    <div class="save-slot-chapter">第${saveData.chapter + 1}章</div>
+                    <div class="save-slot-chapter">第${saveData.chapter}章</div>
                     <div class="save-slot-scene">${getSceneName(saveData.chapter, saveData.scene)}</div>
                     <div class="save-slot-date">${new Date(saveData.timestamp).toLocaleString()}</div>
                 </div>
@@ -417,7 +394,7 @@ function showLoadModal() {
         if (saveData) {
             slot.innerHTML = `
                 <div class="save-slot-content">
-                    <div class="save-slot-chapter">第${saveData.chapter + 1}章</div>
+                    <div class="save-slot-chapter">第${saveData.chapter}章</div>
                     <div class="save-slot-scene">${getSceneName(saveData.chapter, saveData.scene)}</div>
                     <div class="save-slot-date">${new Date(saveData.timestamp).toLocaleString()}</div>
                 </div>
@@ -499,11 +476,24 @@ function onVoiceEnded() {
 }
 
 // 显示结局
-function showEnding() {
-    // 根据游戏进度显示不同的结局
+async function showEnding(endingType) {
+    let title, message;
+    
+    switch(endingType) {
+        case 'fail':
+            title = '任务失败';
+            message = '我们的行动失败了，但战争还没有结束。';
+            break;
+        case 'success':
+        default:
+            title = '游戏结束';
+            message = '感谢您的游玩。';
+    }
+    
     domElements.backgroundContainer.style.backgroundImage = `url('../assets/backgrounds/bg.png')`;
-    showAlert('游戏结束','感谢您的游玩。');
-    window.location.href = '../index.html';
+    showAlert(title, message, () => {
+        window.location.href = '../index.html';
+    });
 }
 
 // 初始化游戏

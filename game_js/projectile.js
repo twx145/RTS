@@ -2,9 +2,10 @@
 let nextProjectileId = 0;
 
 class Projectile {
-    constructor(owner, startPos, target, stats) {
+    constructor(owner, attacker ,startPos, target, stats) {
         this.id = nextProjectileId++;
         this.owner = owner;
+        this.attacker = attacker;
         this.x = startPos.x;
         this.y = startPos.y;
         this.target = target;

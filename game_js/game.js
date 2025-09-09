@@ -27,10 +27,10 @@ class Game {
         this.dragEnd = { x: 0, y: 0 };
         this.mousePos = { x: 0, y: 0 };
         this.globalMousePos = { x: 0, y: 0 };
-        this.camera = { x: 0, y: 0, zoom: 1.2, minZoom: 1, maxZoom: 4.0 };
+        this.camera = { x: 0, y: 0, zoom: 1.2, minZoom: 1.0, maxZoom: 4.0 };
         this.isDraggingMap = false;
         this.lastDragPos = { x: 0, y: 0 };
-        
+
         // --- 新增: 初始化编队数组 ---
         this.controlGroups = Array.from({ length: 10 }, () => []);
 
@@ -52,8 +52,8 @@ class Game {
         this.targetUnit = null;
         this.objectiveMarkers = [];
         this.destination = null;
-        // 新增：北极基地建筑物管理器
-        this.arcticBuildingsManager = null;
+        // 新增：建筑物管理器
+        this.buildingsManager = null;
     }
 
     init(settings) {
@@ -110,26 +110,24 @@ class Game {
         this.camera.minZoom = Math.max(this.camera.minZoom,Math.max(this.canvas.width / this.map.width , this.canvas.height / this.map.height)/TILE_SIZE);
 
         const baseGridY = Math.floor(this.map.height / 2) - 1; 
-        if (this.gameMode === 'annihilation' || this.gameMode === 'defend') {
+        if (this.gameMode === 'tutorial' || this.gameMode === 'annihilation' || this.gameMode === 'defend') {
             this.playerBase = new Base('player', 6, baseGridY);
             this.placeBaseOnMap(this.playerBase);
         }
-        if (this.gameMode === 'annihilation' || this.gameMode === 'attack') {
+        if (this.gameMode === 'tutorial' || this.gameMode === 'annihilation' || this.gameMode === 'attack') {
             this.aiBase = new Base('ai', this.map.width - 9, baseGridY);
             this.placeBaseOnMap(this.aiBase);
         }
         
         this.createTerrainBodies();
 
-        // 新增：如果是北极地图，初始化建筑物管理器
-        if (settings.mapId === 'map_chapter4') {
-            this.arcticBuildingsManager = new ArcticBuildingsManager(this);
-            this.arcticBuildingsManager.initialize();
-        }
+        // 新增：初始化建筑物管理器
+        this.buildingsManager = new BuildingsManager(this);
+        this.buildingsManager.initialize();
 
-        const initialManpower = 50;
-        this.player = new Player('player', '玩家', initialManpower);
-        const aiManpower = settings.aiDifficulty === 'hell' ? Math.round(initialManpower * 2.5) : initialManpower * 1.5;
+        const playerManpower = settings.playerManpower || 50;
+        const aiManpower = settings.aiManpower || (settings.aiDifficulty === 'hell' ? Math.round(playerManpower * 1.5) : playerManpower);
+        this.player = new Player('player', '玩家', playerManpower);
         this.ai = new Player('ai', '电脑', aiManpower, true, {}, settings.aiDifficulty);
         
         this.ui = new UI(this);
@@ -367,14 +365,15 @@ class Game {
     findBuildingPosition(buildingType) {
         // 这里需要根据地图设计来定位特定建筑
         // 简单实现：根据建筑类型返回预设位置
+        const specialbuildings = this.buildingsManager.specialBuildings;
         const positions = {
-            'barracks': { x: this.map.width * TILE_SIZE * 0.7, y: this.map.height * TILE_SIZE * 0.3 },
-            'armory': { x: this.map.width * TILE_SIZE * 0.6, y: this.map.height * TILE_SIZE * 0.5 },
-            'command_center': { x: this.map.width * TILE_SIZE * 0.8, y: this.map.height * TILE_SIZE * 0.4 },
-            'power_station_1': { x: this.map.width * TILE_SIZE * 0.2, y: this.map.height * TILE_SIZE * 0.2 },
-            'power_station_2': { x: this.map.width * TILE_SIZE * 0.8, y: this.map.height * TILE_SIZE * 0.2 },
-            'power_station_3': { x: this.map.width * TILE_SIZE * 0.5, y: this.map.height * TILE_SIZE * 0.8 },
-            'control_tower': { x: this.map.width * TILE_SIZE * 0.5, y: this.map.height * TILE_SIZE * 0.5 }
+            'barracks': specialbuildings['barracks']?{ x: specialbuildings['barracks'][0].pixelX, y: specialbuildings['barracks'][0].pixelY}:null,
+            'armory': specialbuildings['armory']?{ x: specialbuildings['armory'][0].pixelX, y: specialbuildings['armory'][0].pixelY}:null,
+            'command_center': specialbuildings['command_center']?{ x: specialbuildings['command_center'][0]?.pixelX, y: specialbuildings['command_center'][0]?.pixelY}:null,
+            'power_station_1': specialbuildings['power_station']?{ x: specialbuildings['power_station'][0]?.pixelX, y: specialbuildings['power_station'][0]?.pixelY}:null,
+            'power_station_2': specialbuildings['power_station']?{ x: specialbuildings['power_station'][1]?.pixelX, y: specialbuildings['power_station'][1]?.pixelY}:null,
+            'power_station_3': specialbuildings['power_station']?{ x: specialbuildings['power_station'][2]?.pixelX, y: specialbuildings['power_station'][2]?.pixelY}:null,
+            'control_tower': specialbuildings['control_tower']?{ x: specialbuildings['control_tower'][0]?.pixelX, y: specialbuildings['control_tower'][0]?.pixelY}:null
         };
         
         return positions[buildingType] || null;
@@ -435,9 +434,9 @@ class Game {
 
         this.handleEdgeScrolling(deltaTime);
         this.constrainCamera();
-        // 新增：更新北极基地建筑物系统
-        if (this.arcticBuildingsManager) {
-            this.arcticBuildingsManager.update(deltaTime);
+        // 新增：更新建筑物系统
+        if (this.buildingsManager) {
+            this.buildingsManager.update(deltaTime);
         }
         const allPlayerUnits = [...this.player.units];
         const allAiUnits = [...this.ai.units];
@@ -485,57 +484,34 @@ class Game {
     // 新增：更新游戏目标状态
     updateObjectives() {
         switch (this.gameMode) {
+            case 'tutorial': // 新增教程模式
+                this.updateTutorialMode();
+                break;
             case 'objective':
                 this.updateObjectiveMode();
-                break;
-            case 'objective_arctic':
-                this.updateObjective_ArcticMode();
                 break;
             case 'assassination':
                 this.updateAssassinationMode();
                 break;
-                
             case 'escort':
                 this.updateEscortMode();
                 break;
         }
     }
 
-    // 新增：更新目标模式
-    updateObjectiveMode() {
-        // 检查是否所有目标都已完成
-        let allCompleted = true;
-        
-        for (const objective of this.gameObjectives) {
-            const parts = objective.split(':');
-            const type = parts[0];
-            const target = parts[1];
-            
-            if (type === 'destroy_building') {
-                // 检查建筑是否被摧毁
-                const building = this.findBuildingByType(target);
-                if (building && building.hp > 0) {
-                    allCompleted = false;
-                    break;
-                }
-            } else if (type === 'guide_debris') {
-                // 检查残骸是否已引导到目标位置
-                // 这里需要实现残骸引导逻辑
-                allCompleted = false; // 暂时设为未完成
-                break;
-            }
-        }
-        
-        if (allCompleted || this.skip) {
+    // 新增教程模式更新方法
+    updateTutorialMode() {
+        if (this.playerBase?.hp <= 0) this.endGame(this.ai); 
+        else if (this.aiBase?.hp <= 0){
             this.levelCompleted = true;
-            this.checkLightningStrikeAchievement();
             this.endGame(this.player);
         }
     }
-    
-    updateObjective_ArcticMode(){
-        // 检查北极地图的胜利条件
-        if (this.arcticBuildingsManager.checkWinCondition() || this.skip) {
+
+    // 新增：更新目标模式
+    updateObjectiveMode(){
+        // 检查地图的胜利条件
+        if (this.skip || this.buildingsManager.checkWinCondition()){
             this.levelCompleted = true;
             this.checkLightningStrikeAchievement();
             this.endGame(this.player);
@@ -543,7 +519,7 @@ class Game {
         }
             
         // 检查失败条件
-        if (this.arcticBuildingsManager.checkLossCondition()) {
+        if (this.buildingsManager.checkLossCondition()) {
             this.endGame(this.ai);
             return;
         }
@@ -564,7 +540,7 @@ class Game {
         if ((this.escortUnit && this.escortUnit.hp > 0)  || this.skip){
             const distance = getDistance(this.escortUnit, this.escortUnit.destination);
             
-            if ((distance < TILE_SIZE * 0.4) || this.skip) {
+            if ((distance < TILE_SIZE ) || this.skip) {
                 // 到达目的地
                 this.levelCompleted = true;
                 this.checkLightningStrikeAchievement();
@@ -616,9 +592,9 @@ class Game {
         
         if (this.playerBase) this.playerBase.draw(this.ctx, this.camera.zoom);
         if (this.aiBase) this.aiBase.draw(this.ctx, this.camera.zoom);
-        // 新增：绘制北极基地建筑物
-        if (this.arcticBuildingsManager) {
-            this.arcticBuildingsManager.draw(this.ctx, this.camera.zoom);
+        // 新增：绘制基地建筑物
+        if (this.buildingsManager) {
+            this.buildingsManager.draw(this.ctx, this.camera.zoom);
         }
         const allUnits = [...this.player.units, ...this.ai.units];
         const groundSeaUnits = allUnits.filter(u => u.stats.moveType !== 'air');
@@ -800,11 +776,17 @@ class Game {
                     this.ui.clearDeploymentSelection(); // 清空部署选择
                     this.selectedUnits = this.player.units.filter(unit => unit.type === typeToSelect && unit.hp > 0);
                 }
+            }// 添加显示/隐藏建筑名称的快捷键（例如按N键）
+            else if (e.key === 'n' || e.key === 'N') {
+                if (this.buildingsManager) {
+                    this.buildingsManager.showBuildingNames = !this.buildingsManager.showBuildingNames;
+                    this.ui.showGameMessage(`建筑名称显示: ${this.buildingsManager.showBuildingNames ? '开启' : '关闭'}`);
+                }
             }
             // --- 新增: 数字键处理编队 ---
             else if (e.key >= '0' && e.key <= '9') {
                 const groupNumber = parseInt(e.key, 10);
-
+                
                 // Ctrl + 数字: 分配编队
                 if (e.ctrlKey) {
                     e.preventDefault(); // 阻止浏览器默认行为，如Ctrl+1切换标签页
@@ -930,14 +912,14 @@ class Game {
         }
     }
     
-    // 在 game.js 的 handleRightClick 方法中添加对北极建筑物的处理
+    // 添加对建筑物的处理
     handleRightClick(x, y) {
         if (this.selectedUnits.length > 0) {
             const worldPos = this.screenToWorld(x, y);
             
-            // 1. 首先检查是否点击了北极建筑物
-            if (this.arcticBuildingsManager) {
-                const building = this.arcticBuildingsManager.findBuildingAt(
+            // 1. 首先检查是否点击了建筑物
+            if (this.buildingsManager) {
+                const building = this.buildingsManager.findBuildingAt(
                     Math.floor(worldPos.x / TILE_SIZE),
                     Math.floor(worldPos.y / TILE_SIZE)
                 );
@@ -1034,7 +1016,7 @@ class Game {
                 this.player.deductManpower(cost);
                 //修改 新增成就监听
                 if (this.onUnitDeployed) {
-                    this.onUnitDeployed(unitType);
+                    this.onUnitDeployed(unitStats.unitClass);
                 }
                 this.ui.update();
             } else { this.ui.showGameMessage("该单位无法部署在此地形上！"); }
@@ -1225,34 +1207,31 @@ class Game {
         }
     }
 
-    handleProjectileHit(p) {
-        this.explosions.push(new Explosion(p.x, p.y, p.stats.splashRadius || 2));
-        if (this.arcticBuildingsManager) {
+    handleProjectileHit(p) { 
+        this.explosions.push(new Explosion(p.x, p.y, p.stats.splashRadius || 2)); 
+        if (this.buildingsManager) {
             const targetGridX = Math.floor(p.target.x / TILE_SIZE);
             const targetGridY = Math.floor(p.target.y / TILE_SIZE);
-            if (this.arcticBuildingsManager.damageBuilding(targetGridX, targetGridY, p.stats.damage)) {
+            if (this.buildingsManager.damageBuilding(targetGridX, targetGridY, p.stats.damage)) {
                 return;
             }
         }
-
-        // 修改: p.owner 现在是攻击单位的实例，可以直接传递
-        if (p.target.hp > 0) p.target.takeDamage(p.stats.damage, p.owner);
-
-        if (p.stats.splashRadius > 0) {
-            const allTargets = [...this.player.units, ...this.ai.units, this.playerBase, this.aiBase].filter(Boolean);
-            allTargets.forEach(entity => {
-                // --- 修改: p.owner.owner -> p.owner.owner ---
-                // 这里需要注意，p.owner 是 Unit 实例，它的 owner 才是 'player' 或 'ai'
-                if (entity.owner !== p.owner.owner && entity.id !== p.target.id && entity.hp > 0) {
-                    const entityPos = { x: entity.pixelX || entity.x, y: entity.pixelY || entity.y };
-                    const distance = getDistance(entityPos, p);
-                    if (distance < p.stats.splashRadius) {
+        
+        if (p.target.hp > 0) p.target.takeDamage(p.stats.damage, p.attacker); 
+        
+        if (p.stats.splashRadius > 0) { 
+            const allTargets = [...this.player.units, ...this.ai.units, this.playerBase, this.aiBase].filter(Boolean); 
+            allTargets.forEach(entity => { 
+                if (entity.owner !== p.owner.owner && entity.id !== p.target.id && entity.hp > 0) { 
+                    const entityPos = { x: entity.pixelX || entity.x, y: entity.pixelY || entity.y }; 
+                    const distance = getDistance(entityPos, p); if (distance < p.stats.splashRadius) { 
                         const splashDamage = p.stats.damage * (1 - distance / p.stats.splashRadius);
-                        entity.takeDamage(splashDamage, p.owner);
-                    }
-                }
-            });
-        }
+                        // 溅射伤害也应用克制逻辑
+                        entity.takeDamage(splashDamage, p.attacker); 
+                    } 
+                } 
+            }); 
+        } 
     }
     startGame() { if (this.gameState === 'deployment') this.gameState = 'playing'; }
     checkWinConditions() { 
@@ -1284,8 +1263,8 @@ class Game {
                     this.endGame(this.player);
                 }
                 break; 
+            case 'tutorial':
             case 'objective':
-            case 'objective_arctic':
             case 'assassination':
             case 'escort':
                 // 这些模式的胜利条件在updateObjectives中处理
@@ -1301,12 +1280,14 @@ class Game {
     endGame(winner) {
         if (this.gameState === 'gameover') return; 
         this.gameState = 'gameover';
-        this.checkAchievements();
         console.log(`${winner.name} 获胜!`);
         this.ui.showWinner(winner.name);
         localStorage.removeItem('ShenDun_dialogue_settings');
         this.savegame.clearAutoSave();
-
+        if(winner.name === 'ai'){
+            setTimeout(() => {window.location.href = `loading.html?target=dialogue.html&failChapter=7&user=${JSON.parse(currentUser).username}`;},2000);
+            return;
+        }
         if (this.returnToDialogue())return;
     }
     
@@ -1346,8 +1327,8 @@ class Game {
     }
 
     checkChapterCompletion(chapter , scene){
-        const chapterAchievements = {0: '初战告捷',1: '深渊猎手',2: '都市幽灵',3: '极地风暴',4: '终局之光'};
-        if (chapterAchievements[chapter]&& (chapter !== 4 || scene !== 0)){
+        const chapterAchievements = {1: '初战告捷',2: '深渊猎手',3: '都市幽灵',4: '极地风暴',5: '终局之光'};
+        if (chapterAchievements[chapter]&& (chapter !== 5 || scene !== 0)){
             this.unlockAchievement(chapterAchievements[chapter]);
         }
     }
@@ -1365,12 +1346,12 @@ class Game {
             this.unlockAchievement('爱兵如子');
         }
         // 检查反装甲专家成就
-        if (this.achievementStats.enemyTanksDestroyed >= 10 && 
+        if (this.achievementStats.enemyTanksDestroyed >= 3 && 
             !this.achievements['反装甲专家'].unlocked) {
             this.unlockAchievement('反装甲专家');
         }
         // 检查正义天降成就
-        if (this.achievementStats.infantryVsVehicles >= 10 && 
+        if (this.achievementStats.infantryVsVehicles >= 5 && 
             !this.achievements['正义天降'].unlocked) {
             this.unlockAchievement('正义天降');
         }
@@ -1385,12 +1366,12 @@ class Game {
             !this.achievements['海陆协同'].unlocked) {
             this.unlockAchievement('海陆协同');
         }
-        // 检查全球防御者成就
-        if (this.achievementStats.difficulty === 'hard' && 
-            this.gameState === 'gameover' && this.player.winner && 
-            !this.achievements['全球防御者'].unlocked) {
-            this.unlockAchievement('全球防御者');
-        }
+        // // 检查全球防御者成就
+        // if (this.achievementStats.difficulty === 'hard' && 
+        //     this.gameState === 'gameover' && this.player.winner && 
+        //     !this.achievements['全球防御者'].unlocked) {
+        //     this.unlockAchievement('全球防御者');
+        // }
         // 检查神话守护者成就
         const allUnlocked = Object.values(this.achievements)
             .filter(a => a.name !== '神话守护者').every(a => a.unlocked);
@@ -1457,7 +1438,7 @@ class Game {
     }
     
     skipCurrentScenario() {
-        if (this.gameMode === 'annihilation' || this.gameMode === 'attack') {
+        if (this.gameMode === 'tutorial' || this.gameMode === 'annihilation' || this.gameMode === 'attack') {
             this.aiBase.hp = 0;
         } else if (this.gameMode === 'defend') {
             this.playerBase.hp = 0;
@@ -1490,27 +1471,26 @@ class Game {
     }
     // 添加单位摧毁监听
     onUnitDestroyed(attacker, target) {
+        const Attackertype = attacker.stats.unitClass;
+        const Targettype = target.stats.unitClass;
         // 记录敌方坦克摧毁
-        if (target.type.includes('tank') || target.type.includes('armor')) {
+        if (target.stats.name === '主战坦克') {
             this.achievementStats.enemyTanksDestroyed++;
         }
         // 记录敌方舰船摧毁
-        if (target.type.includes('ship') || target.type.includes('naval')) {
+        if (Targettype === '海军') {
             this.achievementStats.enemyShipsDestroyed++;
         }
         // 记录步兵对载具的击杀
-        if ((attacker.type.includes('infantry') || attacker.type.includes('soldier')) && 
-            (target.type.includes('vehicle') || target.type.includes('tank') || target.type.includes('armor'))) {
+        if ((Targettype === '装甲' || Targettype === '炮兵')&& Attackertype === '步兵') {
             this.achievementStats.infantryVsVehicles++;
         }
         // 记录海军对陆地单位的击杀
-        if ((attacker.type.includes('ship') || attacker.type.includes('naval')) && 
-            (target.type.includes('infantry') || target.type.includes('tank') || target.type.includes('vehicle'))) {
+        if ((Targettype === '装甲' || Targettype === '步兵' || Targettype === '炮兵') && Attackertype === '海军') {
             this.achievementStats.navalVsLandKills++;
         }
         // 记录陆军对海军单位的击杀
-        if ((attacker.type.includes('infantry') || attacker.type.includes('tank')) && 
-            (target.type.includes('ship') || target.type.includes('naval'))) {
+        if ((Attackertype === '装甲' || Attackertype === '步兵' || Attackertype === '炮兵') && Targettype === '海军') {
             this.achievementStats.landVsNavalKills++;
         }
         this.checkAchievements();

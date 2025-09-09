@@ -1,6 +1,4 @@
 let Slot = null;
-// 存档管理 - 多用户支持
-// 获取当前用户
 function getCurrentUser() {
     return sessionStorage.getItem('currentUser');
 }
@@ -15,7 +13,6 @@ function getUserSavesKey() {
 function getUserSaves() {
     const userSavesKey = getUserSavesKey();
     const savesJson = localStorage.getItem(userSavesKey);
-    
     if (savesJson) {
         try {
             return JSON.parse(savesJson);

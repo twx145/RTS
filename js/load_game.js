@@ -1,28 +1,15 @@
 let currentUser = null;
-let scriptData = null; // 存储脚本数据
-
-// 初始化函数
+let scriptData = null;
 async function initLoadGame() {
-    // 获取当前用户
     currentUser = sessionStorage.getItem('currentUser');
     if (!currentUser) {
-        // 未登录，跳转到登录页
         window.location.href = 'login.html';
         return;
     }
-    // 更新用户名显示
     document.getElementById('username').textContent = `玩家: ${JSON.parse(currentUser).username}`;
-    
-    // 加载脚本数据
     await loadScriptData();
-    
-    // 设置随机背景
     setRandomBackground();
-    
-    // 加载存档数据
     loadSaveData();
-    
-    // 绑定事件
     bindEvents();
 }
 
@@ -42,9 +29,10 @@ function setRandomBackground() {
     const backgrounds = [
         'url("../assets/backgrounds/bg.png")',
         'url("../assets/backgrounds/bg2.png")',
-        // 'url("assets/backgrounds/border_area.jpg")',
-        // 'url("assets/backgrounds/command_center.jpg")',
-        // 'url("assets/backgrounds/forest.jpg")'
+        'url("../assets/backgrounds/北极能源站.jpg")',
+        'url("../assets/backgrounds/指挥中心.jpg")',
+        'url("../assets/backgrounds/北部山区.jpg")',
+        'url("../assets/backgrounds/沙漠哨站.png")'
     ];
     
     const randomBg = backgrounds[Math.floor(Math.random() * backgrounds.length)];
@@ -79,7 +67,7 @@ function updateSaveSlot(slot, saveData) {
         const dateEl = saveSlot.querySelector('.save-date');
         const dialogEl = saveSlot.querySelector('.save-dialog');
         
-        chapterEl.textContent = `第${saveData.chapter + 1}章: ${getChapterName(saveData.chapter)}`;
+        chapterEl.textContent = `第${saveData.chapter}章: ${getChapterName(saveData.chapter)}`;
         dateEl.textContent = new Date(saveData.timestamp).toLocaleString();
         dialogEl.textContent = getDialogText(saveData) || "无对话内容";
         
@@ -124,7 +112,6 @@ function updateThumbnail(thumbnail, saveData) {
             }
         }
     }
-    
     // 如果无法获取背景，使用默认背景
     thumbnail.style.backgroundImage = 'url("../assets/backgrounds/bg.png")';
 }
@@ -171,9 +158,9 @@ function getChapterName(chapterIndex) {
         const title = scriptData.chapters[chapterIndex].title;
         return title && title.length > 15 ? 
             title.substring(0, 15) + "..." : 
-            title || `章节 ${chapterIndex + 1}`;
+            title || `章节 ${chapterIndex}`;
     }
-    return `章节 ${chapterIndex + 1}`;
+    return `章节 ${chapterIndex}`;
 }
 
 // 加载游戏
@@ -188,7 +175,6 @@ function loadGame(slot) {
             slot: slot,
             saveData: saveData
         }));
-        
         // 跳转到加载页面，然后到游戏页面
         window.location.href = `loading.html?target=game.html&fromSave=true&user=${JSON.parse(currentUser).username}`;
     }

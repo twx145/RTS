@@ -43,16 +43,18 @@ class Unit {
             this.body.gameObject = this;
             Matter.World.add(window.game.engine.world, this.body);
         }
-        this.isPatrolling = false;
-        this.patrolPoints = [];
-        this.currentPatrolPointIndex = 0;
+        this.isPatrolling = false;      // 是否正在巡逻
+        this.patrolPoints = [];         // 巡逻点路径
+        this.currentPatrolPointIndex = 0; // 当前目标巡逻点的索引
         this.tag = 'unit_' + Math.random().toString(36).slice(2);
 
-        this.isEscortUnit = false;
-        this.destination = null;
-        this.isTargetUnit = false;
-        this.isSpecialBuilding = false;
-        this.buildingType = null;
+        this.isEscortUnit = false;      // 是否是护送单位
+        this.destination = null;        // 护送单位的目的地
+        this.isTargetUnit = false;      // 是否是目标单位（刺杀模式）
+        this.isSpecialBuilding = false; // 是否是特殊建筑（目标模式）
+        this.buildingType = null;       // 建筑类型
+
+        this.isBuilding = false;
     }
 
     createBody(x, y) {
@@ -83,24 +85,24 @@ class Unit {
         Matter.Body.setAngle(body, this.angle);
         return body;
     }
-    
+
     setTarget(newTarget) {
         if (!newTarget) {
             this.target = null;
             return;
         }
-        
-        let targetMoveType = 'ground';
+
+        let targetMoveType = 'ground'; // 默认为地面（例如基地或建筑物）
         if (newTarget instanceof Unit) {
             targetMoveType = newTarget.stats.moveType;
-        } else if (newTarget instanceof Base) {
+        } else if (newTarget instanceof Base || newTarget.isBuilding) {
             targetMoveType = 'ground';
         }
         
         if (this.stats.canTarget.includes(targetMoveType)) {
             this.target = newTarget;
         } else {
-            this.target = null;
+            this.target = null; // 确保不会设置非法目标
         }
     }
 
@@ -114,7 +116,7 @@ class Unit {
     // 新增：设置目标单位
     setAsTargetUnit() {
         this.isTargetUnit = true;
-        this.stats.hp *= 1.5; // 目标单位有更多生命值
+        this.stats.hp *= 10; // 目标单位有更多生命值
         this.hp = this.stats.hp;
     }
 
@@ -216,7 +218,6 @@ class Unit {
         // 无论在哪种模式下，只要有路径，就执行移动
         this.handleMovement(deltaTime, map);
     }
-
 
      // 新增：护送单位行为
     updateEscortBehavior(deltaTime, game) {
@@ -321,7 +322,6 @@ class Unit {
                     this.path = [];
                     this.moveTargetPos = null;
                     if (this.body) Matter.Body.setVelocity(this.body, { x: 0, y: 0 });
-                    this.isforcemoving = false;
 
                     if (this.stats.special === 'SETUP_TO_FIRE') {
                         this.isSettingUp = true;
@@ -586,12 +586,11 @@ class Unit {
                 closestTarget = enemyBase;
             }
         }
-        // 新增：检查北极建筑物
-        if (!closestTarget && game.arcticBuildingsManager && validUnitTargetTypes.includes('ground')) {
-            const arcticBuildings = game.arcticBuildingsManager.buildings;
-            for (const building of arcticBuildings) {
+        // 新增：检查建筑物
+        if (!closestTarget && game.buildingsManager && validUnitTargetTypes.includes('ground') && this.owner !== 'ai') {
+            const buildings = game.buildingsManager.buildings;
+            for (const building of buildings) {
                 if (building.hp <= 0 || building.isDestroyed) continue;
-
                 const buildingPos = { x: building.pixelX, y: building.pixelY };
                 const distance = getDistance(this, buildingPos);
                 if (distance < minDistance) {
@@ -605,18 +604,19 @@ class Unit {
     
     attack(game) { 
         if (!this.target || !this.stats.ammoType) return; 
-        const pStats = { damage: this.stats.attack, ammoType: this.stats.ammoType, ammoSpeed: this.stats.ammoSpeed, splashRadius: this.stats.ammoSplashRadius };
-        const proj = new Projectile(this, { x: this.x, y: this.y }, this.target, pStats); 
+        const pStats = { damage: this.stats.attack, ammoType: this.stats.ammoType, ammoSpeed: this.stats.ammoSpeed, splashRadius: this.stats.ammoSplashRadius, };
+        const proj = new Projectile(this.owner, this ,{ x: this.x, y: this.y }, this.target, pStats); 
         game.projectiles.push(proj); 
         this.attackCooldown = this.stats.attackSpeed; 
     }
-
     takeDamage(amount, attacker) {
         let finalDamage = amount;
 
-        if (attacker && attacker.stats.counters) {
+        // 如果有攻击者，且攻击者有克制定义
+        if (attacker && attacker.stats && attacker.stats.counters) {
             const targetClass = this.stats.unitClass;
             const multiplier = attacker.stats.counters[targetClass];
+            
             if (multiplier !== undefined) {
                 finalDamage *= multiplier;
             }
@@ -625,6 +625,9 @@ class Unit {
         this.hp -= finalDamage;
         if (this.hp <= 0) {
             this.hp = 0;
+            if(window.game && attacker && attacker.stats && attacker.owner === 'player'){
+                window.game.onUnitDestroyed(attacker, this);
+            }
         }
 
         if (this.hp > 0 && attacker && this.owner === 'player') {
@@ -633,7 +636,6 @@ class Unit {
             }
         }
     }
-
     findSmoothedPathTarget(map) { 
         if (!this.path || this.path.length === 0 || this.currentPathIndex >= this.path.length) return; 
         for (let i = this.path.length - 1; i > this.currentPathIndex; i--) { 
