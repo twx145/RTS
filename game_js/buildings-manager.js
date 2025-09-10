@@ -7,12 +7,25 @@ class BuildingsManager {
         this.healInterval = 10000;
         this.lastHealTime = 0;
         this.showBuildingNames = true; // 默认显示建筑名称
+        this.buildingImages = {}; // 存储建筑图片
     }
 
     initialize() {
         this.findAndRegisterBuildings();
         this.setBuildingHealth();
+        this.preloadBuildingImages(); // 预加载建筑图片
         console.log("建筑物系统初始化完成");
+    }
+
+    // 预加载建筑图片
+    preloadBuildingImages() {
+        for (const type in BUILDING_TYPES) {
+            if (BUILDING_TYPES[type].imageSrc) {
+                const img = new Image();
+                img.src = BUILDING_TYPES[type].imageSrc;
+                this.buildingImages[type] = img;
+            }
+        }
     }
 
     findAndRegisterBuildings() {
@@ -55,7 +68,8 @@ class BuildingsManager {
         // 计算像素中心点
         const pixelX = (gridPos.x + buildingTypeConfig.width / 2) * TILE_SIZE;
         const pixelY = (gridPos.y + buildingTypeConfig.height / 2) * TILE_SIZE;
-        
+        // 获取建筑图片
+        const buildingImage = this.buildingImages[type];
         // 创建建筑物对象
         const building = {
             type: type,
@@ -72,6 +86,7 @@ class BuildingsManager {
             isDestroyed: false,
             canAttack: buildingTypeConfig.canAttack,
             buildingType: buildingTypeConfig,
+            image: buildingImage, // 添加图片引用
             
             // 攻击相关属性
             attackCooldown: 0,
@@ -86,14 +101,25 @@ class BuildingsManager {
                 const sizeX = this.gridWidth * TILE_SIZE;
                 const sizeY = this.gridHeight * TILE_SIZE;
                 
-                // 绘制建筑物基底
-                ctx.fillStyle = this.getBuildingColor(type);
-                ctx.fillRect(
-                    this.pixelX - sizeX/2, 
-                    this.pixelY - sizeY/2, 
-                    sizeX, 
-                    sizeY
-                );
+                // 绘制建筑物图片
+                if (this.image && !this.isDestroyed) {
+                    ctx.drawImage(
+                        this.image,
+                        this.pixelX - sizeX/2, 
+                        this.pixelY - sizeY/2, 
+                        sizeX, 
+                        sizeY
+                    );
+                } else {
+                    // 如果图片不可用，回退到原始颜色方块
+                    ctx.fillStyle = this.getBuildingColor(type);
+                    ctx.fillRect(
+                        this.pixelX - sizeX/2, 
+                        this.pixelY - sizeY/2, 
+                        sizeX, 
+                        sizeY
+                    );
+                }
                 
                 // 绘制边框
                 ctx.strokeStyle = this.isDestroyed ? '#FF0000' : '#FFFFFF';
@@ -274,7 +300,7 @@ class BuildingsManager {
                     splashRadius: this.buildingType.ammoSplashRadius
                 };
                 
-                const proj = new Projectile('ai', { x: this.pixelX, y: this.pixelY }, this.target, pStats);
+                const proj = new Projectile('ai', this,{ x: this.pixelX, y: this.pixelY }, this.target, pStats);
                 game.projectiles.push(proj);
                 
                 // 播放攻击音效

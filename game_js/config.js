@@ -162,7 +162,8 @@ const BUILDING_TYPES = {
         description: '轻型防御塔，提供视野和小型火力支援。',
         isDestructible: true,
         buildTime: 30,
-        cost: 200
+        cost: 200,
+        imageSrc: '../assets/pics/observation_tower.png'
     },
     
     // 桥梁控制站 - 功能性建筑
