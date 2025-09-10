@@ -1045,9 +1045,18 @@ class Game {
     /**
      * --- 核心修复 (问题 #1): 分散寻路计算以避免卡顿 ---
      */
-    issueGroupMoveCommand(targetPos, map) {
+        issueGroupMoveCommand(targetPos, map) {
         if (this.selectedUnits.length === 0) return;
-        
+
+        // --- 核心修改 1: 计算编队的当前中心点 ---
+        const groupCenter = this.selectedUnits.reduce((acc, unit) => {
+            acc.x += unit.x;
+            acc.y += unit.y;
+            return acc;
+        }, { x: 0, y: 0 });
+        groupCenter.x /= this.selectedUnits.length;
+        groupCenter.y /= this.selectedUnits.length;
+
         const formation = this.calculateFormation(this.selectedUnits, targetPos, TILE_SIZE * 2);
         const sortedUnits = [...this.selectedUnits].sort((a, b) => getDistance(a, targetPos) - getDistance(b, targetPos));
 
@@ -1055,18 +1064,83 @@ class Game {
         const delayIncrement = 5;
 
         sortedUnits.forEach((unit, index) => {
-            const unitTargetPos = formation[index] || targetPos;
+            const idealTargetPos = formation[index] || targetPos;
             
+            // --- 核心修改 2: 将中心点和最终目标点传递给修正函数 ---
+            // 这样修正函数就能知道“前进方向”和“终点线”在哪里
+            const finalTargetPos = this.findNearestValidPosition(
+                idealTargetPos, 
+                map, 
+                unit.stats.moveType,
+                groupCenter,      // 传入当前中心点
+                targetPos         // 传入玩家点击的最终目标点
+            );
+
             setTimeout(() => {
                 if (unit && unit.hp > 0) {
-                     // *** 核心修复 ***
-                     // 明确告诉单位：这不是攻击移动(isEngaging: false)，但这是强制移动(isforcemoving: true)
-                     unit.issueMoveCommand(unitTargetPos, map, false, true);
+                     unit.issueMoveCommand(finalTargetPos, map, false, true);
                 }
             }, delay);
 
             delay += delayIncrement;
         });
+    }
+
+        /**
+     * --- 核心升级: 查找最近的、且不破坏编队相对位置的合法移动点 ---
+     * @param {{x: number, y: number}} idealPos - 为单位计算出的理想目标像素坐标 (可能不合法)
+     * @param {GameMap} map - 游戏地图对象
+     * @param {string} moveType - 单位的移动类型
+     * @param {{x: number, y: number}} groupCenter - 整个编队出发时的中心点
+     * @param {{x: number, y: number}} mainTargetPos - 玩家右键点击的最终目标中心点
+     * @param {number} maxSearchRadius - 最大搜索半径（以格子为单位）
+     * @returns {{x: number, y: number}} - 返回一个保证合法的像素坐标
+     */
+    findNearestValidPosition(idealPos, map, moveType, groupCenter, mainTargetPos, maxSearchRadius = 15) {
+        const startGridX = Math.floor(idealPos.x / TILE_SIZE);
+        const startGridY = Math.floor(idealPos.y / TILE_SIZE);
+
+        // --- 新增逻辑: 定义“终点线” ---
+        // 计算从出发中心点到最终目标点的最大允许距离。
+        // 任何修正后的点都不应该比这个距离更远，从而保证单位不会跑到前面去。
+        // 我们增加一个 TILE_SIZE 的容差，以防止在目标点附近的合法单位被错误地判定为过线。
+        const maxDistance = getDistance(groupCenter, mainTargetPos) + TILE_SIZE;
+
+        let tile = map.getTile(startGridX, startGridY);
+        // 检查原始位置是否合法，并且没有“越线”
+        if (tile && TERRAIN_TYPES[tile.type].traversableBy.includes(moveType) && getDistance(idealPos, groupCenter) <= maxDistance) {
+            return idealPos;
+        }
+        
+        // 如果不合法或越线，开始螺旋搜索
+        for (let r = 1; r <= maxSearchRadius; r++) {
+            for (let dx = -r; dx <= r; dx++) {
+                for (let dy = -r; dy <= r; dy++) {
+                    if (Math.abs(dx) !== r && Math.abs(dy) !== r) continue;
+
+                    const checkX = startGridX + dx;
+                    const checkY = startGridY + dy;
+                    
+                    tile = map.getTile(checkX, checkY);
+                    
+                    // 条件1: 地块必须是可通行的
+                    if (tile && TERRAIN_TYPES[tile.type].traversableBy.includes(moveType)) {
+                        const candidatePos = {
+                            x: checkX * TILE_SIZE + TILE_SIZE / 2,
+                            y: checkY * TILE_SIZE + TILE_SIZE / 2
+                        };
+
+                        // --- 关键约束条件 2: 候选点的距离不能超过“终点线” ---
+                        if (getDistance(candidatePos, groupCenter) <= maxDistance) {
+                            return candidatePos; // 找到一个既合法又没越线的点，立即返回
+                        }
+                    }
+                }
+            }
+        }
+        
+        // 如果实在找不到（非常罕见的情况），返回原始的、可能不合法的位置，避免程序崩溃
+        return idealPos;
     }
 
     calculateFormation(units, targetPos, spacing) {
