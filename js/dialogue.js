@@ -220,19 +220,8 @@ function handleAction(action) {
         case 'jump_to_game':
             tempProgress.dialog += 1;
             localStorage.setItem(`ShenDun_temp_progress_${currentUser}`, JSON.stringify(tempProgress));
-            const gameSettings = {
-                mapId: action.mapId || 'map_new_01', 
-                availableUnits: action.availableUnits || Object.keys(UNIT_TYPES),
-                enableFogOfWar: action.enableFogOfWar !== false ,
-                aiDifficulty: action.aiDifficulty || 'medium',
-                gameMode: action.gameMode || 'annihilation',
-                objectives: action.objectives || null,
-                escortUnit: action.escortUnit || null,
-                targetUnit: action.targetUnit || null,
-                destination: action.destination || null,
-                playerManpower: action.playerManpower || 50,
-                aiManpower: action.aiManpower || 50
-            };
+            const { type, description, ...gameSettings } = action;
+            
             localStorage.setItem('ShenDun_dialogue_settings', JSON.stringify(gameSettings));
             window.location.href = `loading.html?target=game.html&fromDialogue=true&user=${JSON.parse(currentUser).username}`;
             break;

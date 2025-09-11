@@ -132,9 +132,8 @@ class Game {
         
         this.ui = new UI(this);
         this.ai.aiController.playerBase = this.playerBase;
-        this.ai.aiController.deployUnits(this.map.width, this.map.height, TILE_SIZE, this.map);
+        this.ai.aiController.deployUnits(this.map.width, this.map.height, TILE_SIZE, this.map, settings.aiDeployments);
 
-        // 新增：初始化游戏目标
         this.gameObjectives = settings.objectives || [];
         this.escortUnit = settings.escortUnit || null;
         this.targetUnit = settings.targetUnit || null;

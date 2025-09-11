@@ -33,7 +33,12 @@ window.scriptData = {
                 "aiDifficulty": "easy",
                 "gameMode": "tutorial" ,
                 "playerManpower": 30, // 玩家兵力
-                "aiManpower": 15
+                "aiManpower": 15,
+                "aiDeployments": [
+                    { "type": "assault_infantry", "x": 25, "y": 28 },
+                    { "type": "assault_infantry", "x": 25, "y": 22 },
+                    { "type": "sniper", "x": 25, "y": 20 }
+                ]
               }
             },
             {

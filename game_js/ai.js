@@ -52,46 +52,76 @@ class AIController {
         }
     }
 
-    deployUnits(mapWidth, mapHeight, TILE_SIZE, map) {
-        const deployableUnits = Object.keys(UNIT_TYPES);
-        let manpowerToSpend = this.player.manpower;
+    deployUnits(mapWidth, mapHeight, TILE_SIZE, map, predefinedDeployments = null) {
+        // --- 新增逻辑: 检查是否存在预设部署 ---
+        if (predefinedDeployments && predefinedDeployments.length > 0) {
+            // --- 逻辑分支 1: 使用预设部署 ---
+            console.log("Using predefined AI deployments for this mission.");
+            for (const deployment of predefinedDeployments) {
+                const unitType = deployment.type;
+                const cost = UNIT_TYPES[unitType].cost;
 
-        if (this.difficulty === 'hard' || this.difficulty === 'hell') {
-            manpowerToSpend *= 0.8;
-        }
+                if (this.player.canAfford(cost)) {
+                    // 坐标是格子坐标，需要转换为像素坐标
+                    const x = deployment.x * TILE_SIZE;
+                    const y = deployment.y * TILE_SIZE;
 
-        const rallyPointX = mapWidth - 5 - Math.random() * (mapWidth / 4);
-        const rallyPointY = (Math.random() - 0.5) * mapHeight * 0.25 + mapHeight * 0.5;
+                    // 简单检查坐标是否在地图内
+                    if (x < 0 || y < 0 || x >= mapWidth * TILE_SIZE || y >= mapHeight * TILE_SIZE) {
+                        console.warn(`Predefined deployment for ${unitType} is outside map bounds.`);
+                        continue;
+                    }
 
-        let spentManpower = 0;
-        let attempts = 0;
-        const maxAttempts = 20;
-
-        while (spentManpower < manpowerToSpend && attempts < maxAttempts) {
-            const unitType = deployableUnits[Math.floor(Math.random() * deployableUnits.length)];
-            const cost = UNIT_TYPES[unitType].cost;
-
-            if (this.player.canAfford(cost)) {
-                const x = rallyPointX + (Math.random() - 0.5) * 8;
-                const y = rallyPointY + (Math.random() - 0.5) * 8;
-                
-                if (x < 0 || y < 0 || x >= mapWidth || y >= mapHeight) {
-                    attempts++;
-                    continue;
-                }
-
-                const tile = map.getTile(Math.floor(x), Math.floor(y));
-                if(tile && TERRAIN_TYPES[tile.type].traversableBy.includes(UNIT_TYPES[unitType].moveType)){
-                    const newUnit = new Unit(unitType, 'ai', x * TILE_SIZE, y * TILE_SIZE);
+                    const newUnit = new Unit(unitType, 'ai', x, y);
                     this.player.units.push(newUnit);
                     this.player.deductManpower(cost);
-                    spentManpower += cost;
+                } else {
+                    console.warn(`AI cannot afford predefined unit: ${unitType}`);
                 }
-                else {
-                    attempts++;
+            }
+        } else {
+            // --- 逻辑分支 2: 使用原始的随机部署逻辑 (普通模式) ---
+            console.log("Using random AI deployment for this mission.");
+            const deployableUnits = Object.keys(UNIT_TYPES);
+            let manpowerToSpend = this.player.manpower;
+
+            if (this.difficulty === 'hard' || this.difficulty === 'hell') {
+                manpowerToSpend *= 0.8;
+            }
+
+            const rallyPointX = mapWidth - 5 - Math.random() * (mapWidth / 4);
+            const rallyPointY = (Math.random() - 0.5) * mapHeight * 0.25 + mapHeight * 0.5;
+
+            let spentManpower = 0;
+            let attempts = 0;
+            const maxAttempts = 20;
+
+            while (spentManpower < manpowerToSpend && attempts < maxAttempts) {
+                const unitType = deployableUnits[Math.floor(Math.random() * deployableUnits.length)];
+                const cost = UNIT_TYPES[unitType].cost;
+
+                if (this.player.canAfford(cost)) {
+                    const x = rallyPointX + (Math.random() - 0.5) * 8;
+                    const y = rallyPointY + (Math.random() - 0.5) * 8;
+                    
+                    if (x < 0 || y < 0 || x >= mapWidth || y >= mapHeight) {
+                        attempts++;
+                        continue;
+                    }
+
+                    const tile = map.getTile(Math.floor(x), Math.floor(y));
+                    if(tile && TERRAIN_TYPES[tile.type].traversableBy.includes(UNIT_TYPES[unitType].moveType)){
+                        const newUnit = new Unit(unitType, 'ai', x * TILE_SIZE, y * TILE_SIZE);
+                        this.player.units.push(newUnit);
+                        this.player.deductManpower(cost);
+                        spentManpower += cost;
+                    }
+                    else {
+                        attempts++;
+                    }
+                } else {
+                     attempts++;
                 }
-            } else {
-                 attempts++;
             }
         }
     }
