@@ -308,7 +308,7 @@ class Unit {
         this.patrolPoints = [];
     }
     
-    handleMovement(deltaTime, map) {
+        handleMovement(deltaTime, map) {
         if (this.path.length > 0 && !this.moveTargetPos) {
             this.findSmoothedPathTarget(map);
         }
@@ -327,6 +327,7 @@ class Unit {
                         this.isSettingUp = true;
                         this.setupTimer = 2.0;
                     }
+                    this.isforcemoving = false; 
                 } else {
                     this.moveTargetPos = null; 
                 }

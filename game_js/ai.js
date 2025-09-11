@@ -150,9 +150,24 @@ class AIController {
 
     runMediumLogic(aiUnits, map) {
         if (!this.playerBase || this.playerBase.hp <= 0) return;
+
         const livingAttackWave = this.attackWave.filter(u => u.hp > 0);
         if (livingAttackWave.length < 3) {
-            this.attackWave = aiUnits.filter(u => !u.target && u.path.length === 0).slice(0, 5); 
+            const target = this.playerBase;
+            const targetPosition = { x: target.pixelX, y: target.pixelY };
+
+            // 过滤出空闲且存活的单位
+            const availableUnits = aiUnits.filter(u => !u.target && u.path.length === 0 && u.hp > 0);
+
+            // 根据单位与目标点的距离进行排序
+            availableUnits.sort((a, b) => {
+                const distA = getDistance(a, targetPosition);
+                const distB = getDistance(b, targetPosition);
+                return distA - distB;
+            });
+
+            // 选择最近的5个单位组成进攻波
+            this.attackWave = availableUnits.slice(0, 5);
         }
         
         const target = this.playerBase;
@@ -212,7 +227,20 @@ class AIController {
 
         const livingAttackWave = this.attackWave.filter(u => u.hp > 0);
         if (livingAttackWave.length < 4) {
-             this.attackWave = aiUnits.filter(u => !u.target && u.path.length === 0).slice(0, 6);
+            const targetPosition = { x: priorityTarget.pixelX || priorityTarget.x, y: priorityTarget.pixelY || priorityTarget.y };
+
+            // 过滤出空闲且存活的单位
+            const availableUnits = aiUnits.filter(u => !u.target && u.path.length === 0 && u.hp > 0);
+
+            // 根据单位与优先级目标点的距离进行排序
+            availableUnits.sort((a, b) => {
+                const distA = getDistance(a, targetPosition);
+                const distB = getDistance(b, targetPosition);
+                return distA - distB;
+            });
+
+            // 选择最近的6个单位组成进攻波
+            this.attackWave = availableUnits.slice(0, 6);
         }
         
         let delay = 0;

@@ -66,7 +66,7 @@ const UNIT_TYPES = {
         unitClass: '装甲', icon: 't', name: '轻型坦克',
         cost: 3, hp: 250, attack: 18, defense: 20, range: 5 * TILE_SIZE, speed: 1.8, attackSpeed: 1.8, visionRange: 5 * TILE_SIZE * 1.5,
         moveType: 'ground', canTarget: ['ground','amphibious','sea'], imageSrc: '../assets/pics/light_tank.png', drawScale: 3 * DRAW_SCALE_FACTOR,
-        ammoType: 'missile', ammoSpeed: 15 * TILE_SIZE * AMMOSPEED, ammoSplashRadius: 0.5 * TILE_SIZE,
+        ammoType: 'shell', ammoSpeed: 15 * TILE_SIZE * AMMOSPEED, ammoSplashRadius: 0.5 * TILE_SIZE,
         description: '机动性更强，适合侦察和快速穿插。',
         canCrush: true,
         counters: { '步兵': 1.2, '装甲': 0.8, '飞行': 0.1, '海军': 0.4 }
@@ -75,7 +75,7 @@ const UNIT_TYPES = {
         unitClass: '装甲', icon: 'A', name: '两栖坦克',
         cost: 4, hp: 300, attack: 32, defense: 25, range: 5 * TILE_SIZE, speed: 1.2, attackSpeed: 2.0, visionRange: 5 * TILE_SIZE * 1.5,
         moveType: 'amphibious', canTarget: ['ground','sea','amphibious'], imageSrc: '../assets/pics/amphibious_tank.png', drawScale: 3 * DRAW_SCALE_FACTOR,
-        ammoType: 'missile', ammoSpeed: 15 * TILE_SIZE * AMMOSPEED, ammoSplashRadius: 0.5 * TILE_SIZE,
+        ammoType: 'shell', ammoSpeed: 15 * TILE_SIZE * AMMOSPEED, ammoSplashRadius: 0.5 * TILE_SIZE,
         description: '可以穿越水域和陆地，用于登陆作战。',
         canCrush: true,
         counters: { '步兵': 1.3, '装甲': 0.9, '飞行': 0.1, '海军': 1.1 }
