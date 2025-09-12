@@ -6,7 +6,10 @@ const gameState = {
     autoPlay: false,
     fastForward: false,
     textSpeed: 60, // 文字显示速度（毫秒）
-    scriptData: null
+    scriptData: null,
+    bgmPlayed: false,
+    userInteracted: false, // 添加用户交互标志
+    interactionOverlay: null // 存储交互覆盖层引用
 };
 
 // DOM元素引用
@@ -35,37 +38,144 @@ const domElements = {
 // 文字显示相关变量
 let isTyping = false;
 let typeInterval = null;
+
 // 初始化函数
 async function initGame() {
     // 检查当前用户
     const currentUser = sessionStorage.getItem('currentUser');
-    if (!currentUser) {window.location.href = 'login.html';return;}
+    if (!currentUser) {
+        window.location.href = 'login.html';
+        return;
+    }
+    
     // 加载对话脚本
     await loadScript();
-    const urlParams = new URLSearchParams(window.location.search);
-    // 添加失败章节检测
-    const failChapter = urlParams.get('failChapter');
+    showFirstDialog();
+    bindEvents();
+}
 
+// 显示第一句对话
+function showFirstDialog() {
+    const urlParams = new URLSearchParams(window.location.search);
+    const failChapter = urlParams.get('failChapter');
     const isNewGame = urlParams.get('new') === 'true';
-    if (isNewGame) {localStorage.removeItem(`ShenDun_savedialog_${currentUser}`);}
+    
+    const currentUser = sessionStorage.getItem('currentUser');
+    
+    if (isNewGame) {
+        localStorage.removeItem(`ShenDun_savedialog_${currentUser}`);
+    }
+    
     let saveData = null;
-    if (!isNewGame) {saveData = getSaveDataFromURL() || loadAutoSave();}
+    if (!isNewGame) {
+        saveData = getSaveDataFromURL() || loadAutoSave();
+    }
+    
     if (urlParams.get('returnFromGame')) {
         const tempProgress = localStorage.getItem(`ShenDun_temp_progress_${currentUser}`);
         if (tempProgress) {
             try {
                 saveData = JSON.parse(tempProgress);
                 localStorage.removeItem(`ShenDun_temp_progress_${currentUser}`);
-            } catch (e) {console.error("读取临时进度失败", e);}
+            } catch (e) {
+                console.error("读取临时进度失败", e);
+            }
         }
     }
-    if (failChapter) {// 播放失败章节
-        playChapter(parseInt(failChapter), 0, 0);
-    } 
-    else if (saveData) {
-        playChapter(saveData.chapter, saveData.scene, saveData.dialog );
-    }else {playChapter(0, 0, 0);}
-    bindEvents();
+    
+    let chapterIndex = 0;
+    let sceneIndex = 0;
+    let dialogIndex = 0;
+    alert(failChapter);
+    if (failChapter) {
+        chapterIndex = parseInt(failChapter);
+    } else if (saveData) {
+        chapterIndex = saveData.chapter;
+        sceneIndex = saveData.scene;
+        dialogIndex = saveData.dialog;
+    }
+    
+    // 播放第一句对话
+    playChapter(chapterIndex, sceneIndex, dialogIndex);
+    
+    // 创建透明交互覆盖层
+    createTransparentOverlay();
+}
+
+// 创建透明交互覆盖层
+function createTransparentOverlay() {
+    // 创建覆盖层元素
+    gameState.interactionOverlay = document.createElement('div');
+    gameState.interactionOverlay.id = 'transparent-overlay';
+    gameState.interactionOverlay.style.cssText = `
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: transparent;
+        z-index: 9999;
+        cursor: default;
+    `;
+    
+    // 添加到文档
+    document.body.appendChild(gameState.interactionOverlay);
+    
+    // 添加点击事件
+    gameState.interactionOverlay.addEventListener('click', handleFirstInteraction);
+}
+
+// 处理首次交互
+function handleFirstInteraction() {
+    // 移除透明覆盖层
+    if (gameState.interactionOverlay) {
+        document.body.removeChild(gameState.interactionOverlay);
+        gameState.interactionOverlay = null;
+    }
+    
+    // 设置用户已交互标志
+    gameState.userInteracted = true;
+    
+    // 播放BGM（如果场景有BGM）
+    playBGMForCurrentScene();
+}
+
+// 播放当前场景的BGM
+function playBGMForCurrentScene() {
+    const chapter = gameState.scriptData.chapters[gameState.currentChapter];
+    const scene = chapter.scenes[gameState.currentScene];
+    
+    if (scene && scene.bgm) {
+        // 设置BGM源
+        domElements.bgm.src = `../assets/bgm/${scene.bgm}`;
+        
+        // 获取用户设置的音乐音量
+        const currentUser = JSON.parse(sessionStorage.getItem('currentUser'));
+        let bgmVolume = 80; // 默认音量
+        
+        if (currentUser) {
+            const userSettings = localStorage.getItem(`ShenDun_settings_${currentUser.username}`);
+            if (userSettings) {
+                const settings = JSON.parse(userSettings);
+                bgmVolume = settings.bgmVolume || 80;
+            }
+        }
+        
+        // 设置音量
+        domElements.bgm.volume = bgmVolume / 100;
+        
+        // 用户已交互，可以播放BGM
+        const playPromise = domElements.bgm.play();
+        
+        if (playPromise !== undefined) {
+            playPromise.then(() => {
+                gameState.bgmPlayed = true;
+                console.log("BGM开始播放");
+            }).catch(error => {
+                console.log("BGM播放失败:", error);
+            });
+        }
+    }
 }
 
 function getSaveDataFromURL() {
@@ -104,14 +214,113 @@ function bindEvents() {
     
     // 音频结束事件
     domElements.voice.addEventListener('ended', onVoiceEnded);
+    
+    // BGM播放失败事件处理
+    domElements.bgm.addEventListener('error', handleBGMError);
+}
+
+// 处理BGM播放错误
+function handleBGMError(e) {
+    console.error("BGM播放失败:", e);
+}
+
+// 添加显示选择分支的函数
+function displayChoices(choices) {
+    // 创建选择容器
+    const choicesContainer = document.createElement('div');
+    choicesContainer.id = 'choices-container';
+    choicesContainer.style.cssText = `
+        position: absolute;
+        bottom: 200px;
+        left: 50%;
+        transform: translateX(-50%);
+        display: flex;
+        flex-direction: column;
+        gap: 15px;
+        z-index: 10;
+        width: 80%;
+        max-width: 600px;
+    `;
+    
+    // 添加每个选择按钮
+    choices.forEach((choice, index) => {
+        const button = document.createElement('button');
+        button.className = 'choice-btn';
+        button.textContent = choice.text;
+        button.dataset.index = index;
+        button.style.cssText = `
+        padding: 15px 20px;
+        background: rgba(0, 0, 0, 0.7);
+        color: white;
+        border: 2px solid rgba(255, 157, 0, 0.5);
+        border-radius: 8px;
+        cursor: pointer;
+        font-size: 1.1em;
+        transition: all 0.2s ease;
+        backdrop-filter: blur(5px);
+        `;
+        
+        button.addEventListener('mouseover', () => {
+        button.style.background = 'rgba(50, 50, 50, 0.8)';
+        button.style.borderColor = 'rgba(255, 157, 0, 0.8)';
+        });
+        
+        button.addEventListener('mouseout', () => {
+        button.style.background = 'rgba(0, 0, 0, 0.7)';
+        button.style.borderColor = 'rgba(255, 157, 0, 0.5)';
+        });
+        
+        button.addEventListener('click', () => {
+        // 记录选择后果
+        if (choice.consequence) {
+            recordConsequence(choice.consequence);
+        }
+        
+        // 移除选择容器
+        choicesContainer.remove();
+        
+        // 跳转到指定的对话节点
+        const next = choice.next;
+        playChapter(next.chapter, next.scene, next.dialog);
+        });
+        
+        choicesContainer.appendChild(button);
+    });
+    
+    document.body.appendChild(choicesContainer);
+}
+
+// 添加记录选择后果的函数
+function recordConsequence(consequence) {
+    const currentUser = sessionStorage.getItem('currentUser');
+    if (!currentUser) return;
+    
+    let playerChoices = JSON.parse(localStorage.getItem(`ShenDun_choices_${currentUser}`)) || [];
+    playerChoices.push({
+        consequence: consequence,
+        timestamp: new Date().getTime(),
+        chapter: gameState.currentChapter,
+        scene: gameState.currentScene,
+        dialog: gameState.currentDialog
+    });
+    
+    localStorage.setItem(`ShenDun_choices_${currentUser}`, JSON.stringify(playerChoices));
 }
 
 // 处理点击事件
 function handleClick(e) {
+    // 如果存在选择容器，不处理点击继续
+    if (document.getElementById('choices-container')) return;
+    // 如果用户尚未交互，先处理交互
+    if (!gameState.userInteracted) {
+        handleFirstInteraction();
+        return;
+    }
+    
     // 如果点击的是功能按钮区域或模态框，不处理对话继续
     if (e.target.closest('#function-buttons') || e.target.closest('.modal') || e.target.closest('.Mmodal')) return;
     
-    //修改 如果对话框是隐藏状态，先显示对话框
+    // 修改 如果对话框是隐藏状态，先显示对话框
     if (domElements.dialogContainer.classList.contains('hidden')) {
         domElements.dialogContainer.classList.remove('hidden');
         return; // 显示对话框后立即返回，不执行后续操作
@@ -135,6 +344,7 @@ function playChapter(chapterIndex, sceneIndex = 0, dialogIndex = 0) {
         showEnding();
         return;
     }
+    
     // 更新游戏状态
     gameState.currentChapter = chapterIndex;
     gameState.currentScene = sceneIndex;
@@ -148,6 +358,7 @@ function playChapter(chapterIndex, sceneIndex = 0, dialogIndex = 0) {
 function playScene(sceneIndex, dialogIndex = 0) {
     const chapter = gameState.scriptData.chapters[gameState.currentChapter];
     const scene = chapter.scenes[sceneIndex];
+    
     if (!scene) {
         if (gameState.currentChapter + 1 < gameState.scriptData.chapters.length) {
             playChapter(gameState.currentChapter + 1, 0, 0);
@@ -156,13 +367,43 @@ function playScene(sceneIndex, dialogIndex = 0) {
         }
         return;
     }
+    
     gameState.currentScene = sceneIndex;
     gameState.currentDialog = dialogIndex;
     domElements.backgroundContainer.style.backgroundImage = `url('../assets/backgrounds/${scene.background}')`;
+    
+    // 播放BGM（修改部分）
+    // 现在BGM在用户交互后播放，所以这里不播放BGM
+    // 只设置BGM源和音量，但不播放
+    
     if (scene.bgm) {
+        // 设置BGM源
         domElements.bgm.src = `../assets/bgm/${scene.bgm}`;
-        domElements.bgm.play().catch(e => console.log("自动播放被阻止，需要用户交互"));
+        
+        // 获取用户设置的音乐音量
+        const currentUser = JSON.parse(sessionStorage.getItem('currentUser'));
+        let bgmVolume = 80; // 默认音量
+        
+        if (currentUser) {
+            const userSettings = localStorage.getItem(`ShenDun_settings_${currentUser.username}`);
+            if (userSettings) {
+                const settings = JSON.parse(userSettings);
+                bgmVolume = settings.bgmVolume || 80;
+            }
+        }
+        
+        // 设置音量
+        domElements.bgm.volume = bgmVolume / 100;
+
+        if(gameState.userInteracted){
+            playBGMForCurrentScene();
+        }
+    } else {
+        // 如果没有BGM，停止当前播放的BGM
+        domElements.bgm.pause();
+        domElements.bgm.currentTime = 0;
     }
+    
     playDialog(sceneIndex, dialogIndex);
 }
 
@@ -170,6 +411,7 @@ function playScene(sceneIndex, dialogIndex = 0) {
 function playDialog(sceneIndex, dialogIndex) {
     const chapter = gameState.scriptData.chapters[gameState.currentChapter];
     const scene = chapter.scenes[sceneIndex];
+    
     if (!scene || !scene.dialogs || !scene.dialogs[dialogIndex]) {
         if (sceneIndex + 1 < chapter.scenes.length) {
             playScene(sceneIndex + 1, 0);
@@ -188,14 +430,28 @@ function playDialog(sceneIndex, dialogIndex) {
     gameState.currentDialog = dialogIndex;
     domElements.characterName.textContent = dialog.character;
     updateCharacters(dialog);
+
+    // 如果有选择分支，显示选择按钮
+    if (dialog.choices) {
+        displayChoices(dialog.choices);
+        // 跳过自动播放和自动继续
+        domElements.dialogText.textContent = dialog.text;
+        isTyping = false;
+        return;
+    }
+    
     if (dialog.voice) {
         domElements.voice.src = `../assets/voices/${dialog.voice}`;
-        domElements.voice.play().catch(e => console.log("语音播放失败"));
+        // 语音也等待用户交互后再播放
+        if (gameState.userInteracted) {
+            domElements.voice.play().catch(e => console.log("语音播放失败"));
+        }
     }
+    
     displayText(dialog.text);
     autoSave();
 
-    if (dialog.action) {//修改
+    if (dialog.action) {
         handleAction(dialog.action);
         return;
     }
@@ -221,7 +477,6 @@ function handleAction(action) {
             tempProgress.dialog += 1;
             localStorage.setItem(`ShenDun_temp_progress_${currentUser}`, JSON.stringify(tempProgress));
             const { type, description, ...gameSettings } = action;
-            
             localStorage.setItem('ShenDun_dialogue_settings', JSON.stringify(gameSettings));
             window.location.href = `loading.html?target=game.html&fromDialogue=true&user=${JSON.parse(currentUser).username}`;
             break;
@@ -229,7 +484,8 @@ function handleAction(action) {
         case 'jump_to_chapter':
             tempProgress = {
                 chapter: action.chapter,
-                scene: 0,dialog: 0,
+                scene: 0,
+                dialog: 0,
                 timestamp: new Date().getTime()
             };
             localStorage.setItem(`ShenDun_temp_progress_${currentUser}`, JSON.stringify(tempProgress));
@@ -304,7 +560,6 @@ function displayText(text) {
             }
         }
     }, speed);
-    
 }
 
 // 立即完成文字显示
@@ -442,7 +697,7 @@ function toggleFastForward() {
 // 切换对话框可见性
 function toggleDialogVisibility() {
     domElements.dialogContainer.classList.toggle('hidden');
-    //修改 更新按钮状态提示
+    // 修改 更新按钮状态提示
     const isHidden = domElements.dialogContainer.classList.contains('hidden');
     domElements.btnToggleDialog.title = isHidden ? '显示对话框' : '隐藏对话框';
 }
@@ -455,6 +710,7 @@ function checkGoToMainMenu(){
         goToMainMenu
     );
 }
+
 function goToMainMenu() {
     window.location.href = '../index.html';
 }
@@ -466,24 +722,68 @@ function onVoiceEnded() {
 
 // 显示结局
 async function showEnding(endingType) {
-    let title, message;
+    // 如果没有指定结局类型，根据玩家选择判断
+    if (!endingType) {
+        endingType = determineEnding();
+    }
+    
+    let title, message, background;
     
     switch(endingType) {
+        case 'perfect':
+            title = '和平的黎明 - 完美结局';
+            message = '干得漂亮，指挥官！我们成功避免了全球灾难。';
+            background = 'sunrise.jpg';
+        break;
+        case 'sacrifice':
+            title = '和平的黎明 - 牺牲结局';
+            message = '指挥官，我们已经尽力了......虽然避免了最坏的结果，但代价是惨重的。';
+            background = 'sunrise_dark.jpg';
+        break;
+        case 'cost':
+            title = '和平的黎明 - 代价结局';
+            message = '空间站已被摧毁......但是我们收到了坏消息。';
+            background = 'sunrise_dark.jpg';
+        break;
         case 'fail':
             title = '任务失败';
             message = '我们的行动失败了，但战争还没有结束。';
-            break;
-        case 'success':
+            background = 'bg.png';
         default:
             title = '游戏结束';
-            message = '感谢您的游玩。';
+            message = '感谢您的游玩';
+            background = 'bg.png';
     }
     
-    domElements.backgroundContainer.style.backgroundImage = `url('../assets/backgrounds/bg.png')`;
+    domElements.backgroundContainer.style.backgroundImage = `url('../assets/backgrounds/${background}')`;
     showAlert(title, message, () => {
         window.location.href = '../index.html';
     });
 }
 
+// 添加判断结局的函数
+function determineEnding() {
+    const currentUser = sessionStorage.getItem('currentUser');
+    if (!currentUser) return 'fail';
+    
+    const playerChoices = JSON.parse(localStorage.getItem(`ShenDun_choices_${currentUser}`)) || [];
+    
+    // 统计各种选择的次数
+    const choiceCounts = {};
+    playerChoices.forEach(choice => {
+        choiceCounts[choice.consequence] = (choiceCounts[choice.consequence] || 0) + 1;
+    });
+    
+    // 根据选择判断结局
+    if (choiceCounts.aggressive > 2 && choiceCounts.sacrifice) {
+        return 'cost'; // 过于激进且做出牺牲选择
+    } else if (choiceCounts.stealth && choiceCounts.merciful) {
+        return 'perfect'; //  stealth策略且仁慈选择
+    } else if (choiceCounts.loyal && !choiceCounts.deceptive) {
+        return 'sacrifice'; // 忠诚但不够灵活
+    }
+    return 'fail'; // 默认失败结局
+}
+
 // 初始化游戏
-document.addEventListener('DOMContentLoaded',initGame());
+document.addEventListener('DOMContentLoaded', initGame);

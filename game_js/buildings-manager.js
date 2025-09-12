@@ -11,9 +11,9 @@ class BuildingsManager {
     }
 
     initialize() {
+        this.preloadBuildingImages(); // 预加载建筑图片
         this.findAndRegisterBuildings();
         this.setBuildingHealth();
-        this.preloadBuildingImages(); // 预加载建筑图片
         console.log("建筑物系统初始化完成");
     }
 
@@ -102,7 +102,7 @@ class BuildingsManager {
                 const sizeY = this.gridHeight * TILE_SIZE;
                 
                 // 绘制建筑物图片
-                if (this.image && !this.isDestroyed) {
+                if (this.image) {
                     ctx.drawImage(
                         this.image,
                         this.pixelX - sizeX/2, 
@@ -505,7 +505,7 @@ class BuildingsManager {
         const bgWidth = textWidth + padding * 2;
         const bgHeight = fontSize + padding * 2;
         const bgX = building.pixelX - bgWidth / 2;
-        const bgY = building.pixelY - building.gridHeight * TILE_SIZE / 2 - bgHeight - 5 / zoom;
+        const bgY = building.pixelY - building.gridHeight * TILE_SIZE / 2 - bgHeight - 13 / zoom;
         
         // 绘制半透明背景
         ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';

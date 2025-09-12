@@ -66,7 +66,7 @@ const UNIT_TYPES = {
         unitClass: '装甲', icon: 't', name: '轻型坦克',
         cost: 3, hp: 250, attack: 18, defense: 20, range: 5 * TILE_SIZE, speed: 1.8, attackSpeed: 1.8, visionRange: 5 * TILE_SIZE * 1.5,
         moveType: 'ground', canTarget: ['ground','amphibious','sea'], imageSrc: '../assets/pics/light_tank.png', drawScale: 3 * DRAW_SCALE_FACTOR,
-        ammoType: 'shell', ammoSpeed: 15 * TILE_SIZE * AMMOSPEED, ammoSplashRadius: 0.5 * TILE_SIZE,
+        ammoType: 'missile', ammoSpeed: 15 * TILE_SIZE * AMMOSPEED, ammoSplashRadius: 0.5 * TILE_SIZE,
         description: '机动性更强，适合侦察和快速穿插。',
         canCrush: true,
         counters: { '步兵': 1.2, '装甲': 0.8, '飞行': 0.1, '海军': 0.4 }
@@ -75,7 +75,7 @@ const UNIT_TYPES = {
         unitClass: '装甲', icon: 'A', name: '两栖坦克',
         cost: 4, hp: 300, attack: 32, defense: 25, range: 5 * TILE_SIZE, speed: 1.2, attackSpeed: 2.0, visionRange: 5 * TILE_SIZE * 1.5,
         moveType: 'amphibious', canTarget: ['ground','sea','amphibious'], imageSrc: '../assets/pics/amphibious_tank.png', drawScale: 3 * DRAW_SCALE_FACTOR,
-        ammoType: 'shell', ammoSpeed: 15 * TILE_SIZE * AMMOSPEED, ammoSplashRadius: 0.5 * TILE_SIZE,
+        ammoType: 'missile', ammoSpeed: 15 * TILE_SIZE * AMMOSPEED, ammoSplashRadius: 0.5 * TILE_SIZE,
         description: '可以穿越水域和陆地，用于登陆作战。',
         canCrush: true,
         counters: { '步兵': 1.3, '装甲': 0.9, '飞行': 0.1, '海军': 1.1 }
@@ -165,7 +165,6 @@ const BUILDING_TYPES = {
         cost: 200,
         imageSrc: '../assets/pics/observation_tower.png'
     },
-    
     // 桥梁控制站 - 功能性建筑
     bridge_control: {
         name: '桥梁控制站',
@@ -176,9 +175,9 @@ const BUILDING_TYPES = {
         description: '控制桥梁升降的关键设施，无攻击能力。',
         isDestructible: true,
         buildTime: 45,
-        cost: 300
+        cost: 300,
+        imageSrc: '../assets/pics/bridge_control.png'
     },
-    
     // 地堡 - 防御性建筑
     bunker: {
         name: '地堡',
@@ -186,7 +185,7 @@ const BUILDING_TYPES = {
         width: 3,
         height: 3,
         canAttack: true,
-        attack: 125,
+        attack: 125,  
         range: 5 * TILE_SIZE,
         attackSpeed: 2.0,
         canTarget: ['ground', 'amphibious'],
@@ -196,9 +195,9 @@ const BUILDING_TYPES = {
         description: '坚固的防御工事，提供稳定的火力输出。',
         isDestructible: true,
         buildTime: 60,
-        cost: 400
+        cost: 400,
+        imageSrc: '../assets/pics/bunker.png'
     },
-    
     // 训练目标 - 训练用建筑
     training_target: {
         name: '训练目标',
@@ -209,9 +208,9 @@ const BUILDING_TYPES = {
         description: '训练用的靶子，无攻击能力。',
         isDestructible: true,
         buildTime: 15,
-        cost: 50
+        cost: 50,
+        imageSrc: '../assets/pics/training_target.png'
     },
-    
     // 训练障碍 - 训练用建筑
     training_barrier: {
         name: '训练障碍',
@@ -222,9 +221,9 @@ const BUILDING_TYPES = {
         description: '训练用的障碍物，无攻击能力。',
         isDestructible: true,
         buildTime: 10,
-        cost: 30
+        cost: 30,
+        imageSrc: '../assets/pics/training_barrier.png'
     },
-    
     // 雷达站 - 侦查性建筑
     radar_station: {
         name: '雷达站',
@@ -236,9 +235,9 @@ const BUILDING_TYPES = {
         description: '提供广阔视野的侦查设施，无攻击能力。',
         isDestructible: true,
         buildTime: 90,
-        cost: 600
+        cost: 600,
+        imageSrc: '../assets/pics/radar_station.png'
     },
-    
     // 通信塔 - 功能性建筑
     communication_tower: {
         name: '通信塔',
@@ -249,9 +248,9 @@ const BUILDING_TYPES = {
         description: '维持通信联络的关键设施，无攻击能力。',
         isDestructible: true,
         buildTime: 75,
-        cost: 500
+        cost: 500,
+        imageSrc: '../assets/pics/communication_tower.png'
     },
-    
     // 仓库 - 资源性建筑
     storage_depot: {
         name: '仓库',
@@ -262,9 +261,9 @@ const BUILDING_TYPES = {
         description: '储存资源的设施，无攻击能力。',
         isDestructible: true,
         buildTime: 80,
-        cost: 450
+        cost: 450,
+        imageSrc: '../assets/pics/storage_depot.png'
     },
-    
     // 兵营 - 生产性建筑
     barracks: {
         name: '兵营',
@@ -275,9 +274,9 @@ const BUILDING_TYPES = {
         description: '训练步兵的设施，无攻击能力。',
         isDestructible: true,
         buildTime: 120,
-        cost: 800
+        cost: 800,
+        imageSrc: '../assets/pics/barracks.png'
     },
-    
     // 瞭望塔 - 防御性建筑
     watchtower: {
         name: '瞭望塔',
@@ -295,9 +294,9 @@ const BUILDING_TYPES = {
         description: '提供视野和中距离火力支援的防御塔。',
         isDestructible: true,
         buildTime: 50,
-        cost: 350
+        cost: 350,
+        imageSrc: '../assets/pics/watchtower.png'
     },
-    
     // 军火库 - 资源性建筑
     armory: {
         name: '军火库',
@@ -308,9 +307,9 @@ const BUILDING_TYPES = {
         description: '储存武器弹药的设施，无攻击能力。',
         isDestructible: true,
         buildTime: 100,
-        cost: 700
+        cost: 700,
+        imageSrc: '../assets/pics/armory.png'
     },
-    
     // 指挥中心 - 核心建筑
     command_center: {
         name: '指挥中心',
@@ -321,9 +320,9 @@ const BUILDING_TYPES = {
         description: '基地的核心指挥设施，无攻击能力。',
         isDestructible: true,
         buildTime: 180,
-        cost: 1500
+        cost: 1500,
+        imageSrc: '../assets/pics/command_center.png'
     },
-    
     // 研究实验室 - 科技性建筑
     research_lab: {
         name: '研究实验室',
@@ -331,12 +330,12 @@ const BUILDING_TYPES = {
         width: 5,
         height: 5,
         canAttack: false,
-        description: '进行科技研究的设施，无攻击能力。',
+        description: '，进行科技研究的设施，无攻击能力。',
         isDestructible: true,
         buildTime: 150,
-        cost: 1000
+        cost: 1000,
+        imageSrc: '../assets/pics/research_lab.png'
     },
-    
     // 发电机 - 资源性建筑
     power_generator: {
         name: '发电机',
@@ -347,9 +346,9 @@ const BUILDING_TYPES = {
         description: '提供电力的设施，无攻击能力。',
         isDestructible: true,
         buildTime: 70,
-        cost: 550
+        cost: 550,
+        imageSrc: '../assets/pics/power_generator.png'
     },
-    
     // 守卫塔 - 防御性建筑
     guard_tower: {
         name: '守卫塔',
@@ -367,9 +366,9 @@ const BUILDING_TYPES = {
         description: '重型防御塔，对地面单位造成较大伤害。',
         isDestructible: true,
         buildTime: 65,
-        cost: 600
+        cost: 600,
+        imageSrc: '../assets/pics/guard_tower.png'
     },
-    
     // 总部 - 核心建筑
     headquarters: {
         name: '总部',
@@ -380,9 +379,9 @@ const BUILDING_TYPES = {
         description: '组织的神经中枢，无攻击能力。',
         isDestructible: true,
         buildTime: 240,
-        cost: 2000
+        cost: 2000,
+        imageSrc: '../assets/pics/headquarters.png'
     },
-    
     // 通信中心 - 功能性建筑
     communication_center: {
         name: '通信中心',
@@ -393,61 +392,61 @@ const BUILDING_TYPES = {
         description: '主要的通信枢纽，无攻击能力。',
         isDestructible: true,
         buildTime: 120,
-        cost: 900
+        cost: 900,
+        imageSrc: '../assets/pics/communication_center.png'
     },
-    
     // 摩天大楼 - 民用建筑
     skyscraper: {
         name: '摩天大楼',
         hp: 2500,
-        width: 5,
-        height: 8,
+        width: 8,
+        height: 10,
         canAttack: false,
         description: '高大的民用建筑，无攻击能力。',
         isDestructible: true,
         buildTime: 160,
-        cost: 0 // 民用建筑，不可建造
+        cost: 0 ,
+        imageSrc: '../assets/pics/skyscraper.png'
     },
-    
     // 购物中心 - 民用建筑
     shopping_mall: {
         name: '购物中心',
         hp: 2200,
         width: 7,
-        height: 5,
+        height: 7,
         canAttack: false,
         description: '大型商业设施，无攻击能力。',
         isDestructible: true,
         buildTime: 140,
-        cost: 0 // 民用建筑，不可建造
+        cost: 0 ,
+        imageSrc: '../assets/pics/shopping_mall.png'
     },
-    
     // 公寓楼 - 民用建筑
     apartment_complex: {
         name: '公寓楼',
         hp: 2200,
-        width: 7,
+        width: 5,
         height: 5,
         canAttack: false,
         description: '居民住宅楼，无攻击能力。',
         isDestructible: true,
         buildTime: 140,
-        cost: 0 // 民用建筑，不可建造
+        cost: 0 ,
+        imageSrc: '../assets/pics/apartment_complex.png'
     },
-    
     // 停车场 - 民用建筑
     parking_garage: {
         name: '停车场',
         hp: 1500,
         width: 5,
-        height: 4,
+        height: 5,
         canAttack: false,
         description: '车辆停放设施，无攻击能力。',
         isDestructible: true,
         buildTime: 100,
-        cost: 0 // 民用建筑，不可建造
+        cost: 0 ,
+        imageSrc: '../assets/pics/parking_garage.png'
     },
-    
     // 检查点 - 防御性建筑
     checkpoint: {
         name: '检查点',
@@ -465,9 +464,9 @@ const BUILDING_TYPES = {
         description: '道路检查点，提供有限的防御能力。',
         isDestructible: true,
         buildTime: 45,
-        cost: 300
+        cost: 300,
+        imageSrc: '../assets/pics/checkpoint.png'
     },
-    
     // 控制塔 - 核心建筑
     control_tower: {
         name: '控制塔',
@@ -485,9 +484,9 @@ const BUILDING_TYPES = {
         description: '强大的核心防御设施，能攻击地面和空中目标。',
         isDestructible: true,
         buildTime: 300,
-        cost: 2500
+        cost: 2500,
+        imageSrc: '../assets/pics/control_tower.png'
     },
-    
     // 能源站 - 资源性建筑
     power_station: {
         name: '能源站',
@@ -498,9 +497,9 @@ const BUILDING_TYPES = {
         description: '产生能源的设施，无攻击能力。',
         isDestructible: true,
         buildTime: 150,
-        cost: 1200
+        cost: 1200,
+        imageSrc: '../assets/pics/power_station.png'
     },
-    
     // 雷达穹顶 - 侦查性建筑
     radar_dome: {
         name: '雷达穹顶',
@@ -512,22 +511,22 @@ const BUILDING_TYPES = {
         description: '高级雷达设施，提供极远的视野，无攻击能力。',
         isDestructible: true,
         buildTime: 180,
-        cost: 1500
+        cost: 1500,
+        imageSrc: '../assets/pics/radar_dome.png'
     },
-    
     // 机库 - 生产性建筑
     hangar: {
         name: '机库',
         hp: 1800,
         width: 5,
-        height: 4,
+        height: 5,
         canAttack: false,
         description: '生产和维护飞行器的设施，无攻击能力。',
         isDestructible: true,
         buildTime: 160,
-        cost: 1300
+        cost: 1300,
+        imageSrc: '../assets/pics/hangar.png'
     },
-    
     // 离子炮 - 超级武器
     ion_cannon: {
         name: '离子炮',
@@ -538,9 +537,9 @@ const BUILDING_TYPES = {
         description: '超级武器，造成巨大范围伤害，但需要长时间充能。',
         isDestructible: true,
         buildTime: 420,
-        cost: 5000
+        cost: 5000,
+        imageSrc: '../assets/pics/ion_cannon.png'
     },
-    
     // 能源导管 - 功能性建筑
     power_conduit: {
         name: '能源导管',
@@ -551,9 +550,9 @@ const BUILDING_TYPES = {
         description: '输送能源的管道，无攻击能力。',
         isDestructible: true,
         buildTime: 60,
-        cost: 400
+        cost: 400,
+        imageSrc: '../assets/pics/power_conduit.png'
     },
-    
     // 防御炮塔 - 防御性建筑
     defense_turret: {
         name: '防御炮塔',
@@ -571,22 +570,22 @@ const BUILDING_TYPES = {
         description: '重型防御炮塔，对地面单位造成高额伤害。',
         isDestructible: true,
         buildTime: 90,
-        cost: 800
+        cost: 800,
+        imageSrc: '../assets/pics/defense_turret.png'
     },
-    
     // 主控制中心 - 核心建筑
     main_control: {
         name: '主控制中心',
         hp: 3500,
-        width: 5,
-        height: 5,
+        width: 6,
+        height: 6,
         canAttack: false,
         description: '海上平台的核心控制设施，无攻击能力。',
         isDestructible: true,
         buildTime: 240,
-        cost: 2200
+        cost: 2200,
+        imageSrc: '../assets/pics/main_control.png'
     },
-    
     // 研究中心 - 科技性建筑
     research_center: {
         name: '研究中心',
@@ -597,9 +596,9 @@ const BUILDING_TYPES = {
         description: '进行高级研究的设施，无攻击能力。',
         isDestructible: true,
         buildTime: 180,
-        cost: 1600
+        cost: 1600,
+        imageSrc: '../assets/pics/research_center.png'
     },
-    
     // 导弹发射井 - 防御性建筑
     missile_silo: {
         name: '导弹发射井',
@@ -618,9 +617,9 @@ const BUILDING_TYPES = {
         description: '发射远程导弹，能攻击地面和空中目标。',
         isDestructible: true,
         buildTime: 200,
-        cost: 1800
+        cost: 1800,
+        imageSrc: '../assets/pics/missile_silo.png'
     },
-    
     // 防空炮 - 防御性建筑
     aa_gun: {
         name: '防空炮',
@@ -638,6 +637,7 @@ const BUILDING_TYPES = {
         description: '专门针对空中单位的防御设施。',
         isDestructible: true,
         buildTime: 120,
-        cost: 1000
+        cost: 1000,
+        imageSrc: '../assets/pics/aa_gun.png'
     }
 };

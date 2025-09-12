@@ -65,7 +65,11 @@ function saveGame() {
         gameSpeed: window.game?.gameSpeedModifier,
         aiDifficulty: window.game?.ai?.difficulty
     };
-    
+    const currentUser = sessionStorage.getItem('currentUser');
+    if (currentUser) {
+        const playerChoices = JSON.parse(localStorage.getItem(`ShenDun_choices_${currentUser}`)) || [];
+        saveData.choices = playerChoices;
+    }
     // 更新用户存档
     userSaves[Slot] = saveData;
     saveUserSaves(userSaves);
@@ -113,6 +117,10 @@ function loadAutoSave() {
 
 // 加载游戏状态
 function loadGameState(saveData) {
+    const currentUser = sessionStorage.getItem('currentUser');
+    if (currentUser && saveData.choices) {
+        localStorage.setItem(`ShenDun_choices_${currentUser}`, JSON.stringify(saveData.choices));
+    }
     if (saveData && gameState.scriptData) {
         // 验证存档数据是否有效
         if (saveData.chapter >= 0 && saveData.chapter < gameState.scriptData.chapters.length) {
@@ -122,6 +130,7 @@ function loadGameState(saveData) {
                 if (saveData.dialog >= 0 && saveData.dialog < scene.dialogs.length) {
                     // 存档有效，加载游戏
                     playChapter(saveData.chapter, saveData.scene, saveData.dialog);
+                    createTransparentOverlay();
                     return;
                 }
             }

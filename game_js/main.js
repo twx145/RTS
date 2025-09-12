@@ -121,7 +121,13 @@ window.addEventListener('DOMContentLoaded', () => {
     document.getElementById('tutorial-skip')?.addEventListener('click', () => {
         hideTutorialModal();
         // 如果是从设置界面进入，显示设置界面
-        if (!window.game) {
+        if (window.game) {
+            showConfirmDialog('确认', '确定要跳过教程吗？', function() {
+                window.game.skipCurrentScenario();
+                settingsMenu.style.display = 'none';
+            }, 'game');
+        }
+        else {
             document.getElementById('setup-screen').style.display = 'flex';
         }
     });
@@ -246,7 +252,7 @@ window.addEventListener('DOMContentLoaded', () => {
                 settingsMenu.style.display = 'none';
             }, 'game');
         } else {
-            alert('当前没有正在进行的关卡！');
+            showAlert('提示', '当前没有正在进行的关卡！');
         }
     });
 
@@ -270,7 +276,7 @@ window.addEventListener('DOMContentLoaded', () => {
                 window.game.cleanup();
             }
             window.close();
-            window.location.href = 'index.html';
+            window.location.href = '../index.html';
         }, 'main');
     });
 

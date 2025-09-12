@@ -388,8 +388,7 @@ class Game {
     createTargetUnit(targetType) {
         // 根据目标类型创建特定的AI单位
         const position = //this.findBuildingPosition('command_center') || 
-                        { x: this.map.width * TILE_SIZE * 0.9, y: this.map.height * TILE_SIZE * 0.5 };
-        
+            { x: this.map.width * TILE_SIZE * 0.5, y: this.map.height * TILE_SIZE * 0.5 };
         // 创建特殊的目标单位（例如毒蛇的指挥单位）
         const targetUnit = new Unit(targetType, 'ai', position.x, position.y);
         targetUnit.isTargetUnit = true;
@@ -1041,10 +1040,7 @@ class Game {
         });
     }
     
-    /**
-     * --- 核心修复 (问题 #1): 分散寻路计算以避免卡顿 ---
-     */
-        issueGroupMoveCommand(targetPos, map) {
+    issueGroupMoveCommand(targetPos, map) {
         if (this.selectedUnits.length === 0) return;
 
         // --- 核心修改 1: 计算编队的当前中心点 ---
@@ -1085,7 +1081,7 @@ class Game {
         });
     }
 
-        /**
+    /**
      * --- 核心升级: 查找最近的、且不破坏编队相对位置的合法移动点 ---
      * @param {{x: number, y: number}} idealPos - 为单位计算出的理想目标像素坐标 (可能不合法)
      * @param {GameMap} map - 游戏地图对象
@@ -1357,7 +1353,8 @@ class Game {
         this.ui.showWinner(winner.name);
         localStorage.removeItem('ShenDun_dialogue_settings');
         this.savegame.clearAutoSave();
-        if(winner.name === 'ai'){
+        if(winner.name === '电脑'){
+            const currentUser = sessionStorage.getItem('currentUser');
             setTimeout(() => {window.location.href = `loading.html?target=dialogue.html&failChapter=7&user=${JSON.parse(currentUser).username}`;},2000);
             return;
         }

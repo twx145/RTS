@@ -84,61 +84,37 @@ const MAP_DEFINITIONS = [
         description: '新手训练场地，学习基本操作和战术。',
         width: 30, height: 30,
         buildings: [
-            { type: 'training_target', x: 20, y: 20, width: 2, height: 2, hp: 500 },
-            { type: 'training_barrier', x: 12, y: 12, width: 2, height: 2, hp: 300 },
-            { type: 'training_barrier', x: 12, y: 18, width: 2, height: 2, hp: 300 },
-            { type: 'training_barrier', x: 18, y: 12, width: 2, height: 2, hp: 300 },
-            { type: 'training_barrier', x: 18, y: 18, width: 2, height: 2, hp: 300 }
+            { type: 'training_target', x: 15, y: 12, width: 2, height: 2, hp: 500 },
+            { type: 'training_target', x: 15, y: 17, width: 2, height: 2, hp: 500 },
+            { type: 'training_barrier', x: 12, y: 12, width: 3, height: 3, hp: 300 },
+            { type: 'training_barrier', x: 12, y: 17, width: 3, height: 3, hp: 300 },
+            { type: 'training_barrier', x: 18, y: 12, width: 3, height: 3, hp: 300 },
+            { type: 'training_barrier', x: 18, y: 17, width: 3, height: 3, hp: 300 }
         ],
         grid: (() => {
             const w = 30, h = 30;
-            let grid = Array(h).fill(null).map(() => Array(w).fill('g'));
-            
-            // 中央训练区域 - 草地
-            for (let y = 10; y < 20; y++) {
-                for (let x = 10; x < 20; x++) {
-                    grid[y][x] = 'g';
-                }
-            }
-            
+            let grid = Array(h).fill(null).map(() => Array(w).fill('g'));            
             // 左侧部署区域 - 标记为玩家区域
-            for (let y = 5; y < 25; y++) {
-                for (let x = 5; x < 10; x++) {
-                    grid[y][x] = 'r'; // 使用道路标记玩家部署区
+            for (let y = 0; y < 30; y++) {
+                for (let x = 0; x < 10; x++) {
+                    grid[y][x] = 'f'; // 使用森林标记玩家部署区
                 }
             }
             
             // 右侧目标区域 - 标记为AI区域
-            for (let y = 5; y < 25; y++) {
-                for (let x = 20; x < 25; x++) {
-                    grid[y][x] = 'f'; // 使用建筑标记AI区域
+            for (let y = 0; y < 30; y++) {
+                for (let x = 20; x < 30; x++) {
+                    grid[y][x] = 'd'; // 使用建筑标记AI区域
                 }
             }
-            
-            // 中央障碍物 - 用于教学绕行和战术
-            for (let y = 12; y < 18; y++) {
-                for (let x = 12; x < 18; x++) {
-                    if (y === 14 || y === 15) continue; // 留出通道
-                    grid[y][x] = 'b'; // 森林作为障碍物
-                }
-            }
-            
+                        
             // 简单道路连接左右区域
-            for (let y = 14; y < 16; y++) {
+            for (let y = 14; y < 17; y++) {
                 for (let x = 10; x < 20; x++) {
                     grid[y][x] = 'r';
                 }
             }
-            
-            // 添加一些随机小障碍
-            for (let i = 0; i < 15; i++) {
-                const randX = Math.floor(Math.random() * (w-4)) + 2;
-                const randY = Math.floor(Math.random() * (h-4)) + 2;
-                if (grid[randY][randX] === 'g') {
-                    grid[randY][randX] = 'f';
-                }
-            }
-            
+                      
             return grid.map(row => row.join(''));
         })()
     },
@@ -197,12 +173,14 @@ const MAP_DEFINITIONS = [
             { type: 'barracks', x: 33, y: 28, width: 5, height: 5, hp: 1500 },
             { type: 'armory', x: 45, y: 28, width: 5, height: 5, hp: 2000 },
             { type: 'command_center', x:38, y: 21, width: 7, height: 7, hp: 3000 },
-            // { type: 'research_lab', x: 25, y: 30, width: 5, height: 5, hp: 1800 },
-            // { type: 'power_generator', x: 40, y: 30, width: 3, height: 3, hp: 1200 },
-            { type: 'guard_tower', x: 26, y: 15, width: 3, height: 3, hp: 800 },
-            { type: 'guard_tower', x: 52, y: 15, width: 3, height: 3, hp: 800 },
-            { type: 'guard_tower', x: 26, y: 35, width: 3, height: 3, hp: 800 },
-            { type: 'guard_tower', x: 52, y: 35, width: 3, height: 3, hp: 800 }
+            { type: 'research_lab', x: 28, y: 23, width: 5, height: 5, hp: 1800 },
+            { type: 'power_generator', x: 50, y: 20, width: 3, height: 3, hp: 1200 },
+            { type: 'guard_tower', x: 34, y: 15, width: 3, height: 3, hp: 800 },
+            { type: 'guard_tower', x: 46, y: 15, width: 3, height: 3, hp: 800 },
+            { type: 'guard_tower', x: 34, y: 35, width: 3, height: 3, hp: 800 },
+            { type: 'guard_tower', x: 46, y: 35, width: 3, height: 3, hp: 800 },
+            { type: 'guard_tower', x: 34, y: 25, width: 3, height: 3, hp: 800 },
+            { type: 'guard_tower', x: 46, y: 25, width: 3, height: 3, hp: 800 }
         ],
         grid: (() => {
             const w = 80, h = 60;
@@ -261,8 +239,8 @@ const MAP_DEFINITIONS = [
         buildings: [
             { type: 'headquarters', x: 45, y: 40, width: 7, height: 7, hp: 4000 },
             { type: 'communication_center', x: 40, y: 35, width: 5, height: 5, hp: 2000 },
-            { type: 'skyscraper', x: 30, y: 30, width: 5, height: 8, hp: 2500 },
-            { type: 'skyscraper', x: 50, y: 30, width: 5, height: 8, hp: 2500 },
+            { type: 'skyscraper', x: 30, y: 30, width: 5, height: 6, hp: 2500 },
+            { type: 'skyscraper', x: 50, y: 30, width: 5, height: 6, hp: 2500 },
             { type: 'shopping_mall', x: 35, y: 45, width: 7, height: 5, hp: 2200 },
             { type: 'apartment_complex', x: 45, y: 45, width: 7, height: 5, hp: 2200 },
             { type: 'parking_garage', x: 40, y: 50, width: 5, height: 4, hp: 1500 },
@@ -271,7 +249,7 @@ const MAP_DEFINITIONS = [
         ],
         grid: (() => {
             const w = 100, h = 80;
-            let grid = Array(h).fill(null).map(() => Array(w).fill('g'));
+            let grid = Array(h).fill(null).map(() => Array(w).fill('d'));
             
             // 创建城市网格道路
             for (let x = 0; x < w; x += 10) {
@@ -322,7 +300,7 @@ const MAP_DEFINITIONS = [
         description: '冰天雪地的北极基地，三个能源站为主控塔提供护盾，极地环境影响移动。',
         width: 80, height: 80,
         buildings: [
-            { type: 'control_tower', x: 37, y: 37, width: 7, height: 7, hp: 5000 },
+            { type: 'control_tower', x: 37, y: 35, width: 7, height: 7, hp: 5000 },
             { type: 'power_station', x: 38, y: 15, width: 5, height: 5, hp: 2000 },
             { type: 'power_station', x: 60, y: 38, width: 5, height: 5, hp: 2000 },
             { type: 'power_station', x: 38, y: 60, width: 5, height: 5, hp: 2000 },
@@ -377,10 +355,10 @@ const MAP_DEFINITIONS = [
                 }
             }
             // 连接道路
-            for (let x = 20; x < 60; x++) {
+            for (let x = 17; x < 62; x++) {
                 grid[40][x] = 'r';
             }
-            for (let y = 20; y < 60; y++) {
+            for (let y = 18; y < 63; y++) {
                 grid[y][40] = 'r';
             }            
             return grid.map(row => row.join(''));
@@ -428,13 +406,13 @@ const MAP_DEFINITIONS = [
                         
             // 蜿蜒道路从左上到右下
             let roadX = 0, roadY = 0;
-            while (roadX < w-16 || roadY < h-15) {
+            while (roadX < 69 || roadY < 52) {
                 grid[roadY][roadX] = 'r';
                 grid[roadY][roadX+1] = 'r';
                 
-                if (Math.random() > 0.4 && roadX < w-16) {
+                if (Math.random() > 0.4 && roadX < 69) {
                     roadX += 1;
-                } else if (roadY < h-15) {
+                } else if (roadY < 52) {
                     roadY += 1;
                 }
             }
@@ -449,37 +427,42 @@ const MAP_DEFINITIONS = [
         description: '巨大的海上平台，中央是控制塔，四周是深海，只有少量通道连接。',
         width: 70, height: 70,
         buildings: [
-            { type: 'main_control', x: 35, y: 35, width: 5, height: 5, hp: 3500 },
-            { type: 'power_generator', x: 30, y: 30, width: 3, height: 3, hp: 1500 },
-            { type: 'power_generator', x: 40, y: 30, width: 3, height: 3, hp: 1500 },
-            { type: 'hangar', x: 30, y: 40, width: 5, height: 4, hp: 2000 },
-            { type: 'hangar', x: 40, y: 40, width: 5, height: 4, hp: 2000 },
-            { type: 'research_center', x: 25, y: 35, width: 4, height: 4, hp: 1800 },
-            { type: 'research_center', x: 45, y: 35, width: 4, height: 4, hp: 1800 },
-            { type: 'missile_silo', x: 28, y: 25, width: 3, height: 4, hp: 2200 },
-            { type: 'missile_silo', x: 42, y: 25, width: 3, height: 4, hp: 2200 },
-            { type: 'aa_gun', x: 25, y: 30, width: 3, height: 3, hp: 1200 },
-            { type: 'aa_gun', x: 45, y: 30, width: 3, height: 3, hp: 1200 },
-            { type: 'aa_gun', x: 25, y: 40, width: 3, height: 3, hp: 1200 },
-            { type: 'aa_gun', x: 45, y: 40, width: 3, height: 3, hp: 1200 }
+            { type: 'main_control', x: 32, y: 32, width: 6, height: 6, hp: 3500 },
+            { type: 'power_generator', x: 28, y: 30, width: 3, height: 3, hp: 1500 },
+            { type: 'power_generator', x: 39, y: 30, width: 3, height: 3, hp: 1500 },
+            { type: 'hangar', x: 27, y: 38, width: 5, height: 4, hp: 2000 },
+            { type: 'hangar', x: 38, y: 38, width: 5, height: 4, hp: 2000 },
+            { type: 'research_center', x: 19, y: 35, width: 4, height: 4, hp: 1800 },
+            { type: 'research_center', x: 47, y: 35, width: 4, height: 4, hp: 1800 },
+            { type: 'missile_silo', x: 26, y: 25, width: 3, height: 4, hp: 2200 },
+            { type: 'missile_silo', x: 41, y: 25, width: 3, height: 4, hp: 2200 },
+            { type: 'aa_gun', x: 23, y: 27, width: 3, height: 3, hp: 1200 },
+            { type: 'aa_gun', x: 44, y: 27, width: 3, height: 3, hp: 1200 },
+            { type: 'aa_gun', x: 23, y: 40, width: 3, height: 3, hp: 1200 },
+            { type: 'aa_gun', x: 44, y: 40, width: 3, height: 3, hp: 1200 }
         ],
         grid: (() => {
             const w = 70, h = 70;
             let grid = Array(h).fill(null).map(() => Array(w).fill('w'));
             
             // 中央平台
-            for (let y = 20; y < 50; y++) {
-                for (let x = 20; x < 50; x++) {
-                    grid[y][x] = 'g';
+            for (let y = 26; y < 44; y++) {
+                for (let x = 26; x < 44; x++) {
+                    grid[y][x] = 'i';
+                }
+            }
+            for (let y = 31; y < 39; y++) {
+                for (let x = 31; x < 39; x++) {
+                    grid[y][x] = 'w';
                 }
             }
                         
             // 连接桥梁
             for (let x = 30; x < 40; x++) {
-                grid[19][x] = 'r';
-                grid[50][x] = 'r';
-                grid[x][19] = 'r';
-                grid[x][50] = 'r';
+                grid[25][x] = 'r';
+                grid[44][x] = 'r';
+                grid[x][25] = 'r';
+                grid[x][44] = 'r';
             }
             
             // 深海区域（地图边缘）
