@@ -126,7 +126,7 @@ class Game {
         this.buildingsManager.initialize();
 
         const playerManpower = settings.playerManpower || 50;
-        const aiManpower = settings.aiManpower || (settings.aiDifficulty === 'hell' ? Math.round(playerManpower * 1.5) : playerManpower);
+        const aiManpower = settings.aiManpower || (settings.aiDifficulty === 'hell' ? Math.round(playerManpower * 2) : playerManpower);
         this.player = new Player('player', '玩家', playerManpower);
         this.ai = new Player('ai', '电脑', aiManpower, true, {}, settings.aiDifficulty);
         
@@ -898,14 +898,25 @@ class Game {
 
     handleLeftClick(x, y) {
         const worldPos = this.screenToWorld(x, y);
+
+        // 部署单位的逻辑保持不变
         if (this.ui.selectedUnitToDeploy) {
             this.tryDeployUnit(worldPos, this.ui.selectedUnitToDeploy);
             return;
         }
+
+        // 检查是否点击了己方单位
         const clickedUnit = this.player.units.find(unit => getDistance(worldPos, unit) < TILE_SIZE / 2);
-        if(this.selectedUnits.length > 0 && !clickedUnit) {
-             this.selectedUnits = [];
+
+        // --- 核心修改 #1: 实现左键移动 ---
+        // 如果当前有单位被选中，并且玩家没有点击到另一个己方单位
+        if (this.selectedUnits.length > 0 && !clickedUnit) {
+            // 下达一个非攻击性的移动指令 (调用现有的编队移动函数)
+            // 在移动前，明确清空所有选中单位的攻击目标，确保它们只是移动
+            this.selectedUnits.forEach(unit => unit.setTarget(null));
+            this.issueGroupMoveCommand(worldPos, this.map);
         } else {
+            // 如果没有单位被选中，或者点击了另一个己方单位，则执行原有的选择逻辑
             this.selectedUnits = clickedUnit ? [clickedUnit] : [];
         }
     }
@@ -953,14 +964,26 @@ class Game {
                 // 这是强制攻击指令
                 const targetPosition = { x: targetEnemy.pixelX || targetEnemy.x, y: targetEnemy.pixelY || targetEnemy.y };
 
+                // --- 核心修改 #1: 智能分发攻击指令 ---
                 this.selectedUnits.forEach(unit => {
-                    // 1. 设置明确的目标
-                    unit.setTarget(targetEnemy);
-                    // 2. 下达移动指令，并开启"强制移动"标志
-                    unit.issueMoveCommand(targetPosition, this.map, true, true);
+                    // 获取目标类型
+                    let targetMoveType = 'ground'; // 基地或建筑默认为地面
+                    if (targetEnemy instanceof Unit) {
+                        targetMoveType = targetEnemy.stats.moveType;
+                    }
+
+                    // 检查当前单位是否可以攻击该类型的目标
+                    if (unit.stats.canTarget.includes(targetMoveType)) {
+                        // 如果可以攻击，则下达攻击指令
+                        unit.setTarget(targetEnemy);
+                        unit.issueMoveCommand(targetPosition, this.map, true, true);
+                    } else {
+                        // 如果不能攻击（例如防空车攻击地面），则什么都不做
+                        // 单位会保持原有的状态，不会移动
+                    }
                 });
             } else {
-                // 这是普通的移动指令
+                // 这是普通的移动指令 (逻辑不变)
                 this.selectedUnits.forEach(unit => unit.setTarget(null)); // 确保没有目标
                 this.issueGroupMoveCommand(worldPos, this.map);
             }
@@ -1266,12 +1289,23 @@ class Game {
 
             // 如果友军在增援范围内
             if (distance <= ASSISTANCE_RADIUS) {
-                // 1. 设置新的目标为攻击者
-                ally.setTarget(attacker);
                 
-                // 2. 下达一个非强制的攻击移动指令，让它自动去反击
-                // issueMoveCommand(目标位置, 地图, 是否是攻击移动, 是否是强制移动)
-                ally.issueMoveCommand({ x: attacker.x, y: attacker.y }, this.map, true, false);
+                // --- 核心修复：在这里添加攻击能力检查 ---
+                // 1. 获取攻击者(attacker)的移动类型
+                let attackerMoveType = 'ground'; // 默认是地面（例如来自基地的攻击）
+                if (attacker instanceof Unit) {
+                    attackerMoveType = attacker.stats.moveType;
+                }
+
+                // 2. 检查这个友军(ally)是否可以攻击该类型的敌人
+                if (ally.stats.canTarget.includes(attackerMoveType)) {
+                    // 3. 只有在可以攻击的情况下，才下达增援指令
+                    ally.setTarget(attacker);
+                    
+                    // 下达一个非强制的攻击移动指令，让它自动去反击
+                    ally.issueMoveCommand({ x: attacker.x, y: attacker.y }, this.map, true, false);
+                }
+                // 如果不能攻击（例如防空车无法攻击地面火炮），则什么都不做，它会继续执行自己原来的任务。
             }
         }
     }
