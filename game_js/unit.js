@@ -373,11 +373,7 @@ class Unit {
     }
 
     issueMoveCommand(targetPos, map, isEngaging = false,isforcemoving = false) {
-        if (isEngaging && !this.stats.ammoType) {
-            // 直接停止单位的所有活动，并返回，不进行后续的寻路
-            this.stop();
-            return;
-        }
+
         this.isforcemoving = isforcemoving;
         if (!isEngaging) {
             this.setTarget(null); // 使用 setTarget 清空目标
