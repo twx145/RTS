@@ -86,7 +86,6 @@ function showFirstDialog() {
     let chapterIndex = 0;
     let sceneIndex = 0;
     let dialogIndex = 0;
-    alert(failChapter);
     if (failChapter) {
         chapterIndex = parseInt(failChapter);
     } else if (saveData) {
@@ -732,23 +731,24 @@ async function showEnding(endingType) {
     switch(endingType) {
         case 'perfect':
             title = '和平的黎明 - 完美结局';
-            message = '干得漂亮，指挥官！我们成功避免了全球灾难。';
+            message = '干得漂亮！我们成功避免了全球灾难。历史将会铭记您。';
             background = 'sunrise.jpg';
         break;
         case 'sacrifice':
             title = '和平的黎明 - 牺牲结局';
-            message = '指挥官，我们已经尽力了......虽然避免了最坏的结果，但代价是惨重的。';
+            message = '我们已经尽力......虽然避免了最坏的结果，但代价是惨重的。';
             background = 'sunrise_dark.jpg';
         break;
         case 'cost':
             title = '和平的黎明 - 代价结局';
-            message = '空间站已被摧毁......但是我们收到了坏消息。';
+            message = '空间站被摧毁......但，必须付出如此大的代价吗？';
             background = 'sunrise_dark.jpg';
         break;
         case 'fail':
             title = '任务失败';
-            message = '我们的行动失败了，但战争还没有结束。';
-            background = 'bg.png';
+            message = '行动失败了，但战争还没有结束，重振旗鼓，正义总会到来。';
+            background = 'command_center_fail.jpg';
+        break;
         default:
             title = '游戏结束';
             message = '感谢您的游玩';

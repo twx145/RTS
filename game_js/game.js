@@ -54,6 +54,69 @@ class Game {
         this.destination = null;
         // 新增：建筑物管理器
         this.buildingsManager = null;
+        // 新增：音乐播放器
+        this.userInteracted = false;
+        this.audioManager = {
+            bgm: null,
+            currentBGM: null,
+            bgmVolume: 0.8,
+            sfxVolume: 0.8,
+            bgmQueue: null, // 添加队列用于存储等待播放的BGM
+            
+            playBGM: function(src, loop = true) {
+                if (this.currentBGM === src) return;
+                
+                if (this.bgm) {
+                    this.bgm.pause();
+                    this.bgm = null;
+                }
+                
+                if (src) {
+                    this.bgm = new Audio(`../assets/bgm/${src}`);
+                    this.bgm.volume = this.bgmVolume;
+                    this.bgm.loop = loop;
+                    
+                    // 只有在用户交互后才播放
+                    if (this.userInteracted) {
+                        this.bgm.play().catch(e => console.log("BGM播放失败"));
+                    } else {
+                        // 如果没有交互，将BGM加入队列
+                        this.bgmQueue = src;
+                    }
+                    
+                    this.currentBGM = src;
+                }
+            },
+            
+            // 添加处理用户交互的方法
+            handleUserInteraction: function() {
+                this.userInteracted = true;
+                if (this.bgmQueue && this.bgm) {
+                    this.bgm.play().catch(e => console.log("BGM播放失败"));
+                    this.bgmQueue = null;
+                }
+            },
+            
+            setBGMVolume: function(volume) {
+                this.bgmVolume = volume;
+                if (this.bgm) {
+                    this.bgm.volume = volume;
+                }
+            },
+            
+            setSFXVolume: function(volume) {
+                this.sfxVolume = volume;
+            },
+            
+            stopBGM: function() {
+                if (this.bgm) {
+                    this.bgm.pause();
+                    this.bgm = null;
+                    this.currentBGM = null;
+                }
+                this.bgmQueue = null;
+            }
+        };
     }
 
     init(settings) {
@@ -80,6 +143,15 @@ class Game {
         const selectedMapData = MAP_DEFINITIONS.find(m => m.id === settings.mapId);
         this.map = new GameMap();
         this.map.load(selectedMapData);
+
+        if (settings.bgm) {
+            this.audioManager.playBGM(settings.bgm);
+        }else {
+            const mapBGM = selectedMapData.bgm;
+            if (mapBGM) {
+                this.audioManager.playBGM(mapBGM);
+            }
+        }
 
         // --- 核心修复 (问题 #2): 增加迭代次数以提高物理稳定性 ---
         this.engine = Matter.Engine.create({
@@ -126,7 +198,7 @@ class Game {
         this.buildingsManager.initialize();
 
         const playerManpower = settings.playerManpower || 50;
-        const aiManpower = settings.aiManpower || (settings.aiDifficulty === 'hell' ? Math.round(playerManpower * 2) : playerManpower);
+        const aiManpower = settings.aiManpower || (settings.aiDifficulty === 'hell' ? Math.round(playerManpower * 1.5) : playerManpower);
         this.player = new Player('player', '玩家', playerManpower);
         this.ai = new Player('ai', '电脑', aiManpower, true, {}, settings.aiDifficulty);
         
@@ -169,6 +241,11 @@ class Game {
 
         window.game = this;
         requestAnimationFrame(this.gameLoop.bind(this));
+    }
+
+    handleUserInteraction() {
+        this.userInteracted = true;
+        this.audioManager.handleUserInteraction();
     }
 
     handleUnitCollision(unitA, unitB, bodyA, bodyB) {
@@ -481,6 +558,8 @@ class Game {
 
     // 新增：更新游戏目标状态
     updateObjectives() {
+        if (this.player.units.length === 0 && this.player.manpower < 1)
+            this.endGame(this.ai);
         switch (this.gameMode) {
             case 'tutorial': // 新增教程模式
                 this.updateTutorialMode();
@@ -538,7 +617,7 @@ class Game {
         if ((this.escortUnit && this.escortUnit.hp > 0)  || this.skip){
             const distance = getDistance(this.escortUnit, this.escortUnit.destination);
             
-            if ((distance < TILE_SIZE ) || this.skip) {
+            if (distance < TILE_SIZE * 2|| this.skip) {
                 // 到达目的地
                 this.levelCompleted = true;
                 this.checkLightningStrikeAchievement();
@@ -742,6 +821,17 @@ class Game {
     }
 
     addEventListeners() {
+        // 添加用户交互监听
+        const handleInteraction = () => {
+            if (!this.userInteracted) {
+                this.handleUserInteraction();
+            }
+        };
+        
+        this.canvas.addEventListener('click', handleInteraction);
+        this.canvas.addEventListener('mousedown', handleInteraction);
+        this.canvas.addEventListener('touchstart', handleInteraction);
+
         window.addEventListener('mousemove', (e) => this.handleMouseMove(e));
         this.canvas.addEventListener('mousedown', (e) => this.handleMouseDown(e));
         this.canvas.addEventListener('mouseup', (e) => this.handleMouseUp(e));
@@ -1216,7 +1306,7 @@ class Game {
     handleWheel(e) {
         e.preventDefault();
         if (e.ctrlKey) {
-            const zoomFactor = e.deltaY > 0 ? 1.01: 0.99; 
+            const zoomFactor = e.deltaY > 0 ? 1.04: 0.96; 
             this.zoomAtPoint(zoomFactor, this.getMousePos(e));
         } else {
             // 这是平移操作 (触控板双指滑动 或 鼠标滚轮上下/左右滚动)
@@ -1312,7 +1402,7 @@ class Game {
 
     handleProjectileHit(p) { 
         this.explosions.push(new Explosion(p.x, p.y, p.stats.splashRadius || 2)); 
-        if (this.buildingsManager) {
+        if (this.buildingsManager && p.owner !== 'ai') {
             const targetGridX = Math.floor(p.target.x / TILE_SIZE);
             const targetGridY = Math.floor(p.target.y / TILE_SIZE);
             if (this.buildingsManager.damageBuilding(targetGridX, targetGridY, p.stats.damage)) {
@@ -1389,7 +1479,11 @@ class Game {
         this.savegame.clearAutoSave();
         if(winner.name === '电脑'){
             const currentUser = sessionStorage.getItem('currentUser');
-            setTimeout(() => {window.location.href = `loading.html?target=dialogue.html&failChapter=7&user=${JSON.parse(currentUser).username}`;},2000);
+            const tempProgress = JSON.parse(localStorage.getItem(`ShenDun_temp_progress_${currentUser}`));
+            if(tempProgress.chapter === 5 && tempProgress.scene !== 0)
+                setTimeout(() => {window.location.href = `loading.html?target=dialogue.html&returnFromGame=true&failChapter=9&user=${JSON.parse(currentUser).username}`;},2000);
+            else
+                setTimeout(() => {window.location.href = `loading.html?target=dialogue.html&returnFromGame=true&failChapter=7&user=${JSON.parse(currentUser).username}`;},2000);
             return;
         }
         if (this.returnToDialogue())return;
@@ -1560,6 +1654,7 @@ class Game {
     
     cleanup() {
         cancelAnimationFrame(this.animationFrameId);
+        this.audioManager.stopBGM();
     }
 
     // 修改 添加如下成就监听

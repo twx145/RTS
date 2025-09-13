@@ -17,15 +17,10 @@ class LoadingManager {
     }
     
     init() {
-        // 解析URL参数
         this.parseUrlParams();
-        // 设置随机提示
         this.setRandomTip();
-        // 根据目标页面确定要加载的资源
         this.determineResources();
-        // 开始加载
         this.startLoading();
-        // 绑定跳过按钮事件
         document.getElementById('skip-button').addEventListener('click', () => {
             this.skipLoading();
         });
@@ -123,6 +118,10 @@ class LoadingManager {
     }
     
     loadResourcesForProgress(progress) {
+        if(this.loadingParams.failChapter){
+            progress.chapter  = parseInt(this.loadingParams.failChapter);
+            progress.scene  = progress.dialog  = 0; 
+        }
         const chapter = window.scriptData.chapters[progress.chapter];
         if (chapter) {
             const scene = chapter.scenes[progress.scene];

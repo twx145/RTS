@@ -122,10 +122,12 @@ window.addEventListener('DOMContentLoaded', () => {
         hideTutorialModal();
         // 如果是从设置界面进入，显示设置界面
         if (window.game) {
-            showConfirmDialog('确认', '确定要跳过教程吗？', function() {
-                window.game.skipCurrentScenario();
-                settingsMenu.style.display = 'none';
-            }, 'game');
+            if(settings.gameMode === 'tutorial'){
+                showConfirmDialog('确认', '确定要跳过教程吗？', function() {
+                    window.game.skipCurrentScenario();
+                    settingsMenu.style.display = 'none';
+                }, 'game');
+            }
         }
         else {
             document.getElementById('setup-screen').style.display = 'flex';
@@ -195,7 +197,6 @@ window.addEventListener('DOMContentLoaded', () => {
     // 音量控制
     bgmVolumeSlider.addEventListener('input', function() {
         bgmVolumeValue.textContent = this.value + '%';
-        // 这里添加背景音乐音量控制逻辑
         if (window.game && window.game.audioManager) {
             window.game.audioManager.setBGMVolume(this.value / 100);
         }
@@ -203,7 +204,6 @@ window.addEventListener('DOMContentLoaded', () => {
 
     sfxVolumeSlider.addEventListener('input', function() {
         sfxVolumeValue.textContent = this.value + '%';
-        // 这里添加音效音量控制逻辑
         if (window.game && window.game.audioManager) {
             window.game.audioManager.setSFXVolume(this.value / 100);
         }
@@ -320,6 +320,32 @@ window.addEventListener('DOMContentLoaded', () => {
         const canvas = document.getElementById('game-canvas');
         window.game = new Game(canvas);
         window.game.init(defaultSettings);
+
+        // 添加一个覆盖层提示用户点击开始
+        const overlay = document.createElement('div');
+        overlay.style.cssText = `
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            color: white;
+            font-size: 24px;
+            cursor: pointer;
+        `;
+        overlay.innerHTML = '<div>点击屏幕开始游戏</div>';
+        overlay.addEventListener('click', () => {
+            document.body.removeChild(overlay);
+            if (window.game && window.game.handleUserInteraction) {
+                window.game.handleUserInteraction();
+            }
+        });
+        document.body.appendChild(overlay);
         return ;
     }
 

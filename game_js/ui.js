@@ -186,7 +186,10 @@ class UI {
     showWinner(winnerName) {
         const winnerDiv = document.createElement('div');
         winnerDiv.className = 'winner-announcement';
-        winnerDiv.textContent = `${winnerName} 获胜!`;
+        if(winnerName === '玩家')
+            winnerDiv.textContent = '任务成功!';
+        else
+            winnerDiv.textContent = '任务失败!';
         document.body.appendChild(winnerDiv);
     }
 

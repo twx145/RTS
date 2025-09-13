@@ -474,7 +474,7 @@ const BUILDING_TYPES = {
         width: 7,
         height: 7,
         canAttack: true,
-        attack: 300,
+        attack: 250,
         range: 10 * TILE_SIZE,
         attackSpeed: 0.8,
         canTarget: ['ground', 'air', 'amphibious'],

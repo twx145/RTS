@@ -710,25 +710,19 @@ window.scriptData = {
             },
             {
               "character": "伊娃·罗斯托娃",
-              "text": "情报显示他正在新京都的市区内活动，就在天穹大厦的顶层。该建筑有八十层高，顶层被改造成了一个坚固的指挥中心。",
+              "text": "情报显示他正在新京都的市区内活动，就在天穹大厦的顶层。该建筑有八十层高，顶层被改造成了一个坚固的指挥中心。其安保系统非常严密，有多层防御措施。",
               "voice": "eva_city2.mp3",
               "characterLeft": {"image": "eva2.png","expression": "serious"}
             },
             {
               "character": "伊娃·罗斯托娃",
-              "text": "这是一个高度安全的设施。我们需要谨慎行动。大厦的安保系统非常严密，有多层防御措施。周边地区人口密集，行动难度很大。",
-              "voice": "eva_city3.mp3",
-              "characterLeft": {"image": "eva2.png","expression": "serious"}
-            },
-            {
-              "character": "伊娃·罗斯托娃",
-              "text": "这是一次高风险的城市斩首行动。新京都是人口密集的大都市，常住人口超过两千万，我们必须尽量减少平民伤亡。",
+              "text": "新京都是人口密集的大都市，常住人口超过两千万，我们必须尽量减少平民伤亡。",
               "voice": "eva_city4.mp3",
               "characterLeft": {"image": "eva2.png","expression": "serious"}
             },
             {
               "character": "伊娃·罗斯托娃",
-              "text": "行动时间定在凌晨三点，那时人流最少。但你仍然要注意避开夜生活区域和居民区。任何平民伤亡都是不可接受的。",
+              "text": "行动时间定在凌晨三点，那时人流最少。但你仍然要注意避开居民区。任何平民伤亡都是不可接受的。",
               "voice": "eva_city5.mp3",
               "characterLeft": {"image": "eva2.png","expression": "serious"}
             },
@@ -770,14 +764,8 @@ window.scriptData = {
             },
             {
               "character": "伊娃·罗斯托娃",
-              "text": "不要相信任何看似容易的机会。保持通讯畅通，随时汇报情况。如果情况有变，立即调整战术。",
+              "text": "保持通讯畅通，随时汇报情况。如果情况有变，立即调整战术。",
               "voice": "eva_city12.mp3",
-              "characterLeft": {"image": "eva2.png","expression": "serious"}
-            },
-            {
-              "character": "伊娃·罗斯托娃",
-              "text": "毒蛇可能掌握重要情报，要尽量活捉。",
-              "voice": "eva_city13.mp3",
               "characterLeft": {"image": "eva2.png","expression": "serious"}
             },
             {
@@ -850,24 +838,6 @@ window.scriptData = {
               "character": "指挥官",
               "text": "防空小组，使用电磁干扰弹！狙击手，瞄准直升机旋翼和观测设备！",
               "characterRight": {"image": "commander.png","expression": "shouting"}
-            },
-            {
-              "character": "毒蛇",
-              "text": "你可以加入我们，指挥官。刻耳柏洛斯能给你神盾给不了的一切。",
-              "voice": "viper_offer.mp3",
-              "characterCenter": {"image": "viper.jpg","expression": "neutral"},
-              "choices": [
-                {
-                  "text": "拒绝提议，逮捕毒蛇",
-                  "next": {"chapter": 3, "scene": 3, "dialog": 0},
-                  "consequence": "loyal"
-                },
-                {
-                  "text": "假装接受，伺机行动",
-                  "next": {"chapter": 3, "scene": 4, "dialog": 0},
-                  "consequence": "deceptive"
-                }
-              ]
             }
           ]
         },
@@ -884,26 +854,43 @@ window.scriptData = {
             },
             {
               "character": "毒蛇",
+              "text": "你的实力超乎我的预料，小子。或许我们可以谈谈。",
+              "characterCenter": {"image": "viper.jpg","expression": "angry"}
+            },
+            {
+              "character": "毒蛇",
+              "text": "你可以选择加入我们。刻耳柏洛斯能给你神盾给不了的一切。",
+              "voice": "viper_offer.mp3",
+              "characterCenter": {"image": "viper.jpg","expression": "neutral"},
+              "choices": [
+                {
+                  "text": "拒绝提议，逮捕毒蛇",
+                  "next": {"chapter": 3, "scene": 2, "dialog": 3},
+                  "consequence": "loyal"
+                },
+                {
+                  "text": "假装接受，伺机行动",
+                  "next": {"chapter": 3, "scene": 3, "dialog": 0},
+                  "consequence": "deceptive"
+                }
+              ]
+            },
+            {
+              "character": "毒蛇",
               "text": "神盾的走狗！你们以为能阻止未来吗？天锤即将落下，它将净化这个腐朽的世界！",
               "voice": "viper_taunt1.mp3",
               "characterCenter": {"image": "viper.jpg","expression": "angry"}
             },
             {
               "character": "毒蛇",
-              "text": "我的死亡毫无意义，因为新时代已经来临！你们所做的一切，都在我们的计算之中！",
+              "text": "就算杀了我，也改变不了什么！因为新时代已经来临！你们所做的一切都在计算之中！",
               "voice": "viper_taunt2.mp3",
               "characterCenter": {"image": "viper.jpg","expression": "angry"}
             },
             {
               "character": "毒蛇",
-              "text": "就算杀了我，也改变不了什么！天锤终将降临！你们注定失败！",
+              "text": "你们的努力都是徒劳，历史的车轮无法阻挡！新时代的曙光已经到来，旧世界必将被摧毁！",
               "voice": "viper_taunt3.mp3",
-              "characterCenter": {"image": "viper.jpg","expression": "angry"}
-            },
-            {
-              "character": "毒蛇",
-              "text": "愚蠢的抵抗者！你们的努力都是徒劳的，历史的车轮无法阻挡！新时代的曙光已经到来，旧世界必将被摧毁！",
-              "voice": "viper_taunt4.mp3",
               "characterCenter": {"image": "viper.jpg","expression": "angry"}
             },
             {
@@ -914,7 +901,7 @@ window.scriptData = {
             {
               "character": "毒蛇",
               "text": "你们什么都不懂。天锤已经启动，无人能阻止。我只是开始的一环。",
-              "voice": "viper_taunt5.mp3",
+              "voice": "viper_taunt4.mp3",
               "characterCenter": {"image": "viper.jpg","expression": "angry"}
             }
           ]
@@ -932,7 +919,7 @@ window.scriptData = {
             },
             {
               "character": "伊娃·罗斯托娃",
-              "text": "天锤......他临死前一直在重复这个词。健司，我要你调动一切资源，查清这个词的一切可能含义。",
+              "text": "天锤......他一直在重复这个词。健司，我要你调动一切资源，查清这个词的一切可能含义。",
               "voice": "eva_hammer1.mp3",
               "characterLeft": {"image": "eva2.png","expression": "thinking"}
             },
@@ -949,12 +936,6 @@ window.scriptData = {
               "characterLeft": {"image": "eva2.png","expression": "thinking"}
             },
             {
-              "character": "伊娃·罗斯托娃",
-              "text": "这个词汇可能隐藏着重要的信息，我们需要立即破解其含义。全球安全可能取决于这个发现。",
-              "voice": "eva_hammer4.mp3",
-              "characterLeft": {"image": "eva2.png","expression": "thinking"}
-            },
-            {
               "character": "田中健司",
               "text": "正在搜索所有数据库......启动跨部门情报共享协议......",
               "voice": "tanaka_hammer1.mp3",
@@ -962,25 +943,25 @@ window.scriptData = {
             },
             {
               "character": "田中健司",
-              "text": "天啊！找到了！天锤计划......它是一个冷战时期的轨道攻击系统计划档案！",
+              "text": "找到了！天锤计划......它是一个冷战时期的轨道攻击系统计划档案！",
               "voice": "tanaka_hammer2.mp3",
               "characterRight": {"image": "tanaka2.png","expression": "shocked"}
             },
             {
               "character": "田中健司",
-              "text": "根据最高机密文件，天锤计划使用钨合金棒从太空发射，利用动能打击目标......理论上其威力堪比战略核武器，但不会产生辐射污染......",
+              "text": "根据最高机密文件，天锤计划使用钨合金棒从太空发射，利用动能打击目标,理论上其威力堪比战略核武器......",
               "voice": "tanaka_hammer3.mp3",
               "characterRight": {"image": "tanaka2.png","expression": "shocked"}
             },
             {
               "character": "田中健司",
-              "text": "这太可怕了。这种武器可以在不引发核辐射的情况下造成巨大破坏。它的打击精度极高，难以防御。",
+              "text": "这种武器可以造成巨大破坏。打击精度极高，难以防御。",
               "voice": "tanaka_hammer4.mp3",
               "characterRight": {"image": "tanaka2.png","expression": "shocked"}
             },
             {
               "character": "田中健司",
-              "text": "项目因技术限制和国际条约于1998年正式废弃，所有资料都应该被销毁了。",
+              "text": "但项目因技术限制和国际条约于1998年正式废弃，所有资料都应该被销毁了。",
               "voice": "tanaka_hammer5.mp3",
               "characterRight": {"image": "tanaka2.png","expression": "shocked"}
             },
@@ -992,19 +973,13 @@ window.scriptData = {
             },
             {
               "character": "田中健司",
-              "text": "现在的技术水平足以实现这个疯狂的计划！我们必须阻止他们！立即采取行动！",
-              "voice": "tanaka_hammer7.mp3",
-              "characterRight": {"image": "tanaka2.png","expression": "shocked"}
-            },
-            {
-              "character": "田中健司",
-              "text": "如果他们成功激活这个系统，全球都将面临巨大威胁。天锤系统的威力可能超出我们最坏的预估。",
+              "text": "如果他们成功激活，全球都将面临巨大威胁。天锤系统的威力可能超出我们最坏的预估。",
               "voice": "tanaka_hammer8.mp3",
               "characterRight": {"image": "tanaka2.png","expression": "shocked"}
             },
             {
               "character": "伊娃·罗斯托娃",
-              "text": "......那他们就能在不引发核辐射的情况下，攻击世界任何地方。没有辐射污染，没有国际制裁，没有任何预警......",
+              "text": "......那他们就能攻击世界任何地方。没有国际制裁，没有任何预警......",
               "voice": "eva_hammer5.mp3",
               "characterLeft": {"image": "eva2.png","expression": "serious"}
             },
@@ -1062,26 +1037,14 @@ window.scriptData = {
             },
             {
               "character": "伊娃·罗斯托娃",
-              "text": "基地的环境极其恶劣，要做好防寒准备。极地环境对装备和人员都是巨大考验。",
-              "voice": "eva_arctic3.mp3",
-              "characterLeft": {"image": "eva2.png","expression": "serious"}
-            },
-            {
-              "character": "伊娃·罗斯托娃",
               "text": "基地被一层能量护盾保护着，我们必须先摧毁外围的三个能源站。每个能源站都有重兵把守，包括主战坦克和自动炮塔。",
               "voice": "eva_arctic4.mp3",
               "characterLeft": {"image": "eva2.png","expression": "serious"}
             },
             {
               "character": "伊娃·罗斯托娃",
-              "text": "建议使用重火力快速突破，避免陷入持久战。注意，该地区正在经历十年未遇的强烈暴风雪，风速达每秒三十米，能见度几乎为零，会严重影响视野和移动速度。",
-              "voice": "eva_arctic5.mp3",
-              "characterLeft": {"image": "eva2.png","expression": "serious"}
-            },
-            {
-              "character": "伊娃·罗斯托娃",
-              "text": "做好防寒准备。确保装备正常运行。极低温度可能影响武器性能，要注意保养。暴风雪可能导致通讯中断，要做好应急准备。",
-              "voice": "eva_arctic6.mp3",
+              "text": "基地的环境极其恶劣，做好防寒准备。这对装备和人员都是巨大考验。建议使用重火力快速突破，避免陷入持久战。",
+              "voice": "eva_arctic3.mp3",
               "characterLeft": {"image": "eva2.png","expression": "serious"}
             },
             {
@@ -1094,12 +1057,6 @@ window.scriptData = {
               "character": "伊娃·罗斯托娃",
               "text": "世界命运在此一战。如果失败，天锤将拥有随时打击全球任何目标的能力。没有人能够在那样的威胁下幸存。我们必须成功。",
               "voice": "eva_arctic8.mp3",
-              "characterLeft": {"image": "eva2.png","expression": "serious"}
-            },
-            {
-              "character": "伊娃·罗斯托娃",
-              "text": "各兵种要配合好，发挥最大战斗力。极地作战需要特殊战术，要充分利用环境优势。",
-              "voice": "eva_arctic9.mp3",
               "characterLeft": {"image": "eva2.png","expression": "serious"}
             },
             {
@@ -1165,19 +1122,13 @@ window.scriptData = {
             },
             {
               "character": "天锤AI",
-              "text": "清除程序启动。重复，清除程序启动。所有作战单位立即执行清除协议，优先级最高。",
+              "text": "清除程序启动。所有单位立即执行清除协议，优先级最高。",
               "voice": "ai_alert2.mp3",
               "characterCenter": {"image": "ai_core.jpg","expression": "neutral"}
             },
             {
               "character": "天锤AI",
-              "text": "威胁等级：终极。立即执行清除指令。所有系统进入战斗状态，消灭一切威胁。",
-              "voice": "ai_alert3.mp3",
-              "characterCenter": {"image": "ai_core.jpg","expression": "neutral"}
-            },
-            {
-              "character": "天锤AI",
-              "text": "自主作战模式启动，最高警戒级别。",
+              "text": "系统进入战斗状态，自主作战模式启动，最高警戒级别。",
               "voice": "ai_alert4.mp3",
               "characterCenter": {"image": "ai_core.jpg","expression": "neutral"}
             },
@@ -1189,7 +1140,7 @@ window.scriptData = {
             },
             {
               "character": "田中健司",
-              "text": "它在执行某种终极清除协议，这个AI的学习速度惊人，每一秒都在变得更强。",
+              "text": "它在执行某种终极清除协议，这个AI的学习速度惊人，每一秒都会变得更强。",
               "voice": "tanaka_alert2.mp3",
               "characterRight": {"image": "tanaka2.png","expression": "panic"}
             },
@@ -1256,7 +1207,7 @@ window.scriptData = {
             },
             {
               "character": "田中健司",
-              "text": "它似乎在学习我们的战术，适应我们的攻击模式。每一次交手，它都变得更强。",
+              "text": "它似乎在学习我们的战术，适应我们的攻击模式。",
               "voice": "tanaka_analysis2.mp3",
               "characterRight": {"image": "tanaka2.png","expression": "thinking"}
             },
@@ -1268,19 +1219,13 @@ window.scriptData = {
             },
             {
               "character": "伊娃·罗斯托娃",
-              "text": "指挥官，让你的人休息一下，但保持战备状态。可能很快就要再次出击。",
+              "text": "指挥官，让你的人整顿一下，保持战备状态。可能很快就要再次出击。这场战斗可能会很漫长，我们需要保持耐力。",
               "voice": "eva_prepare1.mp3",
               "characterLeft": {"image": "eva2.png","expression": "serious"}
             },
             {
               "character": "伊娃·罗斯托娃",
-              "text": "保持警惕，随时准备行动。这场战斗可能会很漫长，我们需要保持耐力。",
-              "voice": "eva_prepare2.mp3",
-              "characterLeft": {"image": "eva2.png","expression": "serious"}
-            },
-            {
-              "character": "伊娃·罗斯托娃",
-              "text": "同时，做好最坏的打算，应对天锤系统的第一次打击。希望还有时间。",
+              "text": "同时，做好最坏的打算去应对天锤系统的打击。希望我们还有时间。",
               "voice": "eva_prepare3.mp3",
               "characterLeft": {"image": "eva2.png","expression": "serious"}
             },
@@ -1308,43 +1253,37 @@ window.scriptData = {
             },
             {
               "character": "伊娃·罗斯托娃",
-              "text": "指挥官，我们没有时间了。天锤AI正在调动全球的武器库，包括三十二个国家的核武库。如果让它完全控制这些系统，人类文明将面临灭绝。",
+              "text": "指挥官，天锤AI正在调动全球的武器库，包括三十二个国家的核武库。如果让它完全控制这些系统，人类文明将面临灭绝。",
               "voice": "eva_final1.mp3",
               "characterLeft": {"image": "eva2.png","expression": "serious"}
             },
             {
               "character": "伊娃·罗斯托娃",
-              "text": "最新情报显示，它已经开始重新瞄准程序，目标包括主要城市和军事基地。我们必须立即行动。",
+              "text": "最新情报显示，它已经开始进行瞄准程序，目标包括各国的主要城市和军事基地。我们必须立即行动。",
               "voice": "eva_final2.mp3",
               "characterLeft": {"image": "eva2.png","expression": "serious"}
             },
             {
-              "character": "伊娃·罗斯托娃",
-              "text": "全球处于极度危险之中，各国军队已经进入最高警戒状态。",
-              "voice": "eva_final3.mp3",
-              "characterLeft": {"image": "eva2.png","expression": "serious"}
-            },
-            {
               "character": "田中健司",
-              "text": "但我找到了一个可能的机会——北部山区有一座废弃的巨神离子炮试验场。根据档案记录，它的能量输出理论上足以击落天锤空间站。",
+              "text": "我找到了一个可能的机会——北部山区有一座废弃的巨神离子炮试验场。根据档案记录，它的能量输出理论上足以击落天锤空间站。",
               "voice": "tanaka_opportunity1.mp3",
               "characterRight": {"image": "tanaka2.png","expression": "thinking"}
             },
             {
               "character": "田中健司",
-              "text": "但试验场已经废弃二十多年，设备严重老化，维护状况未知。这是一个冒险的计划。成功率难以预估。",
+              "text": "但试验场已经废弃十多年，设备维护状况未知。试验场的设备可能需要大量维修才能重新运作。",
               "voice": "tanaka_opportunity2.mp3",
               "characterRight": {"image": "tanaka2.png","expression": "thinking"}
             },
             {
               "character": "田中健司",
-              "text": "我们需要做好两手准备。试验场的设备可能需要大量维修才能重新运作。",
+              "text": "这是一个冒险的计划，成功率难以预估，我们需要做好两手准备。",
               "voice": "tanaka_opportunity3.mp3",
               "characterRight": {"image": "tanaka2.png","expression": "thinking"}
             },
             {
               "character": "伊娃·罗斯托娃",
-              "text": "如果要启动它，我们需要同时启动三个备用聚变反应堆。这会产生巨大的能量过载，可能会引发里氏8.0级以上的区域性地震，影响范围达三百公里。",
+              "text": "如果要启动它，需要同时启动三个备用聚变反应堆。这会产生巨大的能量过载，可能引发里氏8.0级以上的区域性地震，影响范围达三百公里。",
               "voice": "eva_final4.mp3",
               "characterLeft": {"image": "eva2.png","expression": "serious"}
             },
@@ -1358,13 +1297,14 @@ window.scriptData = {
               "character": "伊娃·罗斯托娃",
               "text": "这个选择必须由你来做。后果由我们共同承担。这个决定很沉重，但必须做出选择。",
               "voice": "eva_final6.mp3",
-              "characterLeft": {"image": "eva2.png","expression": "serious"}
-            },
-            {
-              "character": "伊娃·罗斯托娃",
-              "text": "我们已经启动紧急疏散程序，但时间太紧迫。",
-              "voice": "eva_final7.mp3",
-              "characterLeft": {"image": "eva2.png","expression": "serious"}
+              "characterLeft": {"image": "eva2.png","expression": "serious"},
+              "choices": [
+                {
+                  "text": "我们别无选择。启动计划。",
+                  "next": {"chapter": 5, "scene": 0, "dialog": 10},
+                  "consequence": "loyal"
+                }
+              ]
             },
             {
               "character": "指挥官",
@@ -1379,8 +1319,20 @@ window.scriptData = {
             },
             {
               "character": "伊娃·罗斯托娃",
-              "text": "现在，你的任务是护送移动充能车抵达离子炮阵地。这种车辆速度很慢，每小时只能前进五公里，且极易受到攻击。需要全程严密护卫。",
+              "text": "现在，你的任务是护送移动充能车抵达离子炮阵地。这种车辆速度很慢，且极易受到攻击。需要全程严密护卫。",
               "voice": "eva_final9.mp3",
+              "characterLeft": {"image": "eva2.png","expression": "serious"}
+            },
+            {
+              "character": "伊娃·罗斯托娃",
+              "text": "而且受到天锤AI的干扰，我们的无法通过卫星看到离子炮的方位，这意味着你必须在战争迷雾中自行确定方向，并预防迷雾中的敌袭。",
+              "voice": "eva_final10.mp3",
+              "characterLeft": {"image": "eva2.png","expression": "serious"}
+            },
+            {
+              "character": "伊娃·罗斯托娃",
+              "text": "注意，充能过程中会产生极强的能量波动，这会像灯塔一样吸引天锤AI发动最猛烈的攻击。你要做好万全准备，这可能是最艰难的一场防御战。",
+              "voice": "eva_final11.mp3",
               "characterLeft": {"image": "eva2.png","expression": "serious"}
             },
             {
@@ -1391,20 +1343,8 @@ window.scriptData = {
             },
             {
               "character": "伊娃·罗斯托娃",
-              "text": "注意，充能过程中会产生极强的能量波动，这会像灯塔一样吸引天锤AI发动最猛烈的攻击。你需要做好万全准备，这可能是我们历史上最艰难的一场防御战。",
-              "voice": "eva_final11.mp3",
-              "characterLeft": {"image": "eva2.png","expression": "serious"}
-            },
-            {
-              "character": "伊娃·罗斯托娃",
-              "text": "所有可用的资源都已经调配给你，包括海军支援和空中力量。祝你好运，指挥官。全人类的命运就交给你了。",
+              "text": "所有可用的资源都已经调配给你，包括陆军支援和空中力量。祝你好运，指挥官。全人类的命运就交给你了。",
               "voice": "eva_final12.mp3",
-              "characterLeft": {"image": "eva2.png","expression": "serious"}
-            },
-            {
-              "character": "伊娃·罗斯托娃",
-              "text": "我们必须成功。这场战斗将决定人类的未来。各国军队都在待命，随时准备提供支援。",
-              "voice": "eva_final13.mp3",
               "characterLeft": {"image": "eva2.png","expression": "serious"}
             },
             {
@@ -1417,7 +1357,7 @@ window.scriptData = {
                 "aiDifficulty": "medium",
                 "gameMode": "escort",
                 "escortUnit": "energy_vehicle",
-                "destination": {"x": 69, "y": 52}
+                "destination": {"x": 67, "y": 52}
               }
             }
           ]
@@ -1425,7 +1365,7 @@ window.scriptData = {
         {
           "id": "scene5_2",
           "name": "离子炮充能",
-          "background": "离子炮阵地.jpg",
+          "background": "北部山区.jpg",
           "bgm": "第五幕音乐.mp3",
           "dialogs": [
             {
@@ -1461,25 +1401,34 @@ window.scriptData = {
             },
             {
               "character": "田中健司",
-              "text": "请立即做出决定！时间紧迫，必须马上选择！地质变化正在加速，我们需要立即采取措施。",
+              "text": "时间紧迫，必须马上选择！地质变化正在加速，我们需要立即采取措施。",
               "voice": "tanaka_warning3.mp3",
               "characterRight": {"image": "tanaka2.png","expression": "panic"},
               "choices": [
                 {
                   "text": "维持功率，必须摧毁天锤",
-                  "next": {"chapter": 5, "scene": 3, "dialog": 0},
+                  "next": {"chapter": 5, "scene": 1, "dialog": 4},
                   "consequence": "sacrifice"
                 },
                 {
                   "text": "降低功率，减少平民伤亡",
-                  "next": {"chapter": 5, "scene": 4, "dialog": 0},
+                  "next": {"chapter": 5, "scene": 1, "dialog": 6},
                   "consequence": "merciful"
                 }
               ]
             },
             {
               "character": "田中健司",
-              "text": "开火！",
+              "text": "维持功率，开火！",
+              "voice": "tanaka_fire.mp3",
+              "characterRight": {"image": "tanaka2.png","expression": "shouting"}
+            },
+            {
+              action:{"type": "jump_to_chapter","chapter": 10,"description": "进入终章：和平的黎明 - 代价结局"}
+            },
+            {
+              "character": "田中健司",
+              "text": "各单位注意，降低离子炮功率！",
               "voice": "tanaka_fire.mp3",
               "characterRight": {"image": "tanaka2.png","expression": "shouting"}
             }
@@ -1528,38 +1477,14 @@ window.scriptData = {
             },
             {
               "character": "伊娃·罗斯托娃",
-              "text": "愿神盾与你同在！全人类都在期待你的成功！时间非常紧迫，必须争分夺秒。",
+              "text": "已经调动了所有可用资源协助你，包括三个航母战斗群。但时间不多，残骸将在三十分钟内进入大气层。",
               "voice": "eva_final_order3.mp3",
               "characterLeft": {"image": "eva2.png","expression": "serious"}
             },
             {
               "character": "伊娃·罗斯托娃",
-              "text": "全球海岸线都面临威胁，必须尽快行动。",
+              "text": "愿神盾与你同在，全人类都在期待你的成功！",
               "voice": "eva_final_order4.mp3",
-              "characterLeft": {"image": "eva2.png","expression": "serious"}
-            },
-            {
-              "character": "伊娃·罗斯托娃",
-              "text": "我们已经调动了所有可用资源协助你，包括三个航母战斗群。但时间不多了，残骸将在三十分钟内再入大气层。",
-              "voice": "eva_final_order5.mp3",
-              "characterLeft": {"image": "eva2.png","expression": "serious"}
-            },
-            {
-              "character": "伊娃·罗斯托娃",
-              "text": "你必须在这之前完成引导程序，否则后果不堪设想。全世界都在看着我们，指挥官。",
-              "voice": "eva_final_order6.mp3",
-              "characterLeft": {"image": "eva2.png","expression": "serious"}
-            },
-            {
-              "character": "伊娃·罗斯托娃",
-              "text": "这是最后的机会了。一定要成功！全球救援力量已经待命，但我们需要先避免最坏的情况发生。",
-              "voice": "eva_final_order7.mp3",
-              "characterLeft": {"image": "eva2.png","expression": "serious"}
-            },
-            {
-              "character": "伊娃·罗斯托娃",
-              "text": "各国科学家正在实时监控残骸轨迹，提供技术支持。",
-              "voice": "eva_final_order8.mp3",
               "characterLeft": {"image": "eva2.png","expression": "serious"}
             },
             {
@@ -1594,13 +1519,14 @@ window.scriptData = {
               "characterLeft": {"image": "eva2.png", "expression": "smile"}
             },
             {
-              "action": {"type": "jump_to_chapter","chapter": 6,"description": "进入终章：和平的黎明"}
+              "action": {"type": "jump_to_chapter","chapter": 8,"description": "进入终章：和平的黎明 - 完美结局"}
             }
           ]
         }
       ]
     },
-    {//胜利章节
+    //胜利章节
+    {
       "id": "chapter_victory",
       "title": "终章：和平的黎明",
       "scenes": [
@@ -1673,7 +1599,7 @@ window.scriptData = {
             },
             {
               "character": "田中健司",
-              "text": "刻耳柏洛斯的防御比我们预想的要强大。我需要时间分析数据，找出他们的弱点。",
+              "text": "敌人比我们预想的要强大。我需要时间分析数据，找出他们的弱点。",
               "voice": "tanaka_fail1.mp3",
               "characterRight": {"image": "tanaka2.png", "expression": "worried"}
             },
@@ -1693,6 +1619,7 @@ window.scriptData = {
         }
       ]
     },
+    // 完美
     {
       "id": "chapter_victory_perfect",
       "title": "终章：和平的黎明 - 完美结局",
@@ -1795,6 +1722,7 @@ window.scriptData = {
         }
       ]
     },
+    // 牺牲
     {
       "id": "chapter_victory_sacrifice",
       "title": "终章：和平的黎明 - 牺牲结局",
@@ -1921,6 +1849,7 @@ window.scriptData = {
         }
       ]
     },
+    // 代价
     {
       "id": "chapter_victory_cost",
       "title": "终章：和平的黎明 - 代价结局",
@@ -2009,14 +1938,8 @@ window.scriptData = {
             },
             {
               "character": "伊娃·罗斯托娃",
-              "text": "我们必须对得起那些牺牲的人。用行动证明我们的价值。重建工作将考验我们的决心和能力。",
+              "text": "我们必须对得起那些牺牲的人。重建工作将考验决心和能力。要用实际行动证明我们的价值，再次赢得人民的信任。",
               "voice": "eva_cost9.mp3",
-              "characterLeft": {"image": "eva2.png", "expression": "determined"}
-            },
-            {
-              "character": "伊娃·罗斯托娃",
-              "text": "我们要用实际行动赢得人民的信任。",
-              "voice": "eva_cost10.mp3",
               "characterLeft": {"image": "eva2.png", "expression": "determined"}
             },
             {
@@ -2027,13 +1950,13 @@ window.scriptData = {
             },
             {
               "character": "田中健司",
-              "text": "数据库显示他们还有多个备用计划正在执行，我们必须保持警惕。战争的形态正在改变，指挥官，我们需要改变应对方式。",
+              "text": "数据库显示他们还有多个备用计划正在执行，我们必须保持警惕。战争的形态正在改变，指挥官。",
               "voice": "tanaka_cost5.mp3",
               "characterRight": {"image": "tanaka2.png", "expression": "thinking"}
             },
             {
               "character": "田中健司",
-              "text": "新时代需要新思维。创新才能生存。我们需要适应新的安全环境。科技发展带来新的威胁，我们必须与时俱进。",
+              "text": "新时代需要新思维。科技发展带来新的威胁，我们必须与时俱进，适应新的环境。",
               "voice": "tanaka_cost6.mp3",
               "characterRight": {"image": "tanaka2.png", "expression": "thinking"}
             },

@@ -177,9 +177,9 @@ class Unit {
         // 分支 B: 常规/智能模式 (非强制移动)
         else {
             // a. 自动索敌
-            if (this.findTargetCooldown <= 0) {
+            if (!this.target && this.findTargetCooldown <= 0) {
                 this.findTarget(enemyBase, enemyUnits, game);
-                this.findTargetCooldown = 0.5 + Math.random() * 0.2; // 重置冷却
+                this.findTargetCooldown = 0.5 + Math.random() * 0.2;
             }
 
             // b. 如果有目标，则决定是攻击还是追击
@@ -199,7 +199,7 @@ class Unit {
                     }
                 } else {
                     // 超出射程：追击 (每隔一段时间重新寻路)
-                    if (this.stats.ammoType && !this.path.length && !this.moveTargetPos) {
+                    if (!this.path.length && !this.moveTargetPos) {
                         this.issueMoveCommand(targetPos, game.map, true, false);
                     }
                 }
@@ -373,7 +373,6 @@ class Unit {
     }
 
     issueMoveCommand(targetPos, map, isEngaging = false,isforcemoving = false) {
-
         this.isforcemoving = isforcemoving;
         if (!isEngaging) {
             this.setTarget(null); // 使用 setTarget 清空目标

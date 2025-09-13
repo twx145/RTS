@@ -5,6 +5,7 @@ const MAP_DEFINITIONS = [
     {
         id: 'map_new_01',
         name: '十字路口冲突 (Crossroads Clash)',
+        bgm: '登录&第一幕.mp3',
         description: '中心道路是兵家必争之地，两侧的森林为伏击提供了可能。',
         width: 80, height: 60,
         buildings: [
@@ -46,6 +47,7 @@ const MAP_DEFINITIONS = [
     {
         id: 'map01',
         name: '双子桥 (Twin Bridges) - 大地图版',
+        bgm: '第二三幕音乐.mp3',
         description: '一条河流将地图一分为二，只有两座桥梁可供地面部队通过。',
         width: 100, height: 60, // 直接定义为大尺寸
         buildings: [
@@ -81,6 +83,7 @@ const MAP_DEFINITIONS = [
     {
         id: 'map_tutorial',
         name: '训练基地',
+        bgm: '新手教程.mp3',
         description: '新手训练场地，学习基本操作和战术。',
         width: 30, height: 30,
         buildings: [
@@ -122,6 +125,7 @@ const MAP_DEFINITIONS = [
     {
         id: 'map_chapter1',
         name: '回声-7哨站',
+        bgm: '第一幕游戏.wav',
         description: '撒哈拉沙漠边缘的孤立哨站，沙丘提供了有限的掩护，但视野开阔易被发现。',
         width: 60, height: 60,
         buildings: [
@@ -167,6 +171,7 @@ const MAP_DEFINITIONS = [
     {
         id: 'map_chapter2',
         name: '安第斯秘密基地',
+        bgm: '第二幕游戏.mp3',
         description: '隐藏在安第斯山脉深处的刻耳柏洛斯基地，峡谷地形限制了机动但提供了天然防御。',
         width: 80, height: 60,
         buildings: [
@@ -234,6 +239,7 @@ const MAP_DEFINITIONS = [
     {
         id: 'map_chapter3',
         name: '新京都市战场',
+        bgm: '第三幕游戏.mp3',
         description: '霓虹闪烁的现代都市，高楼大厦提供掩护但也限制了视野，街道成为天然战线。',
         width: 100, height: 80,
         buildings: [
@@ -297,6 +303,7 @@ const MAP_DEFINITIONS = [
     {
         id: 'map_chapter4',
         name: '北极天锤控制基地',
+        bgm: '第四幕游戏.mp3',
         description: '冰天雪地的北极基地，三个能源站为主控塔提供护盾，极地环境影响移动。',
         width: 80, height: 80,
         buildings: [
@@ -368,16 +375,13 @@ const MAP_DEFINITIONS = [
     {
         id: 'map_chapter5_1',
         name: '离子炮阵地',
+        bgm: '第五幕游戏.mp3',
         description: '崎岖山地中的离子炮阵地，护送充能车到达指定位置是获胜关键。',
         width: 80, height: 60,
         buildings: [
-            { type: 'ion_cannon', x: 65, y: 45, width: 7, height: 7, hp: 6000 },
-            { type: 'power_conduit', x: 60, y: 40, width: 3, height: 3, hp: 1200 },
-            { type: 'power_conduit', x: 70, y: 40, width: 3, height: 3, hp: 1200 },
-            { type: 'power_conduit', x: 60, y: 50, width: 3, height: 3, hp: 1200 },
-            { type: 'power_conduit', x: 70, y: 50, width: 3, height: 3, hp: 1200 },
-            { type: 'defense_turret', x: 62, y: 35, width: 3, height: 3, hp: 1500 },
-            { type: 'defense_turret', x: 68, y: 35, width: 3, height: 3, hp: 1500 },
+            { type: 'ion_cannon', x: 63, y: 45, width: 7, height: 7, hp: 6000 },
+            { type: 'defense_turret', x: 62, y: 42, width: 3, height: 3, hp: 1500 },
+            { type: 'defense_turret', x: 68, y: 42, width: 3, height: 3, hp: 1500 },
             { type: 'defense_turret', x: 62, y: 55, width: 3, height: 3, hp: 1500 },
             { type: 'defense_turret', x: 68, y: 55, width: 3, height: 3, hp: 1500 },
             { type: 'bunker', x: 58, y: 45, width: 3, height: 3, hp: 1000 },
@@ -406,11 +410,11 @@ const MAP_DEFINITIONS = [
                         
             // 蜿蜒道路从左上到右下
             let roadX = 0, roadY = 0;
-            while (roadX < 69 || roadY < 52) {
+            while (roadX < 66 || roadY < 52) {
                 grid[roadY][roadX] = 'r';
                 grid[roadY][roadX+1] = 'r';
                 
-                if (Math.random() > 0.4 && roadX < 69) {
+                if (Math.random() > 0.6 && roadX < 66) {
                     roadX += 1;
                 } else if (roadY < 52) {
                     roadY += 1;
@@ -424,6 +428,7 @@ const MAP_DEFINITIONS = [
     {
         id: 'map_chapter5_2',
         name: '刻耳柏洛斯海上平台',
+        bgm: '第六幕游戏.mp3',
         description: '巨大的海上平台，中央是控制塔，四周是深海，只有少量通道连接。',
         width: 70, height: 70,
         buildings: [
