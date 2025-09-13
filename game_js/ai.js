@@ -28,7 +28,7 @@ class AIController {
             { x: patrolX, y: patrolYBottom }
         ];
 
-        console.log("Patrol points calculated:", this.patrolPoints); // 可以在控制台输出，方便调试
+        console.log("Patrol points calculated:", this.patrolPoints);
     }
 
     assignFixedPatrolTasks(aiUnits) {
@@ -53,20 +53,16 @@ class AIController {
     }
 
     deployUnits(mapWidth, mapHeight, TILE_SIZE, map, predefinedDeployments = null) {
-        // --- 新增逻辑: 检查是否存在预设部署 ---
         if (predefinedDeployments && predefinedDeployments.length > 0) {
-            // --- 逻辑分支 1: 使用预设部署 ---
             console.log("Using predefined AI deployments for this mission.");
             for (const deployment of predefinedDeployments) {
                 const unitType = deployment.type;
                 const cost = UNIT_TYPES[unitType].cost;
 
                 if (this.player.canAfford(cost)) {
-                    // 坐标是格子坐标，需要转换为像素坐标
                     const x = deployment.x * TILE_SIZE;
                     const y = deployment.y * TILE_SIZE;
 
-                    // 简单检查坐标是否在地图内
                     if (x < 0 || y < 0 || x >= mapWidth * TILE_SIZE || y >= mapHeight * TILE_SIZE) {
                         console.warn(`Predefined deployment for ${unitType} is outside map bounds.`);
                         continue;
@@ -80,7 +76,6 @@ class AIController {
                 }
             }
         } else {
-            // --- 逻辑分支 2: 使用原始的随机部署逻辑 (普通模式) ---
             console.log("Using random AI deployment for this mission.");
             const deployableUnits = Object.keys(UNIT_TYPES);
             let manpowerToSpend = this.player.manpower;
@@ -137,9 +132,6 @@ class AIController {
         this.macroTimer += deltaTime;
         this.microTimer += deltaTime;
 
-        // 基础索敌逻辑保持高频率运行，但不再下达移动指令，仅用于防御
-        // this.runSimpleLogic(aiUnits, playerUnits, map); // 移动指令由下面的宏观逻辑下达
-
         if (this.macroTimer >= this.macroInterval) {
             switch (this.difficulty) {
                 case 'medium':
@@ -149,7 +141,7 @@ class AIController {
                 case 'hell':
                     this.runHardLogic(aiUnits, playerUnits, map);
                     break;
-                default: // 包含 simple 难度
+                default: // includes simple difficulty
                     this.runSimpleAttackLogic(aiUnits, map);
                     break;
             }
@@ -162,11 +154,12 @@ class AIController {
         }
     }
     
-    // simple难度的进攻逻辑
     runSimpleAttackLogic(aiUnits, map) {
         if (!this.playerBase || this.playerBase.hp <= 0) return;
 
-        const availableUnits = aiUnits.filter(u => !u.target && u.path.length === 0);
+        // Filter for units that are truly idle (not currently fighting an enemy).
+        const availableUnits = aiUnits.filter(u => !u.target);
+        
         if (availableUnits.length > 0) {
             const target = this.playerBase;
             const targetPosition = { x: target.pixelX, y: target.pixelY };
@@ -182,22 +175,20 @@ class AIController {
         if (!this.playerBase || this.playerBase.hp <= 0) return;
 
         const livingAttackWave = this.attackWave.filter(u => u.hp > 0);
+        
+        // Replenish the attack wave if it's too small
         if (livingAttackWave.length < 3) {
-            const target = this.playerBase;
-            const targetPosition = { x: target.pixelX, y: target.pixelY };
-
-            // 过滤出空闲且存活的单位
             const availableUnits = aiUnits.filter(u => !u.target && u.path.length === 0 && u.hp > 0);
 
-            // 根据单位与目标点的距离进行排序
-            availableUnits.sort((a, b) => {
-                const distA = getDistance(a, targetPosition);
-                const distB = getDistance(b, targetPosition);
-                return distA - distB;
-            });
-
-            // 选择最近的5个单位组成进攻波
-            this.attackWave = availableUnits.slice(0, 5);
+            if (availableUnits.length > 0) {
+                const targetPosition = { x: this.playerBase.pixelX, y: this.playerBase.pixelY };
+                availableUnits.sort((a, b) => {
+                    const distA = getDistance(a, targetPosition);
+                    const distB = getDistance(b, targetPosition);
+                    return distA - distB;
+                });
+                this.attackWave = availableUnits.slice(0, 5);
+            }
         }
         
         const target = this.playerBase;
@@ -205,10 +196,13 @@ class AIController {
         
         let delay = 0;
         const delayIncrement = 10;
+
         this.attackWave.forEach(unit => {
-            if (unit.hp > 0 && !unit.target && unit.path.length === 0) {
+            // *** CORE FIX: Only issue a command if the unit is alive and NOT already fighting a target. ***
+            if (unit.hp > 0 && !unit.target) {
                  setTimeout(() => {
-                    if (unit && unit.hp > 0) {
+                    // Re-check state inside timeout to be safe
+                    if (unit && unit.hp > 0 && !unit.target) {
                         unit.setTarget(target);
                         unit.issueMoveCommand(targetPoint, map, true, false);
                     }
@@ -258,27 +252,27 @@ class AIController {
         const livingAttackWave = this.attackWave.filter(u => u.hp > 0);
         if (livingAttackWave.length < 4) {
             const targetPosition = { x: priorityTarget.pixelX || priorityTarget.x, y: priorityTarget.pixelY || priorityTarget.y };
-
-            // 过滤出空闲且存活的单位
             const availableUnits = aiUnits.filter(u => !u.target && u.path.length === 0 && u.hp > 0);
 
-            // 根据单位与优先级目标点的距离进行排序
-            availableUnits.sort((a, b) => {
-                const distA = getDistance(a, targetPosition);
-                const distB = getDistance(b, targetPosition);
-                return distA - distB;
-            });
-
-            // 选择最近的6个单位组成进攻波
-            this.attackWave = availableUnits.slice(0, 6);
+            if (availableUnits.length > 0) {
+                availableUnits.sort((a, b) => {
+                    const distA = getDistance(a, targetPosition);
+                    const distB = getDistance(b, targetPosition);
+                    return distA - distB;
+                });
+                this.attackWave = availableUnits.slice(0, 6);
+            }
         }
         
         let delay = 0;
         const delayIncrement = 10;
+        
         this.attackWave.forEach(unit => {
-            if (unit.hp > 0) {
+            // *** CORE FIX: Only issue a command if the unit is alive and NOT already fighting a target. ***
+            if (unit.hp > 0 && !unit.target) {
                 setTimeout(() => {
-                    if (unit && unit.hp > 0 && priorityTarget && priorityTarget.hp > 0) {
+                    // Re-check state inside timeout
+                    if (unit && unit.hp > 0 && priorityTarget && priorityTarget.hp > 0 && !unit.target) {
                         unit.setTarget(priorityTarget);
                         const targetPosition = { 
                             x: priorityTarget.pixelX || priorityTarget.x, 
@@ -319,7 +313,6 @@ class AIController {
             const delayIncrement = 5;
             aiUnits.forEach(aiUnit => {
                 const dist = getDistance(aiUnit, weakestPlayerUnit);
-                // 让超出射程的单位移动过去
                 if (dist > aiUnit.stats.range) {
                     setTimeout(() => {
                         if (aiUnit && aiUnit.hp > 0 && weakestPlayerUnit && weakestPlayerUnit.hp > 0) {

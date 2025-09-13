@@ -343,6 +343,7 @@ window.addEventListener('DOMContentLoaded', () => {
         const canvas = document.getElementById('game-canvas');
         window.game = new Game(canvas);
         window.game.init(defaultSettings);
+        resizeGame();
 
         // 添加一个覆盖层提示用户点击开始
         const overlay = document.createElement('div');

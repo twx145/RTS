@@ -41,6 +41,11 @@ class Game {
         this.touchStartPos = { x: 0, y: 0 };
         this.isTouchSelectDragging = false; // Touch drag for selection
 
+        // --- CORE CHANGE: Add properties to detect double-taps ---
+        this.lastTapTime = 0;
+        this.lastTapPos = { x: 0, y: 0 };
+        this.DOUBLE_TAP_THRESHOLD = 300; // Milliseconds between taps for a double tap
+
         this.dialogueSettings = null;
         this.enableFogOfWar = null;
         this.availableUnits = null;
@@ -121,11 +126,16 @@ class Game {
         window.game = this;
         requestAnimationFrame(this.gameLoop.bind(this));
     }
-
+    updateTouchState() {
+    if (this.activeTouches.size < 2) {
+        this.lastTouchDistance = 0;
+        this.lastTouchCenter = null;
+    }
+}
     handleUserInteraction() { this.userInteracted = true; this.audioManager.handleUserInteraction(); }
     handleUnitCollision(unitA, unitB, bodyA, bodyB) { let crusher = null; let crushed = null; let crusherBody = null; if (unitA.stats.canCrush && unitB.stats.isCrushable) { crusher = unitA; crushed = unitB; crusherBody = bodyA; } else if (unitB.stats.canCrush && unitA.stats.isCrushable) { crusher = unitB; crushed = unitA; crusherBody = bodyB; } if (crusher && crushed) { if (crusher.owner !== crushed.owner && crusherBody.speed > 0.5 && crushed.crushDamageCooldown <= 0) { crushed.takeDamage(CRUSH_DAMAGE, crusher); crushed.crushDamageCooldown = 1.0; } } }
     createTerrainBodies() { const staticBodies = []; for (let y = 0; y < this.map.height; y++) { for (let x = 0; x < this.map.width; x++) { const tile = this.map.getTile(x, y); if (tile && TERRAIN_TYPES[tile.type].traversableBy.length === 0) { const body = Matter.Bodies.rectangle( x * TILE_SIZE + TILE_SIZE / 2, y * TILE_SIZE + TILE_SIZE / 2, TILE_SIZE, TILE_SIZE, { isStatic: true, label: 'terrain', collisionFilter: { category: COLLISION_CATEGORIES.terrain, mask: COLLISION_CATEGORIES.ground_unit } } ); staticBodies.push(body); } } } Matter.World.add(this.engine.world, staticBodies); }
-    setupInitialCamera() { let focusPoint = this.playerBase ? { x: this.playerBase.pixelX, y: this.playerBase.pixelY } : { x: (this.map.width * TILE_SIZE) / 2, y: (this.map.height * TILE_SIZE) / 2 }; let zoomLevel = 1.5; switch (this.mapId) { case 'map_chapter1': focusPoint = { x: TILE_SIZE * 15, y: TILE_SIZE * 30 }; zoomLevel = 1.5; break; case 'map_chapter2': focusPoint = { x: TILE_SIZE * 40, y: TILE_SIZE * 30 }; zoomLevel = 1.5; break; case 'map_chapter3': focusPoint = { x: TILE_SIZE * 15, y: TILE_SIZE * 35 }; zoomLevel = 1.5; break; case 'map_chapter4': focusPoint = { x: TILE_SIZE * 15, y: TILE_SIZE * 40 }; zoomLevel = 1.5; break; case 'map_chapter5_1': focusPoint = { x: TILE_SIZE, y: TILE_SIZE }; zoomLevel = 3.0; break; case 'map_chapter5_2': focusPoint = { x: TILE_SIZE * 35, y: TILE_SIZE * 35 }; zoomLevel = 1.5; break; case 'map_new_01': zoomLevel = 1.3; break; case 'map01': zoomLevel = 1.1; break; case 'map_new': zoomLevel = 1.8; break; default: break; } this.camera.zoom = Math.max(zoomLevel, this.camera.minZoom); this.camera.x = focusPoint.x - (this.canvas.width / 2) / this.camera.zoom; this.camera.y = focusPoint.y - (this.canvas.height / 2) / this.camera.zoom; this.globalMousePos = { x: this.camera.x, y: this.camera.y }; this.constrainCamera(); }
+    setupInitialCamera() { let focusPoint = this.playerBase ? { x: this.playerBase.pixelX, y: this.playerBase.pixelY } : { x: (this.map.width * TILE_SIZE) / 2, y: (this.map.height * TILE_SIZE) / 2 }; let zoomLevel = 1.5; switch (this.mapId) { case 'map_chapter1': focusPoint = { x: TILE_SIZE * 15, y: TILE_SIZE * 30 }; zoomLevel = 1.5; break; case 'map_chapter2': focusPoint = { x: TILE_SIZE * 40, y: TILE_SIZE * 30 }; zoomLevel = 1.5; break; case 'map_chapter3': focusPoint = { x: TILE_SIZE * 15, y: TILE_SIZE * 35 }; zoomLevel = 1.5; break; case 'map_chapter4': focusPoint = { x: TILE_SIZE * 15, y: TILE_SIZE * 40 }; zoomLevel = 1.5; break; case 'map_chapter5_1': focusPoint = { x: TILE_SIZE, y: TILE_SIZE }; zoomLevel = 3.0; break; case 'map_chapter5_2': focusPoint = { x: TILE_SIZE * 35, y: TILE_SIZE * 35 }; zoomLevel = 1.5; break; case 'map_new_01': zoomLevel = 1.3; break; case 'map01': zoomLevel = 1.1; break; case 'map_new': zoomLevel = 1.8; break; default: break; } this.camera.zoom = Math.max(zoomLevel, this.camera.minZoom); this.camera.x = focusPoint.x - (this.canvas.width / 2) / this.camera.zoom; this.camera.y = focusPoint.y - (this.canvas.height / 2) / this.camera.zoom; this.globalMousePos = { x: window.innerWidth / 2, y: window.innerHeight / 2 }; this.constrainCamera(); }
     setupObjectiveMarkers() { this.objectiveMarkers = []; switch (this.gameMode) { case 'objective': if (this.gameObjectives && this.gameObjectives.length > 0) { this.gameObjectives.forEach(obj => { const parts = obj.split(':'); if (parts[0] === 'destroy_building') { const buildingType = parts[1]; const position = this.findBuildingPosition(buildingType); if (position) { this.objectiveMarkers.push({ type: 'destroy', x: position.x, y: position.y, buildingType: buildingType }); } } else if (parts[0] === 'guide_debris') { const targetType = parts[1]; const position = this.findTrenchPosition(targetType); if (position) { this.objectiveMarkers.push({ type: 'guide', x: position.x, y: position.y, targetType: targetType }); } } }); } break; case 'assassination': if (this.targetUnit) { this.createTargetUnit(this.targetUnit); this.objectiveMarkers.push({ type: 'assassinate', unit: this.targetUnit }); } break; case 'escort': if (this.escortUnit && this.destination) { this.createEscortUnit(this.escortUnit, this.destination); this.objectiveMarkers.push({ type: 'escortdestination', destination: this.destination }); this.objectiveMarkers.push({ type: 'escort', unit: this.escortUnit, }); } break; } }
     findBuildingPosition(buildingType) { const specialbuildings = this.buildingsManager.specialBuildings; const positions = { 'barracks': specialbuildings['barracks']?{ x: specialbuildings['barracks'][0].pixelX, y: specialbuildings['barracks'][0].pixelY}:null, 'armory': specialbuildings['armory']?{ x: specialbuildings['armory'][0].pixelX, y: specialbuildings['armory'][0].pixelY}:null, 'command_center': specialbuildings['command_center']?{ x: specialbuildings['command_center'][0]?.pixelX, y: specialbuildings['command_center'][0]?.pixelY}:null, 'power_station_1': specialbuildings['power_station']?{ x: specialbuildings['power_station'][0]?.pixelX, y: specialbuildings['power_station'][0]?.pixelY}:null, 'power_station_2': specialbuildings['power_station']?{ x: specialbuildings['power_station'][1]?.pixelX, y: specialbuildings['power_station'][1]?.pixelY}:null, 'power_station_3': specialbuildings['power_station']?{ x: specialbuildings['power_station'][2]?.pixelX, y: specialbuildings['power_station'][2]?.pixelY}:null, 'control_tower': specialbuildings['control_tower']?{ x: specialbuildings['control_tower'][0]?.pixelX, y: specialbuildings['control_tower'][0]?.pixelY}:null }; return positions[buildingType] || null; }
     findTrenchPosition(trenchType) { return { x: this.map.width * TILE_SIZE * 0.9, y: this.map.height * TILE_SIZE * 0.9 }; }
@@ -320,8 +330,28 @@ class Game {
             const dragDistance = getDistance(this.touchStartPos, this.dragEnd);
 
             if (tapDuration < 300 && dragDistance < 15) {
-                // It's a TAP
-                this.handleTap(this.touchStartPos);
+                // It's a TAP. Now we check if it's a single or double tap.
+                const pos = this.touchStartPos;
+                const currentTime = Date.now();
+                
+                const timeSinceLastTap = currentTime - this.lastTapTime;
+                const distanceSinceLastTap = getDistance(pos, this.lastTapPos);
+
+                // --- CORE CHANGE: Double-tap logic ---
+                if (timeSinceLastTap < this.DOUBLE_TAP_THRESHOLD && distanceSinceLastTap < 30) {
+                    // This is a DOUBLE TAP, simulate a right-click
+                    this.handleRightClick(pos.x, pos.y);
+                    
+                    // Reset the tap time to prevent a third tap from also being a double tap
+                    this.lastTapTime = 0; 
+                } else {
+                    // This is a SINGLE TAP, simulate a left-click
+                    this.handleLeftClick(pos.x, pos.y);
+                    
+                    // Record this tap's time and position for the next potential double tap
+                    this.lastTapTime = currentTime;
+                    this.lastTapPos = pos;
+                }
             } else {
                 // It's a DRAG-SELECT
                 this.handleBoxSelection();
@@ -334,12 +364,6 @@ class Game {
         }
         this.isTouchSelectDragging = false;
         this.updateTouchState();
-    }
-    updateTouchState() {
-        if (this.activeTouches.size < 2) {
-            this.lastTouchDistance = 0;
-            this.lastTouchCenter = null;
-        }
     }
 
     undoLastDeployment() { if (this.player.units.length === 0) { this.ui.showGameMessage("没有可撤销的部署"); return; } const lastUnit = this.player.units.pop(); if (lastUnit) { if (lastUnit.body) { Matter.World.remove(this.engine.world, lastUnit.body); } const cost = UNIT_TYPES[lastUnit.type].cost; this.player.addManpower(cost); this.ui.update(); this.ui.showGameMessage(`已撤销部署: ${UNIT_TYPES[lastUnit.type].name}`); } }

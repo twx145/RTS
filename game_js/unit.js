@@ -178,8 +178,18 @@ class Unit {
         else {
             // a. 自动索敌
             if (!this.target && this.findTargetCooldown <= 0) {
+                const oldTarget = this.target;
                 this.findTarget(enemyBase, enemyUnits, game);
                 this.findTargetCooldown = 0.5 + Math.random() * 0.2;
+
+                // --- 核心修复 ---
+                // 如果索敌找到了一个新目标 (之前没有目标，现在有了)
+                // 必须立即停止当前的移动计划，为攻击新目标做准备。
+                if (this.target && this.target !== oldTarget) {
+                    this.path = [];
+                    this.moveTargetPos = null;
+                    if (this.body) Matter.Body.setVelocity(this.body, { x: 0, y: 0 });
+                }
             }
 
             // b. 如果有目标，则决定是攻击还是追击
