@@ -11,17 +11,19 @@ html, body {
 }
 
 #game-canvas {
-    position: absolute; /* 画布位于左侧 */
+    position: absolute; 
     top: 0;
     left: 0;
     display: block;
+    /* 移除固定的 width 和 height，让 JS 控制 */
+    transition: width 0.4s ease-in-out; /* 新增: 让画布宽度变化更平滑 */
 }
 
 #sidebar {
-    position: absolute; /* 侧边栏位于右侧 */
+    position: fixed; /* 修改: 使用 fixed 定位，使其独立于滚动 */
     top: 0;
     right: 0;
-    width: 320px; /* 您可以根据需求调整，或者使用 calc(100vw / 6) */
+    width: 320px;
     height: 100vh;
     box-sizing: border-box; 
     background-color: rgba(42, 42, 42, 0.9);
@@ -29,9 +31,84 @@ html, body {
     display: flex;
     flex-direction: column;
     overflow-y: auto;
-    z-index: 10;
+    z-index: 1001; /* 提高 z-index */
     border-left: 1px solid #555;
     box-shadow: -5px 0 15px rgba(0,0,0,0.5);
+
+    /* --- 核心修改: 滑动效果 --- */
+    transform: translateX(100%); /* 默认隐藏在屏幕右侧 */
+    transition: transform 0.4s ease-in-out; /* 添加平滑过渡效果 */
+}
+
+/* 新增: 侧边栏打开时的状态 */
+#sidebar.open {
+    transform: translateX(0);
+}
+
+
+/* --- 新增: 侧边栏切换按钮样式 --- */
+.sidebar-toggle-btn {
+    position: fixed;
+    top: 50%;
+    right: 10px; /* 默认位置 */
+    transform: translateY(-50%);
+    width: 30px;
+    height: 80px;
+    background-color: rgba(60, 60, 60, 0.8);
+    color: #fff;
+    border: 1px solid #777;
+    border-right: none;
+    border-radius: 8px 0 0 8px;
+    cursor: pointer;
+    z-index: 1002; /* 比侧边栏更高 */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 24px;
+    padding: 0;
+    padding-right: 4px; /* 微调箭头位置 */
+    box-shadow: -3px 0 10px rgba(0,0,0,0.4);
+    transition: right 0.4s ease-in-out, background-color 0.2s;
+}
+
+.sidebar-toggle-btn:hover {
+    background-color: rgba(80, 80, 80, 0.9);
+}
+
+.sidebar-toggle-btn span {
+    display: block;
+    transition: transform 0.4s ease-in-out;
+    /* 初始时箭头指向左边，表示“打开” */
+    transform: scaleX(-1); 
+}
+
+/* 新增: 侧边栏打开时，按钮和箭头的状态 */
+#sidebar.open + .sidebar-toggle-btn {
+    right: 320px; /* 移动到侧边栏的左边缘 */
+}
+
+#sidebar.open + .sidebar-toggle-btn span {
+    transform: scaleX(1); /* 箭头指向右边，表示“关闭” */
+}
+
+/* --- 媒体查询: 实现响应式布局 --- */
+@media (max-width: 768px) {
+    #sidebar {
+        width: 85vw; /* 在小屏幕上，侧边栏占据更宽的比例 */
+    }
+
+    /* 在小屏幕上，当侧边栏打开时，按钮移动的距离也需要相应改变 */
+    #sidebar.open + .sidebar-toggle-btn {
+        right: 85vw;
+    }
+
+    /* 调整设置按钮和菜单的位置，避免和小屏幕上的切换按钮重叠 */
+    .settings-button {
+        left: 15px;
+    }
+    .settings-menu {
+        left: 15px;
+    }
 }
 
 /* --- 单位列表美化 --- */

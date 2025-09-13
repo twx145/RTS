@@ -7,6 +7,8 @@ class AssetManager {
 
 window.addEventListener('DOMContentLoaded', () => {
     const canvas = document.getElementById('game-canvas');
+    const sidebar = document.getElementById('sidebar'); // 新增: 获取侧边栏元素
+    const sidebarToggleBtn = document.getElementById('sidebar-toggle-btn'); // 新增: 获取按钮元素
     const setupScreen = document.getElementById('setup-screen');
     const startNewGameBtn = document.getElementById('start-new-game-btn');
     const mapSelect = document.getElementById('map-select');
@@ -29,18 +31,39 @@ window.addEventListener('DOMContentLoaded', () => {
         startNewGameBtn.textContent = '创建游戏';
     });
 
+    // --- 核心修改: 更新 resizeGame 函数 ---
     function resizeGame() {
-        const sidebar = document.getElementById('sidebar');
-        const sidebarWidth = sidebar ? sidebar.offsetWidth : 0;
+        const isSidebarOpen = sidebar.classList.contains('open');
+        let sidebarWidth = 0;
+
+        if (isSidebarOpen && window.innerWidth > 768) {
+            sidebarWidth = sidebar.offsetWidth;
+        }
+
         canvas.width = window.innerWidth - sidebarWidth;
         canvas.height = window.innerHeight;
-        if (window.game && window.game.constrainCamera) {
-            window.game.constrainCamera();
+
+        if (window.game) {
+            if (window.game.constrainCamera) {
+                window.game.constrainCamera();
+            }
+            // --- 核心修复 (问题 #2): 重置全局鼠标位置，防止旋转后屏幕漂移 ---
+            window.game.globalMousePos = { x: window.innerWidth / 2, y: window.innerHeight / 2 };
         }
     }
 
     resizeGame();
     window.addEventListener('resize', resizeGame);
+    
+    // --- 新增: 为切换按钮添加点击事件 ---
+    sidebarToggleBtn.addEventListener('click', () => {
+        sidebar.classList.toggle('open');
+        // 切换后，需要重新计算画布尺寸
+        // 使用 setTimeout 确保在 CSS 过渡动画开始后再调整画布，避免闪烁
+        setTimeout(resizeGame, 50); 
+    });
+
+
     const dialogueSettings = localStorage.getItem('ShenDun_dialogue_settings');
     const urlParams = new URLSearchParams(window.location.search);
     const fromDialogue = urlParams.get('fromDialogue');

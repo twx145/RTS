@@ -10,10 +10,16 @@
     <link rel="stylesheet" href="../css/alert.css">
 </head>
 <body>
+    <!-- 新增: 侧边栏切换按钮 -->
+    <button id="sidebar-toggle-btn" class="sidebar-toggle-btn">
+        <span>›</span>
+    </button>
+
     <div id="game-wrapper">
         <div id="game-container">
             <canvas id="game-canvas" width="1600" height="900"></canvas>
             <aside id="sidebar">
+                <!-- ... 侧边栏内部内容保持不变 ... -->
                 <h2>控制面板</h2>
                 <div id="player-info">
                     <div id="player-base-hp-display" style="display:none;">
