@@ -23,7 +23,7 @@ html, body {
     position: fixed; /* 修改: 使用 fixed 定位，使其独立于滚动 */
     top: 0;
     right: 0;
-    width: 320px;
+    width: calc(100vw/4);
     height: 100vh;
     box-sizing: border-box; 
     background-color: rgba(42, 42, 42, 0.9);
@@ -92,14 +92,69 @@ html, body {
 }
 
 /* --- 媒体查询: 实现响应式布局 --- */
-@media (max-width: 768px) {
+@media (min-width: 769px), (orientation: landscape) {
     #sidebar {
-        width: 85vw; /* 在小屏幕上，侧边栏占据更宽的比例 */
+        width: 320px;
     }
 
-    /* 在小屏幕上，当侧边栏打开时，按钮移动的距离也需要相应改变 */
     #sidebar.open + .sidebar-toggle-btn {
-        right: 85vw;
+        right: 320px;
+    }
+}
+
+/* --- 响应式调整 - 竖屏模式 (Portrait) --- */
+@media (max-width: 768px) and (orientation: portrait) {
+    /* --- 核心修改: 侧边栏变为底部面板 --- */
+    #sidebar {
+        width: 100vw; /* 宽度占满 */
+        height: 40vh; /* 高度为屏幕的60% */
+        top: auto;    /* 解除顶部对齐 */
+        bottom: 0;    /* 对齐到底部 */
+        right: auto;  /* 解除右侧对齐 */
+        left: 0;      /* 对齐到左侧 */
+        border-left: none; /* 移除左边框 */
+        border-top: 1px solid #555; /* 添加上边框 */
+        box-shadow: 0 -5px 15px rgba(0,0,0,0.5); /* 阴影改为向上 */
+
+        /* 滑动效果从右侧平移改为底部平移 */
+        transform: translateY(100%); /* 默认隐藏在屏幕下方 */
+    }
+
+    /* 当底部面板打开时 */
+    #sidebar.open {
+        transform: translateY(0); /* 向上滑动到视图内 */
+    }
+
+    /* --- 核心修改: 切换按钮样式和位置 --- */
+    .sidebar-toggle-btn {
+        top: auto; /* 解除顶部50%的定位 */
+        bottom: 10px; /* 定位在底部 */
+        right: 50%;   /* 水平居中 */
+        transform: translateX(50%); /* 精确水平居中 */
+        width: 80px;  /* 按钮更宽 */
+        height: 30px; /* 按钮更扁 */
+        border: 1px solid #777;
+        border-bottom: none; /* 移除下边框 */
+        border-radius: 8px 8px 0 0; /* 圆角改为上半部分 */
+        padding: 0;
+        padding-bottom: 4px; /* 微调箭头位置 */
+    }
+
+    /* 按钮内的箭头方向调整 */
+    .sidebar-toggle-btn span {
+        /* 初始时箭头向上，表示“打开” */
+        transform: rotate(90deg) scaleX(-1);
+    }
+    
+    /* 当底部面板打开时，按钮的状态 */
+    #sidebar.open + .sidebar-toggle-btn {
+        right: 50%; /* 水平位置不变 */
+        bottom: 60vh; /* 向上移动到面板的上边缘 */
+    }
+
+    /* 当底部面板打开时，箭头方向变为向下，表示“关闭” */
+    #sidebar.open + .sidebar-toggle-btn span {
+        transform: rotate(90deg) scaleX(1);
     }
 
     /* 调整设置按钮和菜单的位置，避免和小屏幕上的切换按钮重叠 */

@@ -22,7 +22,7 @@ class Game {
         this.projectiles = [];
         this.explosions = [];
         this.selectedUnits = [];
-        this.isDragging = false;
+        this.isDragging = false; // Mouse drag for selection
         this.dragStart = { x: 0, y: 0 };
         this.dragEnd = { x: 0, y: 0 };
         this.mousePos = { x: 0, y: 0 };
@@ -31,625 +31,116 @@ class Game {
         this.isDraggingMap = false;
         this.lastDragPos = { x: 0, y: 0 };
 
-        // --- 新增: 初始化编队数组 ---
         this.controlGroups = Array.from({ length: 10 }, () => []);
 
+        // --- MOBILE ADAPTATION: Properties for touch controls ---
         this.activeTouches = new Map();
         this.lastTouchDistance = 0;
         this.lastTouchCenter = null;
-        
+        this.touchStartTime = 0;
+        this.touchStartPos = { x: 0, y: 0 };
+        this.isTouchSelectDragging = false; // Touch drag for selection
+
         this.dialogueSettings = null;
         this.enableFogOfWar = null;
         this.availableUnits = null;
 
         this.savegame = null;
         this.achievements = null;
-        // 新增 跳过游戏标记
         this.skip = false;
-        // 新增：游戏目标相关属性
         this.gameObjectives = null;
         this.escortUnit = null;
         this.targetUnit = null;
         this.objectiveMarkers = [];
         this.destination = null;
-        // 新增：建筑物管理器
         this.buildingsManager = null;
-        // 新增：音乐播放器
         this.userInteracted = false;
         this.audioManager = {
             bgm: null,
             currentBGM: null,
             bgmVolume: 0.8,
             sfxVolume: 0.8,
-            bgmQueue: null, // 添加队列用于存储等待播放的BGM
-            
-            playBGM: function(src, loop = true) {
-                if (this.currentBGM === src) return;
-                
-                if (this.bgm) {
-                    this.bgm.pause();
-                    this.bgm = null;
-                }
-                
-                if (src) {
-                    this.bgm = new Audio(`../assets/bgm/${src}`);
-                    this.bgm.volume = this.bgmVolume;
-                    this.bgm.loop = loop;
-                    
-                    // 只有在用户交互后才播放
-                    if (this.userInteracted) {
-                        this.bgm.play().catch(e => console.log("BGM播放失败"));
-                    } else {
-                        // 如果没有交互，将BGM加入队列
-                        this.bgmQueue = src;
-                    }
-                    
-                    this.currentBGM = src;
-                }
-            },
-            
-            // 添加处理用户交互的方法
-            handleUserInteraction: function() {
-                this.userInteracted = true;
-                if (this.bgmQueue && this.bgm) {
-                    this.bgm.play().catch(e => console.log("BGM播放失败"));
-                    this.bgmQueue = null;
-                }
-            },
-            
-            setBGMVolume: function(volume) {
-                this.bgmVolume = volume;
-                if (this.bgm) {
-                    this.bgm.volume = volume;
-                }
-            },
-            
-            setSFXVolume: function(volume) {
-                this.sfxVolume = volume;
-            },
-            
-            stopBGM: function() {
-                if (this.bgm) {
-                    this.bgm.pause();
-                    this.bgm = null;
-                    this.currentBGM = null;
-                }
-                this.bgmQueue = null;
-            }
+            bgmQueue: null, 
+            playBGM: function(src, loop = true) { if (this.currentBGM === src) return; if (this.bgm) { this.bgm.pause(); this.bgm = null; } if (src) { this.bgm = new Audio(`../assets/bgm/${src}`); this.bgm.volume = this.bgmVolume; this.bgm.loop = loop; if (this.userInteracted) { this.bgm.play().catch(e => console.log("BGM播放失败")); } else { this.bgmQueue = src; } this.currentBGM = src; } },
+            handleUserInteraction: function() { this.userInteracted = true; if (this.bgmQueue && this.bgm) { this.bgm.play().catch(e => console.log("BGM播放失败")); this.bgmQueue = null; } },
+            setBGMVolume: function(volume) { this.bgmVolume = volume; if (this.bgm) { this.bgm.volume = volume; } },
+            setSFXVolume: function(volume) { this.sfxVolume = volume; },
+            stopBGM: function() { if (this.bgm) { this.bgm.pause(); this.bgm = null; this.currentBGM = null; } this.bgmQueue = null; }
         };
     }
 
     init(settings) {
         window.game = this;
-        // 存储 mapId 以便在设置镜头时使用
         this.mapId = settings.mapId;
         const dialogueSettings = localStorage.getItem('ShenDun_dialogue_settings');
         if (dialogueSettings) {
-            try {
-                const dialogueConfig = JSON.parse(dialogueSettings);
-                settings = {...settings, ...dialogueConfig};
-            } catch (e) {
-                console.error('解析对话设置失败', e);
-            }
+            try { const dialogueConfig = JSON.parse(dialogueSettings); settings = {...settings, ...dialogueConfig}; } catch (e) { console.error('解析对话设置失败', e); }
         }
         this.gameMode = settings.gameMode;
         this.showDetails = settings.showDetails;
         this.fromDialogue = settings.fromDialogue || false;
         this.user = settings.user || null;
-
         this.enableFogOfWar = settings.enableFogOfWar !== false;
         this.availableUnits = settings.availableUnits || Object.keys(UNIT_TYPES);
-
         const selectedMapData = MAP_DEFINITIONS.find(m => m.id === settings.mapId);
         this.map = new GameMap();
         this.map.load(selectedMapData);
-
-        if (settings.bgm) {
-            this.audioManager.playBGM(settings.bgm);
-        }else {
-            const mapBGM = selectedMapData.bgm;
-            if (mapBGM) {
-                this.audioManager.playBGM(mapBGM);
-            }
-        }
-
-        // --- 核心修复 (问题 #2): 增加迭代次数以提高物理稳定性 ---
-        this.engine = Matter.Engine.create({
-            // 默认值是 6 和 4。增加迭代次数可以提高精度和稳定性，防止物体弹飞。
-            positionIterations: 8,
-            velocityIterations: 6
-        });
+        if (settings.bgm) { this.audioManager.playBGM(settings.bgm); } else { const mapBGM = selectedMapData.bgm; if (mapBGM) { this.audioManager.playBGM(mapBGM); } }
+        this.engine = Matter.Engine.create({ positionIterations: 8, velocityIterations: 6 });
         this.engine.world.gravity.y = 0;
-
-        Matter.Events.on(this.engine, 'collisionStart', (event) => {
-            const pairs = event.pairs;
-            for (let i = 0; i < pairs.length; i++) {
-                const pair = pairs[i];
-                const bodyA = pair.bodyA;
-                const bodyB = pair.bodyB;
-
-                const unitA = bodyA.gameObject;
-                const unitB = bodyB.gameObject;
-
-                // 确保碰撞双方都是游戏单位
-                if (unitA instanceof Unit && unitB instanceof Unit) {
-                    this.handleUnitCollision(unitA, unitB, bodyA, bodyB);
-                }
-            }
-        });
-
+        Matter.Events.on(this.engine, 'collisionStart', (event) => { const pairs = event.pairs; for (let i = 0; i < pairs.length; i++) { const pair = pairs[i]; const bodyA = pair.bodyA; const bodyB = pair.bodyB; const unitA = bodyA.gameObject; const unitB = bodyB.gameObject; if (unitA instanceof Unit && unitB instanceof Unit) { this.handleUnitCollision(unitA, unitB, bodyA, bodyB); } } });
         this.fogOfWar = new FogOfWar(this.map.width * TILE_SIZE, this.map.height * TILE_SIZE);
         this.camera.minZoom = Math.max(this.camera.minZoom,Math.max(this.canvas.width / this.map.width , this.canvas.height / this.map.height)/TILE_SIZE);
-
         const baseGridY = Math.floor(this.map.height / 2) - 1; 
-        if (this.gameMode === 'tutorial' || this.gameMode === 'annihilation' || this.gameMode === 'defend') {
-            this.playerBase = new Base('player', 6, baseGridY);
-            this.placeBaseOnMap(this.playerBase);
-        }
-        if (this.gameMode === 'tutorial' || this.gameMode === 'annihilation' || this.gameMode === 'attack') {
-            this.aiBase = new Base('ai', this.map.width - 9, baseGridY);
-            this.placeBaseOnMap(this.aiBase);
-        }
-        
+        if (this.gameMode === 'tutorial' || this.gameMode === 'annihilation' || this.gameMode === 'defend') { this.playerBase = new Base('player', 6, baseGridY); this.placeBaseOnMap(this.playerBase); }
+        if (this.gameMode === 'tutorial' || this.gameMode === 'annihilation' || this.gameMode === 'attack') { this.aiBase = new Base('ai', this.map.width - 9, baseGridY); this.placeBaseOnMap(this.aiBase); }
         this.createTerrainBodies();
-
-        // 新增：初始化建筑物管理器
         this.buildingsManager = new BuildingsManager(this);
         this.buildingsManager.initialize();
-
         const playerManpower = settings.playerManpower || 50;
         const aiManpower = settings.aiManpower || (settings.aiDifficulty === 'hell' ? Math.round(playerManpower * 1.5) : playerManpower);
         this.player = new Player('player', '玩家', playerManpower);
         this.ai = new Player('ai', '电脑', aiManpower, true, {}, settings.aiDifficulty);
-        
         this.ui = new UI(this);
         this.ai.aiController.playerBase = this.playerBase;
         this.ai.aiController.deployUnits(this.map.width, this.map.height, TILE_SIZE, this.map, settings.aiDeployments);
-
         this.gameObjectives = settings.objectives || [];
         this.escortUnit = settings.escortUnit || null;
         this.targetUnit = settings.targetUnit || null;
-        if(settings.destination){
-            this.destination = {x: settings.destination.x * TILE_SIZE, y: settings.destination.y * TILE_SIZE} ;
-        }
-        
-        // 新增：根据游戏模式设置初始目标标记
+        if(settings.destination){ this.destination = {x: settings.destination.x * TILE_SIZE, y: settings.destination.y * TILE_SIZE} ; }
         this.setupObjectiveMarkers();
-        
         this.gameSpeedModifier = GAME_SPEEDS[settings.gameSpeed];
         this.gameState = 'deployment';
         this.savegame = new saveGame(this);
-
-        // 修改 初始化成就系统
         this.achievements = this.loadAchievements();
-        this.achievementStats = {
-            unitsDeployed: new Set(), // 已部署的单位类型
-            unitsLost: 0, // 损失的单位数量
-            enemyTanksDestroyed: 0, // 摧毁的敌方坦克数量
-            enemyShipsDestroyed: 0, // 摧毁的敌方舰船数量
-            infantryVsVehicles: 0, // 步兵对载具的击杀数
-            maxUnitsAlive: 0, // 同时存活的单位最大数量
-            navalVsLandKills: 0, // 海军对陆地单位的击杀
-            landVsNavalKills: 0, // 陆军对海军单位的击杀
-            difficulty: settings.aiDifficulty // 当前游戏难度
-        };
+        this.achievementStats = { unitsDeployed: new Set(), unitsLost: 0, enemyTanksDestroyed: 0, enemyShipsDestroyed: 0, infantryVsVehicles: 0, maxUnitsAlive: 0, navalVsLandKills: 0, landVsNavalKills: 0, difficulty: settings.aiDifficulty };
         this.levelStartTime = Date.now();
         this.levelCompleted = false;
-
         this.addEventListeners();
         this.setupInitialCamera();
-
         window.game = this;
         requestAnimationFrame(this.gameLoop.bind(this));
     }
 
-    handleUserInteraction() {
-        this.userInteracted = true;
-        this.audioManager.handleUserInteraction();
-    }
-
-    handleUnitCollision(unitA, unitB, bodyA, bodyB) {
-        // 碾压逻辑
-        let crusher = null;
-        let crushed = null;
-        let crusherBody = null;
-
-        if (unitA.stats.canCrush && unitB.stats.isCrushable) {
-            crusher = unitA;
-            crushed = unitB;
-            crusherBody = bodyA;
-        } else if (unitB.stats.canCrush && unitA.stats.isCrushable) {
-            crusher = unitB;
-            crushed = unitA;
-            crusherBody = bodyB;
-        }
-
-        if (crusher && crushed) {
-            // 检查是否为敌对单位，碾压速度是否足够，以及被碾压单位是否冷却完毕
-            if (crusher.owner !== crushed.owner && crusherBody.speed > 0.5 && crushed.crushDamageCooldown <= 0) {
-                crushed.takeDamage(CRUSH_DAMAGE, crusher);
-                crushed.crushDamageCooldown = 1.0; // 设置1秒冷却
-            }
-        }
-    }
-
-    createTerrainBodies() {
-        const staticBodies = [];
-        for (let y = 0; y < this.map.height; y++) {
-            for (let x = 0; x < this.map.width; x++) {
-                const tile = this.map.getTile(x, y);
-                if (tile && TERRAIN_TYPES[tile.type].traversableBy.length === 0) {
-                    const body = Matter.Bodies.rectangle(
-                        x * TILE_SIZE + TILE_SIZE / 2,
-                        y * TILE_SIZE + TILE_SIZE / 2,
-                        TILE_SIZE,
-                        TILE_SIZE,
-                        {
-                            isStatic: true,
-                            label: 'terrain',
-                            collisionFilter: {
-                                category: COLLISION_CATEGORIES.terrain,
-                                mask: COLLISION_CATEGORIES.ground_unit
-                            }
-                        }
-                    );
-                    staticBodies.push(body);
-                }
-            }
-        }
-        Matter.World.add(this.engine.world, staticBodies);
-    }
+    handleUserInteraction() { this.userInteracted = true; this.audioManager.handleUserInteraction(); }
+    handleUnitCollision(unitA, unitB, bodyA, bodyB) { let crusher = null; let crushed = null; let crusherBody = null; if (unitA.stats.canCrush && unitB.stats.isCrushable) { crusher = unitA; crushed = unitB; crusherBody = bodyA; } else if (unitB.stats.canCrush && unitA.stats.isCrushable) { crusher = unitB; crushed = unitA; crusherBody = bodyB; } if (crusher && crushed) { if (crusher.owner !== crushed.owner && crusherBody.speed > 0.5 && crushed.crushDamageCooldown <= 0) { crushed.takeDamage(CRUSH_DAMAGE, crusher); crushed.crushDamageCooldown = 1.0; } } }
+    createTerrainBodies() { const staticBodies = []; for (let y = 0; y < this.map.height; y++) { for (let x = 0; x < this.map.width; x++) { const tile = this.map.getTile(x, y); if (tile && TERRAIN_TYPES[tile.type].traversableBy.length === 0) { const body = Matter.Bodies.rectangle( x * TILE_SIZE + TILE_SIZE / 2, y * TILE_SIZE + TILE_SIZE / 2, TILE_SIZE, TILE_SIZE, { isStatic: true, label: 'terrain', collisionFilter: { category: COLLISION_CATEGORIES.terrain, mask: COLLISION_CATEGORIES.ground_unit } } ); staticBodies.push(body); } } } Matter.World.add(this.engine.world, staticBodies); }
+    setupInitialCamera() { let focusPoint = this.playerBase ? { x: this.playerBase.pixelX, y: this.playerBase.pixelY } : { x: (this.map.width * TILE_SIZE) / 2, y: (this.map.height * TILE_SIZE) / 2 }; let zoomLevel = 1.5; switch (this.mapId) { case 'map_chapter1': focusPoint = { x: TILE_SIZE * 15, y: TILE_SIZE * 30 }; zoomLevel = 1.5; break; case 'map_chapter2': focusPoint = { x: TILE_SIZE * 40, y: TILE_SIZE * 30 }; zoomLevel = 1.5; break; case 'map_chapter3': focusPoint = { x: TILE_SIZE * 15, y: TILE_SIZE * 35 }; zoomLevel = 1.5; break; case 'map_chapter4': focusPoint = { x: TILE_SIZE * 15, y: TILE_SIZE * 40 }; zoomLevel = 1.5; break; case 'map_chapter5_1': focusPoint = { x: TILE_SIZE, y: TILE_SIZE }; zoomLevel = 3.0; break; case 'map_chapter5_2': focusPoint = { x: TILE_SIZE * 35, y: TILE_SIZE * 35 }; zoomLevel = 1.5; break; case 'map_new_01': zoomLevel = 1.3; break; case 'map01': zoomLevel = 1.1; break; case 'map_new': zoomLevel = 1.8; break; default: break; } this.camera.zoom = Math.max(zoomLevel, this.camera.minZoom); this.camera.x = focusPoint.x - (this.canvas.width / 2) / this.camera.zoom; this.camera.y = focusPoint.y - (this.canvas.height / 2) / this.camera.zoom; this.globalMousePos = { x: this.camera.x, y: this.camera.y }; this.constrainCamera(); }
+    setupObjectiveMarkers() { this.objectiveMarkers = []; switch (this.gameMode) { case 'objective': if (this.gameObjectives && this.gameObjectives.length > 0) { this.gameObjectives.forEach(obj => { const parts = obj.split(':'); if (parts[0] === 'destroy_building') { const buildingType = parts[1]; const position = this.findBuildingPosition(buildingType); if (position) { this.objectiveMarkers.push({ type: 'destroy', x: position.x, y: position.y, buildingType: buildingType }); } } else if (parts[0] === 'guide_debris') { const targetType = parts[1]; const position = this.findTrenchPosition(targetType); if (position) { this.objectiveMarkers.push({ type: 'guide', x: position.x, y: position.y, targetType: targetType }); } } }); } break; case 'assassination': if (this.targetUnit) { this.createTargetUnit(this.targetUnit); this.objectiveMarkers.push({ type: 'assassinate', unit: this.targetUnit }); } break; case 'escort': if (this.escortUnit && this.destination) { this.createEscortUnit(this.escortUnit, this.destination); this.objectiveMarkers.push({ type: 'escortdestination', destination: this.destination }); this.objectiveMarkers.push({ type: 'escort', unit: this.escortUnit, }); } break; } }
+    findBuildingPosition(buildingType) { const specialbuildings = this.buildingsManager.specialBuildings; const positions = { 'barracks': specialbuildings['barracks']?{ x: specialbuildings['barracks'][0].pixelX, y: specialbuildings['barracks'][0].pixelY}:null, 'armory': specialbuildings['armory']?{ x: specialbuildings['armory'][0].pixelX, y: specialbuildings['armory'][0].pixelY}:null, 'command_center': specialbuildings['command_center']?{ x: specialbuildings['command_center'][0]?.pixelX, y: specialbuildings['command_center'][0]?.pixelY}:null, 'power_station_1': specialbuildings['power_station']?{ x: specialbuildings['power_station'][0]?.pixelX, y: specialbuildings['power_station'][0]?.pixelY}:null, 'power_station_2': specialbuildings['power_station']?{ x: specialbuildings['power_station'][1]?.pixelX, y: specialbuildings['power_station'][1]?.pixelY}:null, 'power_station_3': specialbuildings['power_station']?{ x: specialbuildings['power_station'][2]?.pixelX, y: specialbuildings['power_station'][2]?.pixelY}:null, 'control_tower': specialbuildings['control_tower']?{ x: specialbuildings['control_tower'][0]?.pixelX, y: specialbuildings['control_tower'][0]?.pixelY}:null }; return positions[buildingType] || null; }
+    findTrenchPosition(trenchType) { return { x: this.map.width * TILE_SIZE * 0.9, y: this.map.height * TILE_SIZE * 0.9 }; }
+    createTargetUnit(targetType) { const position = { x: this.map.width * TILE_SIZE * 0.5, y: this.map.height * TILE_SIZE * 0.5 }; const targetUnit = new Unit(targetType, 'ai', position.x, position.y); targetUnit.isTargetUnit = true; targetUnit.name = "毒蛇指挥单位"; this.ai.units.push(targetUnit); this.targetUnit = targetUnit; }
+    createEscortUnit(unitType, destination) { const startPosition = { x: TILE_SIZE * 5, y: TILE_SIZE }; const escortUnit = new Unit(unitType, 'player', startPosition.x, startPosition.y); escortUnit.isEscortUnit = true; escortUnit.destination = destination; escortUnit.speed = 0.5; this.player.units.push(escortUnit); this.escortUnit = escortUnit; }
     
-    // 在 Game 类的 setupInitialCamera 方法中添加地图特定的镜头设置
-    setupInitialCamera() {
-        // 默认设置
-        let focusPoint = this.playerBase 
-            ? { x: this.playerBase.pixelX, y: this.playerBase.pixelY }
-            : { x: (this.map.width * TILE_SIZE) / 2, y: (this.map.height * TILE_SIZE) / 2 };
-        
-        let zoomLevel = 1.5;
-        
-        // 根据地图ID设置特定的镜头位置和缩放
-        switch (this.mapId) {
-            case 'map_chapter1': // 撒哈拉沙漠哨站
-                focusPoint = { x: TILE_SIZE * 15, y: TILE_SIZE * 30 };
-                zoomLevel = 1.5;
-                break;
-                
-            case 'map_chapter2': // 安第斯秘密基地
-                focusPoint = { x: TILE_SIZE * 40, y: TILE_SIZE * 30 };
-                zoomLevel = 1.5;
-                break;
-                
-            case 'map_chapter3': // 新京都市战场
-                focusPoint = { x: TILE_SIZE * 15, y: TILE_SIZE * 35 };
-                zoomLevel = 1.5;
-                break;
-                
-            case 'map_chapter4': // 北极天锤控制基地
-                focusPoint = { x: TILE_SIZE * 15, y: TILE_SIZE * 40 };
-                zoomLevel = 1.5;
-                break;
-                
-            case 'map_chapter5_1': // 离子炮阵地
-                focusPoint = { x: TILE_SIZE, y: TILE_SIZE };
-                zoomLevel = 3.0;
-                break;
-                
-            case 'map_chapter5_2': // 刻耳柏洛斯海上平台
-                focusPoint = { x: TILE_SIZE * 35, y: TILE_SIZE * 35 };
-                zoomLevel = 1.5;
-                break;
-                
-            case 'map_new_01': // 十字路口冲突
-                // focusPoint = { x: TILE_SIZE * 40, y: TILE_SIZE * 30 };
-                zoomLevel = 1.3;
-                break;
-                
-            case 'map01': // 双子桥
-                // focusPoint = { x: TILE_SIZE * 50, y: TILE_SIZE * 30 };
-                zoomLevel = 1.1;
-                break;
-                
-            case 'map_new': // 新手地图
-                // focusPoint = { x: TILE_SIZE * 5, y: TILE_SIZE * 5 };
-                zoomLevel = 1.8;
-                break;
-                
-            default:
-                // 使用默认设置
-                break;
-        }
-        
-        this.camera.zoom = Math.max(zoomLevel, this.camera.minZoom);
-        this.camera.x = focusPoint.x - (this.canvas.width / 2) / this.camera.zoom;
-        this.camera.y = focusPoint.y - (this.canvas.height / 2) / this.camera.zoom;
-        
-        this.globalMousePos = { x: this.camera.x, y: this.camera.y };
-        this.constrainCamera();
-    }
-    // 新增：设置目标标记
-    setupObjectiveMarkers() {
-        this.objectiveMarkers = [];
-        
-        switch (this.gameMode) {
-            case 'objective':
-                // 为目标模式设置建筑标记
-                if (this.gameObjectives && this.gameObjectives.length > 0) {
-                    this.gameObjectives.forEach(obj => {
-                        const parts = obj.split(':');
-                        if (parts[0] === 'destroy_building') {
-                            const buildingType = parts[1];
-                            // 根据建筑类型在地图上找到对应位置
-                            const position = this.findBuildingPosition(buildingType);
-                            if (position) {
-                                this.objectiveMarkers.push({
-                                    type: 'destroy',
-                                    x: position.x,
-                                    y: position.y,
-                                    buildingType: buildingType
-                                });
-                            }
-                        } else if (parts[0] === 'guide_debris') {
-                            const targetType = parts[1];
-                            // 找到海沟位置
-                            const position = this.findTrenchPosition(targetType);
-                            if (position) {
-                                this.objectiveMarkers.push({
-                                    type: 'guide',
-                                    x: position.x,
-                                    y: position.y,
-                                    targetType: targetType
-                                });
-                            }
-                        }
-                    });
-                }
-                break;
-                
-            case 'assassination':
-                // 为刺杀模式设置目标单位标记
-                if (this.targetUnit) {
-                    // 创建目标单位（这里需要根据targetUnit类型创建对应的AI单位）
-                    this.createTargetUnit(this.targetUnit);
-                    this.objectiveMarkers.push({
-                        type: 'assassinate',
-                        unit: this.targetUnit
-                    });
-                }
-                break;
-                
-            case 'escort':
-                // 为护送模式设置护送单位和目的地标记
-                if (this.escortUnit && this.destination) {
-                    // 创建护送单位
-                    this.createEscortUnit(this.escortUnit, this.destination);
-                    this.objectiveMarkers.push({
-                        type: 'escortdestination',
-                        destination: this.destination
-                    });
-                    this.objectiveMarkers.push({
-                        type: 'escort',
-                        unit: this.escortUnit,
-                    });
-                }
-                break;
-        }
-    }
-
-    // 新增：根据建筑类型找到位置
-    findBuildingPosition(buildingType) {
-        // 这里需要根据地图设计来定位特定建筑
-        // 简单实现：根据建筑类型返回预设位置
-        const specialbuildings = this.buildingsManager.specialBuildings;
-        const positions = {
-            'barracks': specialbuildings['barracks']?{ x: specialbuildings['barracks'][0].pixelX, y: specialbuildings['barracks'][0].pixelY}:null,
-            'armory': specialbuildings['armory']?{ x: specialbuildings['armory'][0].pixelX, y: specialbuildings['armory'][0].pixelY}:null,
-            'command_center': specialbuildings['command_center']?{ x: specialbuildings['command_center'][0]?.pixelX, y: specialbuildings['command_center'][0]?.pixelY}:null,
-            'power_station_1': specialbuildings['power_station']?{ x: specialbuildings['power_station'][0]?.pixelX, y: specialbuildings['power_station'][0]?.pixelY}:null,
-            'power_station_2': specialbuildings['power_station']?{ x: specialbuildings['power_station'][1]?.pixelX, y: specialbuildings['power_station'][1]?.pixelY}:null,
-            'power_station_3': specialbuildings['power_station']?{ x: specialbuildings['power_station'][2]?.pixelX, y: specialbuildings['power_station'][2]?.pixelY}:null,
-            'control_tower': specialbuildings['control_tower']?{ x: specialbuildings['control_tower'][0]?.pixelX, y: specialbuildings['control_tower'][0]?.pixelY}:null
-        };
-        
-        return positions[buildingType] || null;
-    }
-
-    // 新增：找到海沟位置
-    findTrenchPosition(trenchType) {
-        // 简单实现：返回地图右下角位置
-        return { x: this.map.width * TILE_SIZE * 0.9, y: this.map.height * TILE_SIZE * 0.9 };
-    }
-    
-    // 新增：创建目标单位
-    createTargetUnit(targetType) {
-        // 根据目标类型创建特定的AI单位
-        const position = //this.findBuildingPosition('command_center') || 
-            { x: this.map.width * TILE_SIZE * 0.5, y: this.map.height * TILE_SIZE * 0.5 };
-        // 创建特殊的目标单位（例如毒蛇的指挥单位）
-        const targetUnit = new Unit(targetType, 'ai', position.x, position.y);
-        targetUnit.isTargetUnit = true;
-        targetUnit.name = "毒蛇指挥单位";
-        
-        this.ai.units.push(targetUnit);
-        this.targetUnit = targetUnit;
-    }
-    
-    // 新增：创建护送单位
-    createEscortUnit(unitType, destination) {
-        // 创建护送单位（例如充能车）
-        const startPosition = { x: TILE_SIZE * 5, y: TILE_SIZE };
-        
-        const escortUnit = new Unit(unitType, 'player', startPosition.x, startPosition.y);
-        escortUnit.isEscortUnit = true;
-        escortUnit.destination = destination;
-        escortUnit.speed = 0.5; // 较慢的速度
-        
-        this.player.units.push(escortUnit);
-        this.escortUnit = escortUnit;
-    }
-    
-    gameLoop(currentTime) {
-        if (!this.lastTime) this.lastTime = currentTime;
-        const deltaTime = (currentTime - this.lastTime) / 1000;
-        this.lastTime = currentTime;
-        const adjustedDeltaTime = deltaTime / this.gameSpeedModifier;
-
-        this.update(adjustedDeltaTime);
-        this.draw();
-        this.ui.update();
-
-        requestAnimationFrame(this.gameLoop.bind(this));
-    }
-
-    update(deltaTime) {
-        if (this.gameState === 'gameover' || this.gameState === 'setup') return;
-
-        Matter.Engine.update(this.engine, deltaTime * 1000);
-
-        this.handleEdgeScrolling(deltaTime);
-        this.constrainCamera();
-        // 新增：更新建筑物系统
-        if (this.buildingsManager) {
-            this.buildingsManager.update(deltaTime);
-        }
-        const allPlayerUnits = [...this.player.units];
-        const allAiUnits = [...this.ai.units];
-        const allUnits = [...allPlayerUnits, ...allAiUnits];
-
-        allUnits.forEach(unit => {
-            if (unit.body) {
-                unit.x = unit.body.position.x;
-                unit.y = unit.body.position.y;
-                unit.angle = unit.body.angle;
-            }
-        });
-        
-        if (this.gameState === 'playing' ){
-            this.updateObjectives();
-            allPlayerUnits.forEach(unit => unit.update(deltaTime, allAiUnits, this.map, this.aiBase, this));
-            allAiUnits.forEach(unit => unit.update(deltaTime, allPlayerUnits, this.map, this.playerBase, this));
-            
-            this.ai.update(deltaTime, this.player, this.map);
-        }
-        
-        const remainingProjectiles = [];
-        for (const p of this.projectiles) {
-            const hasHitTarget = p.update(deltaTime);
-            if (hasHitTarget) {
-                this.handleProjectileHit(p);
-            } else {
-                remainingProjectiles.push(p);
-            }
-        }
-        this.projectiles = remainingProjectiles;
-
-        this.explosions = this.explosions.filter(e => !e.update(deltaTime));
-        
-        this.player.units = this.player.units.filter(u => this.filterDeadUnits(u));
-        this.ai.units = this.ai.units.filter(u => this.filterDeadUnits(u));
-        this.selectedUnits = this.selectedUnits.filter(u => u.hp > 0);
-
-        if (this.enableFogOfWar) this.fogOfWar.update([...this.player.units, this.playerBase].filter(Boolean));
-        // 修改 更新存活单位数量
-        this.updateUnitCount();
-        if (this.gameState === 'playing') this.checkWinConditions();
-    }
-
-    // 新增：更新游戏目标状态
-    updateObjectives() {
-        if (this.player.units.length === 0 && this.player.manpower < 1)
-            this.endGame(this.ai);
-        switch (this.gameMode) {
-            case 'tutorial': // 新增教程模式
-                this.updateTutorialMode();
-                break;
-            case 'objective':
-                this.updateObjectiveMode();
-                break;
-            case 'assassination':
-                this.updateAssassinationMode();
-                break;
-            case 'escort':
-                this.updateEscortMode();
-                break;
-        }
-    }
-
-    // 新增教程模式更新方法
-    updateTutorialMode() {
-        if (this.playerBase?.hp <= 0) this.endGame(this.ai); 
-        else if (this.aiBase?.hp <= 0){
-            this.levelCompleted = true;
-            this.endGame(this.player);
-        }
-    }
-
-    // 新增：更新目标模式
-    updateObjectiveMode(){
-        // 检查地图的胜利条件
-        if (this.skip || this.buildingsManager.checkWinCondition()){
-            this.levelCompleted = true;
-            this.checkLightningStrikeAchievement();
-            this.endGame(this.player);
-            return;
-        }
-            
-        // 检查失败条件
-        if (this.buildingsManager.checkLossCondition()) {
-            this.endGame(this.ai);
-            return;
-        }
-    }
-    // 新增：更新刺杀模式
-    updateAssassinationMode() {
-        // 检查目标单位是否被消灭
-        if ( (this.targetUnit && this.targetUnit.hp <= 0) || this.skip) {
-            this.levelCompleted = true;
-            this.checkLightningStrikeAchievement();
-            this.endGame(this.player);
-        }
-    }
-    
-    // 新增：更新护送模式
-    updateEscortMode() {
-        // 检查护送单位是否到达目的地
-        if ((this.escortUnit && this.escortUnit.hp > 0)  || this.skip){
-            const distance = getDistance(this.escortUnit, this.escortUnit.destination);
-            
-            if (distance < TILE_SIZE * 2|| this.skip) {
-                // 到达目的地
-                this.levelCompleted = true;
-                this.checkLightningStrikeAchievement();
-                this.endGame(this.player);
-            }
-        } else if (this.escortUnit && this.escortUnit.hp <= 0) {
-            // 护送单位被摧毁，任务失败
-            this.endGame(this.ai);
-        }
-    }
-    
-    // 新增：根据类型找到建筑
-    findBuildingByType(buildingType) {
-        // 简单实现：返回对应的基地或特定建筑
-        if (buildingType === 'control_tower' && this.aiBase) {
-            return this.aiBase;
-        }
-        
-        // 可以扩展以支持更多建筑类型
-        return null;
-    }
-
-    filterDeadUnits(unit) {
-        if (unit.hp > 0) {
-            return true;
-        }
-        if (unit.body) {
-            Matter.World.remove(this.engine.world, unit.body);
-            unit.body = null;
-        }
-        return false;
-    }
+    gameLoop(currentTime) { if (!this.lastTime) this.lastTime = currentTime; const deltaTime = (currentTime - this.lastTime) / 1000; this.lastTime = currentTime; const adjustedDeltaTime = deltaTime / this.gameSpeedModifier; this.update(adjustedDeltaTime); this.draw(); this.ui.update(); requestAnimationFrame(this.gameLoop.bind(this)); }
+    update(deltaTime) { if (this.gameState === 'gameover' || this.gameState === 'setup') return; Matter.Engine.update(this.engine, deltaTime * 1000); this.handleEdgeScrolling(deltaTime); this.constrainCamera(); if (this.buildingsManager) { this.buildingsManager.update(deltaTime); } const allPlayerUnits = [...this.player.units]; const allAiUnits = [...this.ai.units]; const allUnits = [...allPlayerUnits, ...allAiUnits]; allUnits.forEach(unit => { if (unit.body) { unit.x = unit.body.position.x; unit.y = unit.body.position.y; unit.angle = unit.body.angle; } }); if (this.gameState === 'playing' ){ this.updateObjectives(); allPlayerUnits.forEach(unit => unit.update(deltaTime, allAiUnits, this.map, this.aiBase, this)); allAiUnits.forEach(unit => unit.update(deltaTime, allPlayerUnits, this.map, this.playerBase, this)); this.ai.update(deltaTime, this.player, this.map); } const remainingProjectiles = []; for (const p of this.projectiles) { const hasHitTarget = p.update(deltaTime); if (hasHitTarget) { this.handleProjectileHit(p); } else { remainingProjectiles.push(p); } } this.projectiles = remainingProjectiles; this.explosions = this.explosions.filter(e => !e.update(deltaTime)); this.player.units = this.player.units.filter(u => this.filterDeadUnits(u)); this.ai.units = this.ai.units.filter(u => this.filterDeadUnits(u)); this.selectedUnits = this.selectedUnits.filter(u => u.hp > 0); if (this.enableFogOfWar) this.fogOfWar.update([...this.player.units, this.playerBase].filter(Boolean)); this.updateUnitCount(); if (this.gameState === 'playing') this.checkWinConditions(); }
+    updateObjectives() { if (this.player.units.length === 0 && this.player.manpower < 1) this.endGame(this.ai); switch (this.gameMode) { case 'tutorial': this.updateTutorialMode(); break; case 'objective': this.updateObjectiveMode(); break; case 'assassination': this.updateAssassinationMode(); break; case 'escort': this.updateEscortMode(); break; } }
+    updateTutorialMode() { if (this.playerBase?.hp <= 0) this.endGame(this.ai); else if (this.aiBase?.hp <= 0){ this.levelCompleted = true; this.endGame(this.player); } }
+    updateObjectiveMode(){ if (this.skip || this.buildingsManager.checkWinCondition()){ this.levelCompleted = true; this.checkLightningStrikeAchievement(); this.endGame(this.player); return; } if (this.buildingsManager.checkLossCondition()) { this.endGame(this.ai); return; } }
+    updateAssassinationMode() { if ( (this.targetUnit && this.targetUnit.hp <= 0) || this.skip) { this.levelCompleted = true; this.checkLightningStrikeAchievement(); this.endGame(this.player); } }
+    updateEscortMode() { if ((this.escortUnit && this.escortUnit.hp > 0) || this.skip){ const distance = getDistance(this.escortUnit, this.escortUnit.destination); if (distance < TILE_SIZE * 2|| this.skip) { this.levelCompleted = true; this.checkLightningStrikeAchievement(); this.endGame(this.player); } } else if (this.escortUnit && this.escortUnit.hp <= 0) { this.endGame(this.ai); } }
+    findBuildingByType(buildingType) { if (buildingType === 'control_tower' && this.aiBase) { return this.aiBase; } return null; }
+    filterDeadUnits(unit) { if (unit.hp > 0) { return true; } if (unit.body) { Matter.World.remove(this.engine.world, unit.body); unit.body = null; } return false; }
 
     draw() {
         this.ctx.fillStyle = '#1a1a1a';
@@ -658,1050 +149,221 @@ class Game {
         this.ctx.scale(this.camera.zoom, this.camera.zoom);
         this.ctx.translate(-this.camera.x, -this.camera.y);
         
-        const viewBounds = {
-            left: this.camera.x,
-            top: this.camera.y,
-            right: this.camera.x + this.canvas.width / this.camera.zoom,
-            bottom: this.camera.y + this.canvas.height / this.camera.zoom
-        };
-
+        const viewBounds = { left: this.camera.x, top: this.camera.y, right: this.camera.x + this.canvas.width / this.camera.zoom, bottom: this.camera.y + this.canvas.height / this.camera.zoom };
         this.map.draw(this.ctx, this.camera);
-        
         if (this.playerBase) this.playerBase.draw(this.ctx, this.camera.zoom);
         if (this.aiBase) this.aiBase.draw(this.ctx, this.camera.zoom);
-        // 新增：绘制基地建筑物
-        if (this.buildingsManager) {
-            this.buildingsManager.draw(this.ctx, this.camera.zoom);
-        }
+        if (this.buildingsManager) { this.buildingsManager.draw(this.ctx, this.camera.zoom); }
         const allUnits = [...this.player.units, ...this.ai.units];
         const groundSeaUnits = allUnits.filter(u => u.stats.moveType !== 'air');
         const airUnits = allUnits.filter(u => u.stats.moveType === 'air');
-
-        const isVisible = (entity, padding = TILE_SIZE * 2) => {
-            return entity.x > viewBounds.left - padding && entity.x < viewBounds.right + padding &&
-                   entity.y > viewBounds.top - padding && entity.y < viewBounds.bottom + padding;
-        };
-
-        groundSeaUnits.forEach(unit => {
-            if (isVisible(unit)) {
-                unit.draw(this.ctx, this.selectedUnits.includes(unit), this.camera.zoom, this.showDetails)
-            }
-        });
-        
+        const isVisible = (entity, padding = TILE_SIZE * 2) => { return entity.x > viewBounds.left - padding && entity.x < viewBounds.right + padding && entity.y > viewBounds.top - padding && entity.y < viewBounds.bottom + padding; };
+        groundSeaUnits.forEach(unit => { if (isVisible(unit)) { unit.draw(this.ctx, this.selectedUnits.includes(unit), this.camera.zoom, this.showDetails) } });
         this.projectiles.forEach(p => { if(isVisible(p)) p.draw(this.ctx) });
         this.explosions.forEach(e => { if(isVisible(e)) e.draw(this.ctx) });
-        
-        airUnits.forEach(unit => {
-             if (isVisible(unit)) {
-                unit.draw(this.ctx, this.selectedUnits.includes(unit), this.camera.zoom, this.showDetails);
-            }
-        });
-
+        airUnits.forEach(unit => { if (isVisible(unit)) { unit.draw(this.ctx, this.selectedUnits.includes(unit), this.camera.zoom, this.showDetails); } });
         if (this.enableFogOfWar) {this.fogOfWar.draw(this.ctx);}
-
         this.ctx.restore();
         
-        if (this.isDragging && !this.isDraggingMap) {
+        // --- MOBILE ADAPTATION: Draw selection box for both mouse and touch ---
+        if (this.isDragging || this.isTouchSelectDragging) {
             this.ctx.strokeStyle = 'rgba(100, 255, 100, 0.7)';
             this.ctx.lineWidth = 1;
             this.ctx.strokeRect(this.dragStart.x, this.dragStart.y, this.dragEnd.x - this.dragStart.x, this.dragEnd.y - this.dragStart.y);
         }
 
-        // 新增：绘制目标标记
         this.drawObjectiveMarkers();
     }
     
-    // 新增：绘制目标标记
-    drawObjectiveMarkers() {
-        this.objectiveMarkers.forEach(marker => {
-            const screenPos = this.worldToScreen(marker.x, marker.y);
-            
-            switch (marker.type) {
-                case 'destroy':
-                    // 绘制摧毁目标标记
-                    this.ctx.fillStyle = 'rgba(255, 0, 0, 0.3)';
-                    this.ctx.beginPath();
-                    this.ctx.arc(screenPos.x, screenPos.y, 15, 0, Math.PI * 2);
-                    this.ctx.fill();
-                    
-                    this.ctx.strokeStyle = 'red';
-                    this.ctx.lineWidth = 2;
-                    this.ctx.beginPath();
-                    this.ctx.arc(screenPos.x, screenPos.y, 15, 0, Math.PI * 2);
-                    this.ctx.stroke();
-                    
-                    this.ctx.fillStyle = 'white';
-                    this.ctx.font = '12px Arial';
-                    this.ctx.fillText('摧毁', screenPos.x - 15, screenPos.y - 20);
-                    break;
-                    
-                case 'guide':
-                    // 绘制引导目标标记
-                    this.ctx.fillStyle = 'rgba(0, 0, 255, 0.3)';
-                    this.ctx.beginPath();
-                    this.ctx.arc(screenPos.x, screenPos.y, 15, 0, Math.PI * 2);
-                    this.ctx.fill();
-                    
-                    this.ctx.strokeStyle = 'blue';
-                    this.ctx.lineWidth = 2;
-                    this.ctx.beginPath();
-                    this.ctx.arc(screenPos.x, screenPos.y, 15, 0, Math.PI * 2);
-                    this.ctx.stroke();
-                    
-                    this.ctx.fillStyle = 'white';
-                    this.ctx.font = '12px Arial';
-                    this.ctx.fillText('引导', screenPos.x - 15, screenPos.y - 20);
-                    break;
-                    
-                case 'assassinate':
-                    // 刺杀目标标记（跟随目标单位）
-                    if (marker.unit && marker.unit.hp > 0) {
-                        const unitScreenPos = this.worldToScreen(marker.unit.x, marker.unit.y);
-                        
-                        this.ctx.fillStyle = 'rgba(255, 165, 0, 0.3)';
-                        this.ctx.beginPath();
-                        this.ctx.arc(unitScreenPos.x, unitScreenPos.y, 20, 0, Math.PI * 2);
-                        this.ctx.fill();
-                        
-                        this.ctx.strokeStyle = 'orange';
-                        this.ctx.lineWidth = 2;
-                        this.ctx.beginPath();
-                        this.ctx.arc(unitScreenPos.x, unitScreenPos.y, 20, 0, Math.PI * 2);
-                        this.ctx.stroke();
-                        
-                        this.ctx.fillStyle = 'white';
-                        this.ctx.font = '12px Arial';
-                        this.ctx.fillText('刺杀目标：毒蛇', unitScreenPos.x - 25, unitScreenPos.y - 25);
-                    }
-                    break;
-                    
-                case 'escortdestination':
-                    // 护送目标标记（目的地）
-                    const destScreenPos = this.worldToScreen(marker.destination.x, marker.destination.y);
-                    
-                    this.ctx.fillStyle = 'rgba(0, 255, 0, 0.3)';
-                    this.ctx.beginPath();
-                    this.ctx.arc(destScreenPos.x, destScreenPos.y, 15, 0, Math.PI * 2);
-                    this.ctx.fill();
-                    
-                    this.ctx.strokeStyle = 'green';
-                    this.ctx.lineWidth = 2;
-                    this.ctx.beginPath();
-                    this.ctx.arc(destScreenPos.x, destScreenPos.y, 15, 0, Math.PI * 2);
-                    this.ctx.stroke();
-                    
-                    this.ctx.fillStyle = 'white';
-                    this.ctx.font = '12px Arial';
-                    this.ctx.fillText('目的地', destScreenPos.x - 20, destScreenPos.y - 20);
-                    break;
-                
-                case 'escort':
-                    // 护送目标标记
-                    if (marker.unit && marker.unit.hp > 0) {
-                        const unitScreenPos = this.worldToScreen(marker.unit.x, marker.unit.y);
-                        
-                        this.ctx.fillStyle = 'rgba(0, 255, 0, 0.3)';
-                        this.ctx.beginPath();
-                        this.ctx.arc(unitScreenPos.x, unitScreenPos.y, 20, 0, Math.PI * 2);
-                        this.ctx.fill();
-                        
-                        this.ctx.strokeStyle = 'green';
-                        this.ctx.lineWidth = 2;
-                        this.ctx.beginPath();
-                        this.ctx.arc(unitScreenPos.x, unitScreenPos.y, 20, 0, Math.PI * 2);
-                        this.ctx.stroke();
-                        
-                        this.ctx.fillStyle = 'white';
-                        this.ctx.font = '12px Arial';
-                        this.ctx.fillText('保护目标：充能车', unitScreenPos.x - 25, unitScreenPos.y - 25);
-                    }
-                    break;
-            }
-        });
-    }
+    drawObjectiveMarkers() { this.objectiveMarkers.forEach(marker => { const screenPos = this.worldToScreen(marker.x, marker.y); switch (marker.type) { case 'destroy': this.ctx.fillStyle = 'rgba(255, 0, 0, 0.3)'; this.ctx.beginPath(); this.ctx.arc(screenPos.x, screenPos.y, 15, 0, Math.PI * 2); this.ctx.fill(); this.ctx.strokeStyle = 'red'; this.ctx.lineWidth = 2; this.ctx.beginPath(); this.ctx.arc(screenPos.x, screenPos.y, 15, 0, Math.PI * 2); this.ctx.stroke(); this.ctx.fillStyle = 'white'; this.ctx.font = '12px Arial'; this.ctx.fillText('摧毁', screenPos.x - 15, screenPos.y - 20); break; case 'guide': this.ctx.fillStyle = 'rgba(0, 0, 255, 0.3)'; this.ctx.beginPath(); this.ctx.arc(screenPos.x, screenPos.y, 15, 0, Math.PI * 2); this.ctx.fill(); this.ctx.strokeStyle = 'blue'; this.ctx.lineWidth = 2; this.ctx.beginPath(); this.ctx.arc(screenPos.x, screenPos.y, 15, 0, Math.PI * 2); this.ctx.stroke(); this.ctx.fillStyle = 'white'; this.ctx.font = '12px Arial'; this.ctx.fillText('引导', screenPos.x - 15, screenPos.y - 20); break; case 'assassinate': if (marker.unit && marker.unit.hp > 0) { const unitScreenPos = this.worldToScreen(marker.unit.x, marker.unit.y); this.ctx.fillStyle = 'rgba(255, 165, 0, 0.3)'; this.ctx.beginPath(); this.ctx.arc(unitScreenPos.x, unitScreenPos.y, 20, 0, Math.PI * 2); this.ctx.fill(); this.ctx.strokeStyle = 'orange'; this.ctx.lineWidth = 2; this.ctx.beginPath(); this.ctx.arc(unitScreenPos.x, unitScreenPos.y, 20, 0, Math.PI * 2); this.ctx.stroke(); this.ctx.fillStyle = 'white'; this.ctx.font = '12px Arial'; this.ctx.fillText('刺杀目标：毒蛇', unitScreenPos.x - 25, unitScreenPos.y - 25); } break; case 'escortdestination': const destScreenPos = this.worldToScreen(marker.destination.x, marker.destination.y); this.ctx.fillStyle = 'rgba(0, 255, 0, 0.3)'; this.ctx.beginPath(); this.ctx.arc(destScreenPos.x, destScreenPos.y, 15, 0, Math.PI * 2); this.ctx.fill(); this.ctx.strokeStyle = 'green'; this.ctx.lineWidth = 2; this.ctx.beginPath(); this.ctx.arc(destScreenPos.x, destScreenPos.y, 15, 0, Math.PI * 2); this.ctx.stroke(); this.ctx.fillStyle = 'white'; this.ctx.font = '12px Arial'; this.ctx.fillText('目的地', destScreenPos.x - 20, destScreenPos.y - 20); break; case 'escort': if (marker.unit && marker.unit.hp > 0) { const unitScreenPos = this.worldToScreen(marker.unit.x, marker.unit.y); this.ctx.fillStyle = 'rgba(0, 255, 0, 0.3)'; this.ctx.beginPath(); this.ctx.arc(unitScreenPos.x, unitScreenPos.y, 20, 0, Math.PI * 2); this.ctx.fill(); this.ctx.strokeStyle = 'green'; this.ctx.lineWidth = 2; this.ctx.beginPath(); this.ctx.arc(unitScreenPos.x, unitScreenPos.y, 20, 0, Math.PI * 2); this.ctx.stroke(); this.ctx.fillStyle = 'white'; this.ctx.font = '12px Arial'; this.ctx.fillText('保护目标：充能车', unitScreenPos.x - 25, unitScreenPos.y - 25); } break; } }); }
 
     addEventListeners() {
-        // 添加用户交互监听
-        const handleInteraction = () => {
-            if (!this.userInteracted) {
-                this.handleUserInteraction();
-            }
-        };
-        
+        const handleInteraction = () => { if (!this.userInteracted) { this.handleUserInteraction(); } };
         this.canvas.addEventListener('click', handleInteraction);
         this.canvas.addEventListener('mousedown', handleInteraction);
         this.canvas.addEventListener('touchstart', handleInteraction);
-
         window.addEventListener('mousemove', (e) => this.handleMouseMove(e));
         this.canvas.addEventListener('mousedown', (e) => this.handleMouseDown(e));
         this.canvas.addEventListener('mouseup', (e) => this.handleMouseUp(e));
         this.canvas.addEventListener('wheel', (e) => this.handleWheel(e), { passive: false });
         this.canvas.addEventListener('contextmenu', (e) => e.preventDefault());
-
-        // --- 修改: 扩展键盘监听以包含新功能 ---
-        window.addEventListener('keydown', (e) => {
-            if (e.key === 'Escape') {
-                this.selectedUnits = [];
-                this.ui.clearDeploymentSelection();
-            } 
-            else if (e.key === 'r' || e.key === 'R') {
-                if (this.gameState === 'deployment') {
-                    this.undoLastDeployment();
-                }
-            }
-            else if (e.key === 'q' || e.key === 'Q') {
-                if (this.gameState === 'playing' && this.selectedUnits.length > 0) {
-                    this.selectedUnits.forEach(unit => {
-                        unit.stop();
-                    });
-                    this.ui.showGameMessage("单位已停下");
-                }
-            }
-            // --- 新增: T键选中同类单位 ---
-            else if (e.key === 't' || e.key === 'T') {
-                if (this.selectedUnits.length > 0) {
-                    const typeToSelect = this.selectedUnits[0].type;
-                    this.ui.clearDeploymentSelection(); // 清空部署选择
-                    this.selectedUnits = this.player.units.filter(unit => unit.type === typeToSelect && unit.hp > 0);
-                }
-            }// 添加显示/隐藏建筑名称的快捷键（例如按N键）
-            else if (e.key === 'n' || e.key === 'N') {
-                if (this.buildingsManager) {
-                    this.buildingsManager.showBuildingNames = !this.buildingsManager.showBuildingNames;
-                    this.ui.showGameMessage(`建筑名称显示: ${this.buildingsManager.showBuildingNames ? '开启' : '关闭'}`);
-                }
-            }
-            // --- 新增: 数字键处理编队 ---
-            else if (e.key >= '0' && e.key <= '9') {
-                const groupNumber = parseInt(e.key, 10);
-                
-                // Ctrl + 数字: 分配编队
-                if (e.ctrlKey) {
-                    e.preventDefault(); // 阻止浏览器默认行为，如Ctrl+1切换标签页
-                    const unitsToAssign = this.selectedUnits;
-
-                    // 如果没有选中单位，则是清空/解散编队
-                    if (unitsToAssign.length === 0) {
-                        this.controlGroups[groupNumber].forEach(unit => {
-                            if (unit) unit.controlGroup = null;
-                        });
-                        this.controlGroups[groupNumber] = [];
-                        this.ui.showGameMessage(`${groupNumber} 号队伍已解散`);
-                        return;
-                    }
-                    
-                    // 遍历要分配的单位，将它们从旧的编队中移除
-                    unitsToAssign.forEach(unit => {
-                        if (unit.controlGroup !== null && unit.controlGroup !== groupNumber) {
-                            this.controlGroups[unit.controlGroup] = this.controlGroups[unit.controlGroup].filter(u => u.id !== unit.id);
-                        }
-                    });
-
-                    // 清理目标编队中不再被包含的单位
-                    this.controlGroups[groupNumber].forEach(oldUnit => {
-                        if (!unitsToAssign.includes(oldUnit)) {
-                             oldUnit.controlGroup = null;
-                        }
-                    });
-
-                    // 分配新单位到编队
-                    this.controlGroups[groupNumber] = [...unitsToAssign];
-                    this.controlGroups[groupNumber].forEach(unit => {
-                        unit.controlGroup = groupNumber;
-                    });
-                    
-                    this.ui.showGameMessage(`部队已编入 ${groupNumber} 号队伍`);
-
-                } 
-                // 单独按数字键: 选中编队
-                else {
-                    // 每次选择时都过滤掉死亡单位
-                    this.controlGroups[groupNumber] = this.controlGroups[groupNumber].filter(u => u.hp > 0);
-
-                    if (this.controlGroups[groupNumber].length > 0) {
-                        this.ui.clearDeploymentSelection(); // 清理部署状态
-                        this.selectedUnits = [...this.controlGroups[groupNumber]];
-                    }
-                }
-            }
-        });
-
+        window.addEventListener('keydown', (e) => { if (e.key === 'Escape') { this.selectedUnits = []; this.ui.clearDeploymentSelection(); } else if (e.key === 'r' || e.key === 'R') { if (this.gameState === 'deployment') { this.undoLastDeployment(); } } else if (e.key === 'q' || e.key === 'Q') { if (this.gameState === 'playing' && this.selectedUnits.length > 0) { this.selectedUnits.forEach(unit => { unit.stop(); }); this.ui.showGameMessage("单位已停下"); } } else if (e.key === 't' || e.key === 'T') { if (this.selectedUnits.length > 0) { const typeToSelect = this.selectedUnits[0].type; this.ui.clearDeploymentSelection(); this.selectedUnits = this.player.units.filter(unit => unit.type === typeToSelect && unit.hp > 0); } } else if (e.key === 'n' || e.key === 'N') { if (this.buildingsManager) { this.buildingsManager.showBuildingNames = !this.buildingsManager.showBuildingNames; this.ui.showGameMessage(`建筑名称显示: ${this.buildingsManager.showBuildingNames ? '开启' : '关闭'}`); } } else if (e.key >= '0' && e.key <= '9') { const groupNumber = parseInt(e.key, 10); if (e.ctrlKey) { e.preventDefault(); const unitsToAssign = this.selectedUnits; if (unitsToAssign.length === 0) { this.controlGroups[groupNumber].forEach(unit => { if (unit) unit.controlGroup = null; }); this.controlGroups[groupNumber] = []; this.ui.showGameMessage(`${groupNumber} 号队伍已解散`); return; } unitsToAssign.forEach(unit => { if (unit.controlGroup !== null && unit.controlGroup !== groupNumber) { this.controlGroups[unit.controlGroup] = this.controlGroups[unit.controlGroup].filter(u => u.id !== unit.id); } }); this.controlGroups[groupNumber].forEach(oldUnit => { if (!unitsToAssign.includes(oldUnit)) { oldUnit.controlGroup = null; } }); this.controlGroups[groupNumber] = [...unitsToAssign]; this.controlGroups[groupNumber].forEach(unit => { unit.controlGroup = groupNumber; }); this.ui.showGameMessage(`部队已编入 ${groupNumber} 号队伍`); } else { this.controlGroups[groupNumber] = this.controlGroups[groupNumber].filter(u => u.hp > 0); if (this.controlGroups[groupNumber].length > 0) { this.ui.clearDeploymentSelection(); this.selectedUnits = [...this.controlGroups[groupNumber]]; } } } });
+        
+        // --- MOBILE ADAPTATION: Use dedicated touch event listeners ---
         this.canvas.addEventListener('touchstart', (e) => this.handleTouchStart(e), { passive: false });
         this.canvas.addEventListener('touchmove', (e) => this.handleTouchMove(e), { passive: false });
         this.canvas.addEventListener('touchend', (e) => this.handleTouchEnd(e));
         this.canvas.addEventListener('touchcancel', (e) => this.handleTouchEnd(e));
     }
 
-    handleMouseDown(e) {
-        const pos = this.getMousePos(e);
-        if (e.button === 0) {
-            if (e.ctrlKey) {
-                this.isDraggingMap = true;
-                this.lastDragPos = { x: e.clientX, y: e.clientY };
-                this.canvas.style.cursor = 'grabbing';
-            } else {
-                this.isDragging = true;
-                this.dragStart = pos;
-                this.dragEnd = pos;
-            }
-        } else if (e.button === 1) {
-             this.isDraggingMap = true;
-             this.lastDragPos = { x: e.clientX, y: e.clientY };
-             this.canvas.style.cursor = 'grabbing';
-        }
-    }
+    handleMouseDown(e) { const pos = this.getMousePos(e); if (e.button === 0) { if (e.ctrlKey) { this.isDraggingMap = true; this.lastDragPos = { x: e.clientX, y: e.clientY }; this.canvas.style.cursor = 'grabbing'; } else { this.isDragging = true; this.dragStart = pos; this.dragEnd = pos; } } else if (e.button === 1) { this.isDraggingMap = true; this.lastDragPos = { x: e.clientX, y: e.clientY }; this.canvas.style.cursor = 'grabbing'; } }
+    handleMouseMove(e) { this.mousePos = this.getMousePos(e); this.globalMousePos = { x: e.clientX, y: e.clientY }; if (this.isDraggingMap) { const dx = e.clientX - this.lastDragPos.x; const dy = e.clientY - this.lastDragPos.y; this.camera.x -= dx / this.camera.zoom; this.camera.y -= dy / this.camera.zoom; this.lastDragPos = { x: e.clientX, y: e.clientY }; } else if (this.isDragging) { this.dragEnd = this.mousePos; } }
+    handleMouseUp(e) { if (e.button === 2) { const pos = this.getMousePos(e); this.handleRightClick(pos.x, pos.y); return; } if (this.isDraggingMap) { this.isDraggingMap = false; this.canvas.style.cursor = 'default'; } else if (this.isDragging) { this.isDragging = false; const pos = this.getMousePos(e); if (getDistance(this.dragStart, pos) < 10) { this.handleLeftClick(pos.x, pos.y); } else { this.handleBoxSelection(); } } }
+    handleLeftClick(x, y) { const worldPos = this.screenToWorld(x, y); if (this.ui.selectedUnitToDeploy) { this.tryDeployUnit(worldPos, this.ui.selectedUnitToDeploy); return; } const clickedUnit = this.player.units.find(unit => getDistance(worldPos, unit) < TILE_SIZE / 2); if (this.selectedUnits.length > 0 && !clickedUnit) { this.selectedUnits.forEach(unit => unit.setTarget(null)); this.issueGroupMoveCommand(worldPos, this.map); } else { this.selectedUnits = clickedUnit ? [clickedUnit] : []; } }
+    handleRightClick(x, y) { if (this.selectedUnits.length > 0) { const worldPos = this.screenToWorld(x, y); if (this.buildingsManager) { const building = this.buildingsManager.findBuildingAt( Math.floor(worldPos.x / TILE_SIZE), Math.floor(worldPos.y / TILE_SIZE) ); if (building && !building.isDestroyed) { this.selectedUnits.forEach(unit => { unit.setTarget(building); unit.issueMoveCommand( { x: building.pixelX, y: building.pixelY }, this.map, true, true ); }); return; } } let targetEnemy = null; const allEnemies = [...this.ai.units, this.aiBase].filter(Boolean); for (const enemy of allEnemies) { const enemyPos = { x: enemy.pixelX || enemy.x, y: enemy.pixelY || enemy.y }; const clickRadius = (enemy instanceof Base) ? (enemy.width * TILE_SIZE / 2) : (enemy.stats.drawScale * TILE_SIZE / 2); if (getDistance(worldPos, enemyPos) < clickRadius) { targetEnemy = enemy;break; } } if (targetEnemy) { const targetPosition = { x: targetEnemy.pixelX || targetEnemy.x, y: targetEnemy.pixelY || targetEnemy.y }; this.selectedUnits.forEach(unit => { let targetMoveType = 'ground'; if (targetEnemy instanceof Unit) { targetMoveType = targetEnemy.stats.moveType; } if (unit.stats.canTarget.includes(targetMoveType)) { unit.setTarget(targetEnemy); unit.issueMoveCommand(targetPosition, this.map, true, true); } }); } else { this.selectedUnits.forEach(unit => unit.setTarget(null)); this.issueGroupMoveCommand(worldPos, this.map); } } }
+    
+    // --- MOBILE ADAPTATION: New method to handle a unified tap action ---
+    handleTap(pos) {
+        const worldPos = this.screenToWorld(pos.x, pos.y);
 
-    handleMouseMove(e) {
-        this.mousePos = this.getMousePos(e);
-        this.globalMousePos = { x: e.clientX, y: e.clientY };
-
-        if (this.isDraggingMap) {
-            const dx = e.clientX - this.lastDragPos.x;
-            const dy = e.clientY - this.lastDragPos.y;
-            this.camera.x -= dx / this.camera.zoom;
-            this.camera.y -= dy / this.camera.zoom;
-            this.lastDragPos = { x: e.clientX, y: e.clientY };
-        } else if (this.isDragging) {
-            this.dragEnd = this.mousePos;
-        }
-    }
-
-    handleMouseUp(e) {
-         if (e.button === 2) {
-            const pos = this.getMousePos(e);
-            this.handleRightClick(pos.x, pos.y);
-            return;
-        }
-        if (this.isDraggingMap) {
-            this.isDraggingMap = false;
-            this.canvas.style.cursor = 'default';
-        } else if (this.isDragging) {
-            this.isDragging = false;
-            const pos = this.getMousePos(e);
-            if (getDistance(this.dragStart, pos) < 10) {
-                this.handleLeftClick(pos.x, pos.y);
-            } else {
-                this.handleBoxSelection();
-            }
-        }
-    }
-
-    handleLeftClick(x, y) {
-        const worldPos = this.screenToWorld(x, y);
-
-        // 部署单位的逻辑保持不变
+        // 1. Deployment logic
         if (this.ui.selectedUnitToDeploy) {
             this.tryDeployUnit(worldPos, this.ui.selectedUnitToDeploy);
             return;
         }
 
-        // 检查是否点击了己方单位
-        const clickedUnit = this.player.units.find(unit => getDistance(worldPos, unit) < TILE_SIZE / 2);
-
-        // --- 核心修改 #1: 实现左键移动 ---
-        // 如果当前有单位被选中，并且玩家没有点击到另一个己方单位
-        if (this.selectedUnits.length > 0 && !clickedUnit) {
-            // 下达一个非攻击性的移动指令 (调用现有的编队移动函数)
-            // 在移动前，明确清空所有选中单位的攻击目标，确保它们只是移动
-            this.selectedUnits.forEach(unit => unit.setTarget(null));
-            this.issueGroupMoveCommand(worldPos, this.map);
-        } else {
-            // 如果没有单位被选中，或者点击了另一个己方单位，则执行原有的选择逻辑
-            this.selectedUnits = clickedUnit ? [clickedUnit] : [];
-        }
-    }
-    
-    // 添加对建筑物的处理
-    handleRightClick(x, y) {
+        // 2. Selection and Command logic
         if (this.selectedUnits.length > 0) {
-            const worldPos = this.screenToWorld(x, y);
-            
-            // 1. 首先检查是否点击了建筑物
-            if (this.buildingsManager) {
-                const building = this.buildingsManager.findBuildingAt(
-                    Math.floor(worldPos.x / TILE_SIZE),
-                    Math.floor(worldPos.y / TILE_SIZE)
-                );
-                
-                if (building && !building.isDestroyed) {
-                    // 命令选中的单位攻击建筑物
-                    this.selectedUnits.forEach(unit => {
-                        // 设置建筑物为目标
-                        unit.setTarget(building);
-                        // 下达移动指令，开启"强制移动"标志
-                        unit.issueMoveCommand(
-                            { x: building.pixelX, y: building.pixelY },
-                            this.map,
-                            true,
-                            true
-                        );
-                    });
-                    return; // 已处理建筑物点击，直接返回
-                }
-            }
-            // 2. 如果没有点击建筑物，则按原来的逻辑处理
-            let targetEnemy = null;
-            const allEnemies = [...this.ai.units, this.aiBase].filter(Boolean);
-            for (const enemy of allEnemies) {
-                const enemyPos = { x: enemy.pixelX || enemy.x, y: enemy.pixelY || enemy.y };
-                const clickRadius = (enemy instanceof Base) ? (enemy.width * TILE_SIZE / 2) : (enemy.stats.drawScale * TILE_SIZE / 2);
-                if (getDistance(worldPos, enemyPos) < clickRadius) {
-                    targetEnemy = enemy;break;
-                }
-            }
-            
-            if (targetEnemy) {
-                // 这是强制攻击指令
-                const targetPosition = { x: targetEnemy.pixelX || targetEnemy.x, y: targetEnemy.pixelY || targetEnemy.y };
-
-                // --- 核心修改 #1: 智能分发攻击指令 ---
-                this.selectedUnits.forEach(unit => {
-                    // 获取目标类型
-                    let targetMoveType = 'ground'; // 基地或建筑默认为地面
-                    if (targetEnemy instanceof Unit) {
-                        targetMoveType = targetEnemy.stats.moveType;
-                    }
-
-                    // 检查当前单位是否可以攻击该类型的目标
-                    if (unit.stats.canTarget.includes(targetMoveType)) {
-                        // 如果可以攻击，则下达攻击指令
-                        unit.setTarget(targetEnemy);
-                        unit.issueMoveCommand(targetPosition, this.map, true, true);
-                    } else {
-                        // 如果不能攻击（例如防空车攻击地面），则什么都不做
-                        // 单位会保持原有的状态，不会移动
-                    }
-                });
-            } else {
-                // 这是普通的移动指令 (逻辑不变)
-                this.selectedUnits.forEach(unit => unit.setTarget(null)); // 确保没有目标
-                this.issueGroupMoveCommand(worldPos, this.map);
-            }
+            // If units are selected, a tap issues a command (move or attack)
+            this.issueCommandForSelectedUnits(worldPos); 
+        } else {
+            // If no units are selected, a tap is for selecting a single unit
+            const clickedUnit = this.player.units.find(unit => getDistance(worldPos, unit) < TILE_SIZE / 2);
+            this.selectedUnits = clickedUnit ? [clickedUnit] : [];
         }
     }
 
     issueCommandForSelectedUnits(worldPos) {
+        // This function consolidates the attack/move logic from handleRightClick
         let targetEnemy = null;
         const allEnemies = [...this.ai.units, this.aiBase].filter(Boolean);
         for (const enemy of allEnemies) {
             const enemyPos = { x: enemy.pixelX || enemy.x, y: enemy.pixelY || enemy.y };
             const clickRadius = (enemy instanceof Base) ? (enemy.width * TILE_SIZE / 2) : (enemy.stats.drawScale * TILE_SIZE / 2);
             if (getDistance(worldPos, enemyPos) < clickRadius) {
-                targetEnemy = enemy;break;
+                targetEnemy = enemy; break;
             }
         }
-        
         if (targetEnemy) {
-            // 这是强制攻击指令
             const targetPosition = { x: targetEnemy.pixelX || targetEnemy.x, y: targetEnemy.pixelY || targetEnemy.y };
-
             this.selectedUnits.forEach(unit => {
-                // 1. 设置明确的目标
                 unit.setTarget(targetEnemy);
-                // 2. 下达移动指令，并开启“强制移动”标志！
-                // issueMoveCommand(目标位置, 地图, 是否在交战状态, 是否强制移动)
                 if (unit.target) {
-                    // 3. 只有合法的单位才下达移动攻击指令！
                     unit.issueMoveCommand(targetPosition, this.map, true, true);
                 }
             });
-
         } else {
-            // 这是普通的移动指令
-            // --- 核心修复: 使用 setTarget 方法 ---
-            this.selectedUnits.forEach(unit => unit.setTarget(null)); // 确保没有目标
+            this.selectedUnits.forEach(unit => unit.setTarget(null));
             this.issueGroupMoveCommand(worldPos, this.map);
         }
     }
 
-    tryDeployUnit(worldPos, unitType) {
-        const cost = UNIT_TYPES[unitType].cost;
-        if (this.player.canAfford(cost) && worldPos.x < (this.map.width * TILE_SIZE) / 3) {
-            const gridX = Math.floor(worldPos.x / TILE_SIZE);
-            const gridY = Math.floor(worldPos.y / TILE_SIZE);
-            const tile = this.map.getTile(gridX, gridY);
-            const unitStats = UNIT_TYPES[unitType];
-            if (unitStats.moveType === 'air' || (tile && TERRAIN_TYPES[tile.type].traversableBy.includes(unitStats.moveType))) {
-                const newUnit = new Unit(unitType, 'player', worldPos.x + Math.random()*2 - 1, worldPos.y + Math.random()*2 - 1);
-                this.player.units.push(newUnit);
-                this.player.deductManpower(cost);
-                //修改 新增成就监听
-                if (this.onUnitDeployed) {
-                    this.onUnitDeployed(unitStats.unitClass);
-                }
-                this.ui.update();
-            } else { this.ui.showGameMessage("该单位无法部署在此地形上！"); }
-        } else {
-            if(!this.player.canAfford(cost)) { this.ui.showGameMessage("资源不足！"); }
-            else { this.ui.showGameMessage("只能在左侧1/3区域部署！"); }
-        }
-    }
-
-    handleBoxSelection() {
-        this.ui.clearDeploymentSelection();
-        this.selectedUnits = [];
-        const rect = { x: Math.min(this.dragStart.x, this.dragEnd.x),
-             y: Math.min(this.dragStart.y, this.dragEnd.y), 
-             w: Math.abs(this.dragStart.x - this.dragEnd.x), 
-             h: Math.abs(this.dragStart.y - this.dragEnd.y) 
-        };
-        this.player.units.forEach(unit => {
-            const screenPos = this.worldToScreen(unit.x, unit.y);
-            if (screenPos.x > rect.x && screenPos.x < rect.x + rect.w && screenPos.y > rect.y && screenPos.y < rect.y + rect.h) {
-                this.selectedUnits.push(unit);
-            }
-        });
-    }
-    
-    issueGroupMoveCommand(targetPos, map) {
-        if (this.selectedUnits.length === 0) return;
-
-        // --- 核心修改 1: 计算编队的当前中心点 ---
-        const groupCenter = this.selectedUnits.reduce((acc, unit) => {
-            acc.x += unit.x;
-            acc.y += unit.y;
-            return acc;
-        }, { x: 0, y: 0 });
-        groupCenter.x /= this.selectedUnits.length;
-        groupCenter.y /= this.selectedUnits.length;
-
-        const formation = this.calculateFormation(this.selectedUnits, targetPos, TILE_SIZE * 2);
-        const sortedUnits = [...this.selectedUnits].sort((a, b) => getDistance(a, targetPos) - getDistance(b, targetPos));
-
-        let delay = 0;
-        const delayIncrement = 5;
-
-        sortedUnits.forEach((unit, index) => {
-            const idealTargetPos = formation[index] || targetPos;
-            
-            // --- 核心修改 2: 将中心点和最终目标点传递给修正函数 ---
-            // 这样修正函数就能知道“前进方向”和“终点线”在哪里
-            const finalTargetPos = this.findNearestValidPosition(
-                idealTargetPos, 
-                map, 
-                unit.stats.moveType,
-                groupCenter,      // 传入当前中心点
-                targetPos         // 传入玩家点击的最终目标点
-            );
-
-            setTimeout(() => {
-                if (unit && unit.hp > 0) {
-                     unit.issueMoveCommand(finalTargetPos, map, false, true);
-                }
-            }, delay);
-
-            delay += delayIncrement;
-        });
-    }
-
-    /**
-     * --- 核心升级: 查找最近的、且不破坏编队相对位置的合法移动点 ---
-     * @param {{x: number, y: number}} idealPos - 为单位计算出的理想目标像素坐标 (可能不合法)
-     * @param {GameMap} map - 游戏地图对象
-     * @param {string} moveType - 单位的移动类型
-     * @param {{x: number, y: number}} groupCenter - 整个编队出发时的中心点
-     * @param {{x: number, y: number}} mainTargetPos - 玩家右键点击的最终目标中心点
-     * @param {number} maxSearchRadius - 最大搜索半径（以格子为单位）
-     * @returns {{x: number, y: number}} - 返回一个保证合法的像素坐标
-     */
-    findNearestValidPosition(idealPos, map, moveType, groupCenter, mainTargetPos, maxSearchRadius = 15) {
-        const startGridX = Math.floor(idealPos.x / TILE_SIZE);
-        const startGridY = Math.floor(idealPos.y / TILE_SIZE);
-
-        // --- 新增逻辑: 定义“终点线” ---
-        // 计算从出发中心点到最终目标点的最大允许距离。
-        // 任何修正后的点都不应该比这个距离更远，从而保证单位不会跑到前面去。
-        // 我们增加一个 TILE_SIZE 的容差，以防止在目标点附近的合法单位被错误地判定为过线。
-        const maxDistance = getDistance(groupCenter, mainTargetPos) + TILE_SIZE;
-
-        let tile = map.getTile(startGridX, startGridY);
-        // 检查原始位置是否合法，并且没有“越线”
-        if (tile && TERRAIN_TYPES[tile.type].traversableBy.includes(moveType) && getDistance(idealPos, groupCenter) <= maxDistance) {
-            return idealPos;
-        }
-        
-        // 如果不合法或越线，开始螺旋搜索
-        for (let r = 1; r <= maxSearchRadius; r++) {
-            for (let dx = -r; dx <= r; dx++) {
-                for (let dy = -r; dy <= r; dy++) {
-                    if (Math.abs(dx) !== r && Math.abs(dy) !== r) continue;
-
-                    const checkX = startGridX + dx;
-                    const checkY = startGridY + dy;
-                    
-                    tile = map.getTile(checkX, checkY);
-                    
-                    // 条件1: 地块必须是可通行的
-                    if (tile && TERRAIN_TYPES[tile.type].traversableBy.includes(moveType)) {
-                        const candidatePos = {
-                            x: checkX * TILE_SIZE + TILE_SIZE / 2,
-                            y: checkY * TILE_SIZE + TILE_SIZE / 2
-                        };
-
-                        // --- 关键约束条件 2: 候选点的距离不能超过“终点线” ---
-                        if (getDistance(candidatePos, groupCenter) <= maxDistance) {
-                            return candidatePos; // 找到一个既合法又没越线的点，立即返回
-                        }
-                    }
-                }
-            }
-        }
-        
-        // 如果实在找不到（非常罕见的情况），返回原始的、可能不合法的位置，避免程序崩溃
-        return idealPos;
-    }
-
-    calculateFormation(units, targetPos, spacing) {
-        // 如果没有单位，直接返回空数组
-        if (units.length === 0) return [];
-        
-        // 获取单位的原始边界框
-        let minX = Math.min(...units.map(u => u.x));
-        let maxX = Math.max(...units.map(u => u.x));
-        let minY = Math.min(...units.map(u => u.y));
-        let maxY = Math.max(...units.map(u => u.y));
-        
-        // 计算原始布局的中心点
-        const originalCenter = {
-            x: (minX + maxX) / 2,
-            y: (minY + maxY) / 2
-        };
-        
-        // 计算相对于原始中心点的偏移量
-        const offsets = units.map(unit => ({
-            x: unit.x - originalCenter.x,
-            y: unit.y - originalCenter.y
-        }));
-        
-        // 计算原始布局的边界半径
-        const originalRadius = Math.max(
-            ...units.map(unit => 
-                Math.sqrt(
-                    Math.pow(unit.x - originalCenter.x, 2) + 
-                    Math.pow(unit.y - originalCenter.y, 2)
-                )
-            )
-        );
-        
-        // 避免除以零的情况
-        if (originalRadius === 0) {
-            return units.map(() => ({ ...targetPos }));
-        }
-        
-        // 计算缩放因子，使外围单位更靠近中心
-        // 使用平方根函数使缩放更加平滑
-        const scaleFactor = 0.8; // 可以调整这个值来控制紧凑程度
-        
-        // 根据偏移量和缩放因子计算新的位置
-        return offsets.map(offset => ({
-            x: targetPos.x + offset.x * scaleFactor,
-            y: targetPos.y + offset.y * scaleFactor
-        }));
-    }
-
+    tryDeployUnit(worldPos, unitType) { const cost = UNIT_TYPES[unitType].cost; if (this.player.canAfford(cost) && worldPos.x < (this.map.width * TILE_SIZE) / 3) { const gridX = Math.floor(worldPos.x / TILE_SIZE); const gridY = Math.floor(worldPos.y / TILE_SIZE); const tile = this.map.getTile(gridX, gridY); const unitStats = UNIT_TYPES[unitType]; if (unitStats.moveType === 'air' || (tile && TERRAIN_TYPES[tile.type].traversableBy.includes(unitStats.moveType))) { const newUnit = new Unit(unitType, 'player', worldPos.x + Math.random()*2 - 1, worldPos.y + Math.random()*2 - 1); this.player.units.push(newUnit); this.player.deductManpower(cost); if (this.onUnitDeployed) { this.onUnitDeployed(unitStats.unitClass); } this.ui.update(); } else { this.ui.showGameMessage("该单位无法部署在此地形上！"); } } else { if(!this.player.canAfford(cost)) { this.ui.showGameMessage("资源不足！"); } else { this.ui.showGameMessage("只能在左侧1/3区域部署！"); } } }
+    handleBoxSelection() { this.ui.clearDeploymentSelection(); this.selectedUnits = []; const rect = { x: Math.min(this.dragStart.x, this.dragEnd.x), y: Math.min(this.dragStart.y, this.dragEnd.y), w: Math.abs(this.dragStart.x - this.dragEnd.x), h: Math.abs(this.dragStart.y - this.dragEnd.y) }; this.player.units.forEach(unit => { const screenPos = this.worldToScreen(unit.x, unit.y); if (screenPos.x > rect.x && screenPos.x < rect.x + rect.w && screenPos.y > rect.y && screenPos.y < rect.y + rect.h) { this.selectedUnits.push(unit); } }); }
+    issueGroupMoveCommand(targetPos, map) { if (this.selectedUnits.length === 0) return; const groupCenter = this.selectedUnits.reduce((acc, unit) => { acc.x += unit.x; acc.y += unit.y; return acc; }, { x: 0, y: 0 }); groupCenter.x /= this.selectedUnits.length; groupCenter.y /= this.selectedUnits.length; const formation = this.calculateFormation(this.selectedUnits, targetPos, TILE_SIZE * 2); const sortedUnits = [...this.selectedUnits].sort((a, b) => getDistance(a, targetPos) - getDistance(b, targetPos)); let delay = 0; const delayIncrement = 5; sortedUnits.forEach((unit, index) => { const idealTargetPos = formation[index] || targetPos; const finalTargetPos = this.findNearestValidPosition( idealTargetPos, map, unit.stats.moveType, groupCenter, targetPos ); setTimeout(() => { if (unit && unit.hp > 0) { unit.issueMoveCommand(finalTargetPos, map, false, true); } }, delay); delay += delayIncrement; }); }
+    findNearestValidPosition(idealPos, map, moveType, groupCenter, mainTargetPos, maxSearchRadius = 15) { const startGridX = Math.floor(idealPos.x / TILE_SIZE); const startGridY = Math.floor(idealPos.y / TILE_SIZE); const maxDistance = getDistance(groupCenter, mainTargetPos) + TILE_SIZE; let tile = map.getTile(startGridX, startGridY); if (tile && TERRAIN_TYPES[tile.type].traversableBy.includes(moveType) && getDistance(idealPos, groupCenter) <= maxDistance) { return idealPos; } for (let r = 1; r <= maxSearchRadius; r++) { for (let dx = -r; dx <= r; dx++) { for (let dy = -r; dy <= r; dy++) { if (Math.abs(dx) !== r && Math.abs(dy) !== r) continue; const checkX = startGridX + dx; const checkY = startGridY + dy; tile = map.getTile(checkX, checkY); if (tile && TERRAIN_TYPES[tile.type].traversableBy.includes(moveType)) { const candidatePos = { x: checkX * TILE_SIZE + TILE_SIZE / 2, y: checkY * TILE_SIZE + TILE_SIZE / 2 }; if (getDistance(candidatePos, groupCenter) <= maxDistance) { return candidatePos; } } } } } return idealPos; }
+    calculateFormation(units, targetPos, spacing) { if (units.length === 0) return []; let minX = Math.min(...units.map(u => u.x)); let maxX = Math.max(...units.map(u => u.x)); let minY = Math.min(...units.map(u => u.y)); let maxY = Math.max(...units.map(u => u.y)); const originalCenter = { x: (minX + maxX) / 2, y: (minY + maxY) / 2 }; const offsets = units.map(unit => ({ x: unit.x - originalCenter.x, y: unit.y - originalCenter.y })); const originalRadius = Math.max( ...units.map(unit => Math.sqrt( Math.pow(unit.x - originalCenter.x, 2) + Math.pow(unit.y - originalCenter.y, 2) ) ) ); if (originalRadius === 0) { return units.map(() => ({ ...targetPos })); } const scaleFactor = 0.8; return offsets.map(offset => ({ x: targetPos.x + offset.x * scaleFactor, y: targetPos.y + offset.y * scaleFactor })); }
     getMousePos(e) { const rect = this.canvas.getBoundingClientRect(); const scaleX = this.canvas.width / rect.width; const scaleY = this.canvas.height / rect.height; return { x: (e.clientX - rect.left) * scaleX, y: (e.clientY - rect.top) * scaleY }; }
     worldToScreen(worldX, worldY) { return { x: (worldX - this.camera.x) * this.camera.zoom, y: (worldY - this.camera.y) * this.camera.zoom }; }
     screenToWorld(screenX, screenY) { return { x: screenX / this.camera.zoom + this.camera.x, y: screenY / this.camera.zoom + this.camera.y }; }
     constrainCamera() { if (!this.map) return; const mapWidthPixels = this.map.width * TILE_SIZE; const mapHeightPixels = this.map.height * TILE_SIZE; const viewWidth = this.canvas.width / this.camera.zoom; const viewHeight = this.canvas.height / this.camera.zoom; this.camera.x = Math.max(0, Math.min(this.camera.x, mapWidthPixels - viewWidth)); this.camera.y = Math.max(0, Math.min(this.camera.y, mapHeightPixels - viewHeight)); }
-    handleWheel(e) {
-        e.preventDefault();
-        if (e.ctrlKey) {
-            const zoomFactor = e.deltaY > 0 ? 1.04: 0.96; 
-            this.zoomAtPoint(zoomFactor, this.getMousePos(e));
-        } else {
-            // 这是平移操作 (触控板双指滑动 或 鼠标滚轮上下/左右滚动)
-            // 使用 deltaX 和 deltaY 来移动镜头
-            this.camera.x += e.deltaX / this.camera.zoom;
-            this.camera.y += e.deltaY / this.camera.zoom;
-        }
-    }
+    handleWheel(e) { e.preventDefault(); if (e.ctrlKey) { const zoomFactor = e.deltaY > 0 ? 1.04: 0.96; this.zoomAtPoint(zoomFactor, this.getMousePos(e)); } else { this.camera.x += e.deltaX / this.camera.zoom; this.camera.y += e.deltaY / this.camera.zoom; } }
     zoomAtPoint(factor, point) { const oldZoom = this.camera.zoom; const newZoom = Math.max(this.camera.minZoom, Math.min(this.camera.maxZoom, oldZoom / factor)); if (newZoom === oldZoom) return; const worldMouseX = point.x / oldZoom + this.camera.x; const worldMouseY = point.y / oldZoom + this.camera.y; this.camera.zoom = newZoom; this.camera.x = worldMouseX - point.x / newZoom; this.camera.y = worldMouseY - point.y / newZoom; }
-    handleTouchStart(e) { e.preventDefault(); for (const touch of e.changedTouches) { this.activeTouches.set(touch.identifier, this.getTouchPos(touch)); } this.updateTouchState(); }
+    
+    // --- MOBILE ADAPTATION: Rewritten touch handlers ---
     getTouchPos(touch) { const rect = this.canvas.getBoundingClientRect(); const scaleX = this.canvas.width / rect.width; const scaleY = this.canvas.height / rect.height; return { x: (touch.clientX - rect.left) * scaleX, y: (touch.clientY - rect.top) * scaleY }; }
-    handleTouchMove(e) { e.preventDefault(); for (const touch of e.changedTouches) { this.activeTouches.set(touch.identifier, this.getTouchPos(touch)); } const touches = Array.from(this.activeTouches.values()); if (touches.length === 2) { const currentCenter = { x: (touches[0].x + touches[1].x) / 2, y: (touches[0].y + touches[1].y) / 2 }; const currentDistance = getDistance(touches[0], touches[1]); if (this.lastTouchCenter) { const dx = currentCenter.x - this.lastTouchCenter.x; const dy = currentCenter.y - this.lastTouchCenter.y; this.camera.x -= dx / this.camera.zoom; this.camera.y -= dy / this.camera.zoom; } if (this.lastTouchDistance > 0) { const zoomFactor = this.lastTouchDistance / currentDistance; this.zoomAtPoint(zoomFactor, currentCenter); } this.lastTouchCenter = currentCenter; this.lastTouchDistance = currentDistance; } }
-    handleTouchEnd(e) { for (const touch of e.changedTouches) { this.activeTouches.delete(touch.identifier); } this.updateTouchState(); }
-    updateTouchState() { if (this.activeTouches.size < 2) { this.lastTouchDistance = 0; this.lastTouchCenter = null; } }
-    undoLastDeployment() {
-        // 1. 检查玩家是否部署过单位
-        if (this.player.units.length === 0) {
-            this.ui.showGameMessage("没有可撤销的部署");
-            return;
+    handleTouchStart(e) {
+        e.preventDefault();
+        for (const touch of e.changedTouches) {
+            this.activeTouches.set(touch.identifier, this.getTouchPos(touch));
         }
 
-        // 2. 从玩家单位数组中移除最后一个单位
-        const lastUnit = this.player.units.pop();
+        if (this.activeTouches.size === 1) {
+            const touch = e.changedTouches[0];
+            const pos = this.getTouchPos(touch);
+            this.isTouchSelectDragging = true;
+            this.touchStartTime = Date.now();
+            this.touchStartPos = pos;
+            this.dragStart = pos; // For drawing the selection box
+            this.dragEnd = pos;
+        } else {
+            // More than one finger, so it's not a selection drag
+            this.isTouchSelectDragging = false;
+        }
+        this.updateTouchState();
+    }
+    handleTouchMove(e) {
+        e.preventDefault();
+        for (const touch of e.changedTouches) {
+            this.activeTouches.set(touch.identifier, this.getTouchPos(touch));
+        }
+        
+        const touches = Array.from(this.activeTouches.values());
 
-        if (lastUnit) {
-            // 3. 从物理引擎中移除该单位的碰撞体，非常重要！
-            if (lastUnit.body) {
-                Matter.World.remove(this.engine.world, lastUnit.body);
+        if (touches.length === 2) {
+            // Two-finger pan and zoom
+            this.isTouchSelectDragging = false; // Cancel any potential selection drag
+            const currentCenter = { x: (touches[0].x + touches[1].x) / 2, y: (touches[0].y + touches[1].y) / 2 };
+            const currentDistance = getDistance(touches[0], touches[1]);
+            if (this.lastTouchCenter) {
+                const dx = currentCenter.x - this.lastTouchCenter.x;
+                const dy = currentCenter.y - this.lastTouchCenter.y;
+                this.camera.x -= dx / this.camera.zoom;
+                this.camera.y -= dy / this.camera.zoom;
             }
-
-            // 4. 获取该单位的成本，并返还给玩家
-            const cost = UNIT_TYPES[lastUnit.type].cost;
-            this.player.addManpower(cost);
-
-            // 5. 更新UI以显示返还后的资源
-            this.ui.update();
-            this.ui.showGameMessage(`已撤销部署: ${UNIT_TYPES[lastUnit.type].name}`);这一行也修改了一下
+            if (this.lastTouchDistance > 0) {
+                const zoomFactor = this.lastTouchDistance / currentDistance;
+                this.zoomAtPoint(zoomFactor, currentCenter);
+            }
+            this.lastTouchCenter = currentCenter;
+            this.lastTouchDistance = currentDistance;
+        } else if (touches.length === 1 && this.isTouchSelectDragging) {
+            // Single-finger drag for selection box
+            this.dragEnd = touches[0];
         }
     }
+    handleTouchEnd(e) {
+        const wasSingleTouch = this.activeTouches.size === 1;
 
-    handleEdgeScrolling(deltaTime) {
-        if (this.isDraggingMap || this.isDragging || this.activeTouches.size > 0) return;
-        
-        const edgeMargin = 20;
-        const scrollSpeed = 600 / this.camera.zoom;
-        
-        if (this.globalMousePos.x < edgeMargin) this.camera.x -= scrollSpeed * deltaTime;
-        if (this.globalMousePos.x > window.innerWidth - edgeMargin) this.camera.x += scrollSpeed * deltaTime;
-        if (this.globalMousePos.y < edgeMargin) this.camera.y -= scrollSpeed * deltaTime;
-        if (this.globalMousePos.y > window.innerHeight - edgeMargin) this.camera.y += scrollSpeed * deltaTime;
+        if (this.isTouchSelectDragging && wasSingleTouch) {
+            const tapDuration = Date.now() - this.touchStartTime;
+            const dragDistance = getDistance(this.touchStartPos, this.dragEnd);
+
+            if (tapDuration < 300 && dragDistance < 15) {
+                // It's a TAP
+                this.handleTap(this.touchStartPos);
+            } else {
+                // It's a DRAG-SELECT
+                this.handleBoxSelection();
+            }
+        }
+
+        // Cleanup
+        for (const touch of e.changedTouches) {
+            this.activeTouches.delete(touch.identifier);
+        }
+        this.isTouchSelectDragging = false;
+        this.updateTouchState();
     }
-
-    requestAssistance(attackedUnit, attacker) {
-        // 定义增援范围，可以根据需要调整
-        const ASSISTANCE_RADIUS = 15 * TILE_SIZE; 
-        
-        // 获取所有潜在的友军单位 (这里我们只处理玩家单位的互相协助)
-        const potentialAllies = this.player.units;
-
-        for (const ally of potentialAllies) {
-            // 排除自己、已死亡、或正在强制移动/已有目标的单位
-            if (ally.id === attackedUnit.id || 
-                ally.hp <= 0 || 
-                ally.isforcemoving || 
-                ally.target) {
-                continue;
-            }
-
-            const distance = getDistance(ally, attackedUnit);
-
-            // 如果友军在增援范围内
-            if (distance <= ASSISTANCE_RADIUS) {
-                
-                // --- 核心修复：在这里添加攻击能力检查 ---
-                // 1. 获取攻击者(attacker)的移动类型
-                let attackerMoveType = 'ground'; // 默认是地面（例如来自基地的攻击）
-                if (attacker instanceof Unit) {
-                    attackerMoveType = attacker.stats.moveType;
-                }
-
-                // 2. 检查这个友军(ally)是否可以攻击该类型的敌人
-                if (ally.stats.canTarget.includes(attackerMoveType)) {
-                    // 3. 只有在可以攻击的情况下，才下达增援指令
-                    ally.setTarget(attacker);
-                    
-                    // 下达一个非强制的攻击移动指令，让它自动去反击
-                    ally.issueMoveCommand({ x: attacker.x, y: attacker.y }, this.map, true, false);
-                }
-                // 如果不能攻击（例如防空车无法攻击地面火炮），则什么都不做，它会继续执行自己原来的任务。
-            }
+    updateTouchState() {
+        if (this.activeTouches.size < 2) {
+            this.lastTouchDistance = 0;
+            this.lastTouchCenter = null;
         }
     }
 
-    handleProjectileHit(p) { 
-        this.explosions.push(new Explosion(p.x, p.y, p.stats.splashRadius || 2)); 
-        if (this.buildingsManager && p.owner !== 'ai') {
-            const targetGridX = Math.floor(p.target.x / TILE_SIZE);
-            const targetGridY = Math.floor(p.target.y / TILE_SIZE);
-            if (this.buildingsManager.damageBuilding(targetGridX, targetGridY, p.stats.damage)) {
-                return;
-            }
-        }
-        
-        if (p.target.hp > 0) p.target.takeDamage(p.stats.damage, p.attacker); 
-        
-        if (p.stats.splashRadius > 0) { 
-            const allTargets = [...this.player.units, ...this.ai.units, this.playerBase, this.aiBase].filter(Boolean); 
-            allTargets.forEach(entity => { 
-                if (entity.owner !== p.owner.owner && entity.id !== p.target.id && entity.hp > 0) { 
-                    const entityPos = { x: entity.pixelX || entity.x, y: entity.pixelY || entity.y }; 
-                    const distance = getDistance(entityPos, p); if (distance < p.stats.splashRadius) { 
-                        const splashDamage = p.stats.damage * (1 - distance / p.stats.splashRadius);
-                        // 溅射伤害也应用克制逻辑
-                        entity.takeDamage(splashDamage, p.attacker); 
-                    } 
-                } 
-            }); 
-        } 
-    }
+    undoLastDeployment() { if (this.player.units.length === 0) { this.ui.showGameMessage("没有可撤销的部署"); return; } const lastUnit = this.player.units.pop(); if (lastUnit) { if (lastUnit.body) { Matter.World.remove(this.engine.world, lastUnit.body); } const cost = UNIT_TYPES[lastUnit.type].cost; this.player.addManpower(cost); this.ui.update(); this.ui.showGameMessage(`已撤销部署: ${UNIT_TYPES[lastUnit.type].name}`); } }
+    handleEdgeScrolling(deltaTime) { if (this.isDraggingMap || this.isDragging || this.isTouchSelectDragging || this.activeTouches.size > 0) return; const edgeMargin = 20; const scrollSpeed = 600 / this.camera.zoom; if (this.globalMousePos.x < edgeMargin) this.camera.x -= scrollSpeed * deltaTime; if (this.globalMousePos.x > window.innerWidth - edgeMargin) this.camera.x += scrollSpeed * deltaTime; if (this.globalMousePos.y < edgeMargin) this.camera.y -= scrollSpeed * deltaTime; if (this.globalMousePos.y > window.innerHeight - edgeMargin) this.camera.y += scrollSpeed * deltaTime; }
+    requestAssistance(attackedUnit, attacker) { const ASSISTANCE_RADIUS = 15 * TILE_SIZE; const potentialAllies = this.player.units; for (const ally of potentialAllies) { if (ally.id === attackedUnit.id || ally.hp <= 0 || ally.isforcemoving || ally.target) { continue; } const distance = getDistance(ally, attackedUnit); if (distance <= ASSISTANCE_RADIUS) { let attackerMoveType = 'ground'; if (attacker instanceof Unit) { attackerMoveType = attacker.stats.moveType; } if (ally.stats.canTarget.includes(attackerMoveType)) { ally.setTarget(attacker); ally.issueMoveCommand({ x: attacker.x, y: attacker.y }, this.map, true, false); } } } }
+    handleProjectileHit(p) { this.explosions.push(new Explosion(p.x, p.y, p.stats.splashRadius || 2)); if (this.buildingsManager && p.owner !== 'ai') { const targetGridX = Math.floor(p.target.x / TILE_SIZE); const targetGridY = Math.floor(p.target.y / TILE_SIZE); if (this.buildingsManager.damageBuilding(targetGridX, targetGridY, p.stats.damage)) { return; } } if (p.target.hp > 0) p.target.takeDamage(p.stats.damage, p.attacker); if (p.stats.splashRadius > 0) { const allTargets = [...this.player.units, ...this.ai.units, this.playerBase, this.aiBase].filter(Boolean); allTargets.forEach(entity => { if (entity.owner !== p.owner.owner && entity.id !== p.target.id && entity.hp > 0) { const entityPos = { x: entity.pixelX || entity.x, y: entity.pixelY || entity.y }; const distance = getDistance(entityPos, p); if (distance < p.stats.splashRadius) { const splashDamage = p.stats.damage * (1 - distance / p.stats.splashRadius); entity.takeDamage(splashDamage, p.attacker); } } }); } }
     startGame() { if (this.gameState === 'deployment') this.gameState = 'playing'; }
-    checkWinConditions() { 
-        if (this.gameState !== 'playing') return; 
-        const pCanDeploy = this.player.manpower >= Math.min(...Object.values(UNIT_TYPES).map(u => u.cost)); 
-        const pOutOfForces = this.player.units.length === 0 && !pCanDeploy;
-        switch (this.gameMode) { // 修改 新增成就检查
-            case 'annihilation': 
-                if (this.playerBase?.hp <= 0) this.endGame(this.ai); 
-                else if (this.aiBase?.hp <= 0){
-                    this.levelCompleted = true;
-                    this.checkLightningStrikeAchievement();
-                    this.endGame(this.player);
-                }
-                break; 
-            case 'attack': 
-                if (this.aiBase?.hp <= 0){
-                    this.levelCompleted = true;
-                    this.checkLightningStrikeAchievement();
-                    this.endGame(this.player);
-                }
-                else if (pOutOfForces) this.endGame(this.ai); 
-                break; 
-            case 'defend': 
-                if (this.playerBase?.hp <= 0) this.endGame(this.ai); 
-                else if (this.ai.units.length === 0 && this.ai.manpower < 2){
-                    this.levelCompleted = true;
-                    this.checkLightningStrikeAchievement();
-                    this.endGame(this.player);
-                }
-                break; 
-            case 'tutorial':
-            case 'objective':
-            case 'assassination':
-            case 'escort':
-                // 这些模式的胜利条件在updateObjectives中处理
-                break;
-            default :
-                this.levelCompleted = true;
-                this.checkLightningStrikeAchievement();
-                this.endGame(this.player);
-                break; 
-        } 
-    }
-
-    endGame(winner) {
-        if (this.gameState === 'gameover') return; 
-        this.gameState = 'gameover';
-        console.log(`${winner.name} 获胜!`);
-        this.ui.showWinner(winner.name);
-        localStorage.removeItem('ShenDun_dialogue_settings');
-        this.savegame.clearAutoSave();
-        if(winner.name === '电脑'){
-            const currentUser = sessionStorage.getItem('currentUser');
-            const tempProgress = JSON.parse(localStorage.getItem(`ShenDun_temp_progress_${currentUser}`));
-            if(tempProgress.chapter === 5 && tempProgress.scene !== 0)
-                setTimeout(() => {window.location.href = `loading.html?target=dialogue.html&returnFromGame=true&failChapter=9&user=${JSON.parse(currentUser).username}`;},2000);
-            else
-                setTimeout(() => {window.location.href = `loading.html?target=dialogue.html&returnFromGame=true&failChapter=7&user=${JSON.parse(currentUser).username}`;},2000);
-            return;
-        }
-        if (this.returnToDialogue())return;
-    }
-    
-    unlockAchievement(achievementId) {
-        if (!this.achievements) this.achievements = this.loadAchievements();
-        if (!this.achievements[achievementId].unlocked) {
-            this.achievements[achievementId].unlocked = true;
-            this.achievements[achievementId].unlockTime = new Date().getTime();
-            this.saveAchievements();
-            this.ui.showAchievementUnlocked(achievementId);
-            
-            if (window.updateAchievementPoints) {
-                window.updateAchievementPoints(this.achievements);
-            }
-        }
-    }
-
-    loadAchievements() {
-        const defaultAchievements = {...ACHIEVEMENTS};
-        const saved = localStorage.getItem(`ShenDun_achievements_${this.user}`);
-        
-        if (saved) {
-            const savedAchievements = JSON.parse(saved);
-            Object.keys(defaultAchievements).forEach(id => {
-                if (savedAchievements[id]) {
-                    defaultAchievements[id].unlocked = savedAchievements[id].unlocked;
-                    defaultAchievements[id].unlockTime = savedAchievements[id].unlockTime;
-                }
-            });
-        }
-        
-        return defaultAchievements;
-    }
-
-    saveAchievements() {
-        localStorage.setItem(`ShenDun_achievements_${this.user}`, JSON.stringify(this.achievements));
-    }
-
-    checkChapterCompletion(chapter , scene){
-        const chapterAchievements = {1: '初战告捷',2: '深渊猎手',3: '都市幽灵',4: '极地风暴',5: '终局之光'};
-        if (chapterAchievements[chapter]&& (chapter !== 5 || scene !== 0)){
-            this.unlockAchievement(chapterAchievements[chapter]);
-        }
-    }
-    
-    checkAchievements() {//修改 增加成就监听
-        // 检查全能指挥官成就
-        if (this.achievementStats.unitsDeployed.size >= 4 && 
-            !this.achievements['全能指挥官'].unlocked) {
-            this.unlockAchievement('全能指挥官');
-        }
-        // 检查爱兵如子成就
-        if (this.achievementStats.unitsLost === 0 && 
-            this.gameState === 'gameover' && 
-            !this.achievements['爱兵如子'].unlocked) {
-            this.unlockAchievement('爱兵如子');
-        }
-        // 检查反装甲专家成就
-        if (this.achievementStats.enemyTanksDestroyed >= 3 && 
-            !this.achievements['反装甲专家'].unlocked) {
-            this.unlockAchievement('反装甲专家');
-        }
-        // 检查正义天降成就
-        if (this.achievementStats.infantryVsVehicles >= 5 && 
-            !this.achievements['正义天降'].unlocked) {
-            this.unlockAchievement('正义天降');
-        }
-        // 检查人海战术成就
-        if (this.achievementStats.maxUnitsAlive >= 50 &&
-           !this.achievements['人海战术'].unlocked) {
-            this.unlockAchievement('人海战术');
-        }
-        // 检查海陆协同成就
-        if (this.achievementStats.navalVsLandKills > 0 && 
-            this.achievementStats.landVsNavalKills > 0 && 
-            !this.achievements['海陆协同'].unlocked) {
-            this.unlockAchievement('海陆协同');
-        }
-        // // 检查全球防御者成就
-        // if (this.achievementStats.difficulty === 'hard' && 
-        //     this.gameState === 'gameover' && this.player.winner && 
-        //     !this.achievements['全球防御者'].unlocked) {
-        //     this.unlockAchievement('全球防御者');
-        // }
-        // 检查神话守护者成就
-        const allUnlocked = Object.values(this.achievements)
-            .filter(a => a.name !== '神话守护者').every(a => a.unlocked);
-        if (allUnlocked && !this.achievements['神话守护者'].unlocked) {
-            this.unlockAchievement('神话守护者');
-        }
-    }
-
-    // 修改 添加 闪电突击 成就检查
-    checkLightningStrikeAchievement() {
-        if (this.levelCompleted && this.skip === false && !this.achievements['闪电突击'].unlocked) {
-            if (Date.now() - this.levelStartTime <= 60000/this.gameSpeedModifier) {
-                this.unlockAchievement('闪电突击');
-            }
-        }
-    }
-
-    returnToDialogue() {
-        const currentUser = sessionStorage.getItem('currentUser');
-        if (currentUser) {
-            const urlParams = new URLSearchParams(window.location.search);
-            const fromDialogue = urlParams.get('fromDialogue');
-            if (fromDialogue === 'true') {
-                const tempProgress = JSON.parse(localStorage.getItem(`ShenDun_temp_progress_${currentUser}`));
-                this.checkChapterCompletion(tempProgress.chapter , tempProgress.scene);
-                setTimeout(() => {window.location.href = `loading.html?target=dialogue.html&returnFromGame=true&user=${JSON.parse(currentUser).username}`;},2000);
-                return true;
-            }
-        }
-        return false;
-    }
+    checkWinConditions() { if (this.gameState !== 'playing') return; const pCanDeploy = this.player.manpower >= Math.min(...Object.values(UNIT_TYPES).map(u => u.cost)); const pOutOfForces = this.player.units.length === 0 && !pCanDeploy; switch (this.gameMode) { case 'annihilation': if (this.playerBase?.hp <= 0) this.endGame(this.ai); else if (this.aiBase?.hp <= 0){ this.levelCompleted = true; this.checkLightningStrikeAchievement(); this.endGame(this.player); } break; case 'attack': if (this.aiBase?.hp <= 0){ this.levelCompleted = true; this.checkLightningStrikeAchievement(); this.endGame(this.player); } else if (pOutOfForces) this.endGame(this.ai); break; case 'defend': if (this.playerBase?.hp <= 0) this.endGame(this.ai); else if (this.ai.units.length === 0 && this.ai.manpower < 2){ this.levelCompleted = true; this.checkLightningStrikeAchievement(); this.endGame(this.player); } break; case 'tutorial': case 'objective': case 'assassination': case 'escort': break; default : this.levelCompleted = true; this.checkLightningStrikeAchievement(); this.endGame(this.player); break; } }
+    endGame(winner) { if (this.gameState === 'gameover') return; this.gameState = 'gameover'; console.log(`${winner.name} 获胜!`); this.ui.showWinner(winner.name); localStorage.removeItem('ShenDun_dialogue_settings'); this.savegame.clearAutoSave(); if(winner.name === '电脑'){ const currentUser = sessionStorage.getItem('currentUser'); const tempProgress = JSON.parse(localStorage.getItem(`ShenDun_temp_progress_${currentUser}`)); if(tempProgress.chapter === 5 && tempProgress.scene !== 0) setTimeout(() => {window.location.href = `loading.html?target=dialogue.html&returnFromGame=true&failChapter=9&user=${JSON.parse(currentUser).username}`;},2000); else setTimeout(() => {window.location.href = `loading.html?target=dialogue.html&returnFromGame=true&failChapter=7&user=${JSON.parse(currentUser).username}`;},2000); return; } if (this.returnToDialogue())return; }
+    unlockAchievement(achievementId) { if (!this.achievements) this.achievements = this.loadAchievements(); if (!this.achievements[achievementId].unlocked) { this.achievements[achievementId].unlocked = true; this.achievements[achievementId].unlockTime = new Date().getTime(); this.saveAchievements(); this.ui.showAchievementUnlocked(achievementId); if (window.updateAchievementPoints) { window.updateAchievementPoints(this.achievements); } } }
+    loadAchievements() { const defaultAchievements = {...ACHIEVEMENTS}; const saved = localStorage.getItem(`ShenDun_achievements_${this.user}`); if (saved) { const savedAchievements = JSON.parse(saved); Object.keys(defaultAchievements).forEach(id => { if (savedAchievements[id]) { defaultAchievements[id].unlocked = savedAchievements[id].unlocked; defaultAchievements[id].unlockTime = savedAchievements[id].unlockTime; } }); } return defaultAchievements; }
+    saveAchievements() { localStorage.setItem(`ShenDun_achievements_${this.user}`, JSON.stringify(this.achievements)); }
+    checkChapterCompletion(chapter , scene){ const chapterAchievements = {1: '初战告捷',2: '深渊猎手',3: '都市幽灵',4: '极地风暴',5: '终局之光'}; if (chapterAchievements[chapter]&& (chapter !== 5 || scene !== 0)){ this.unlockAchievement(chapterAchievements[chapter]); } }
+    checkAchievements() { if (this.achievementStats.unitsDeployed.size >= 4 && !this.achievements['全能指挥官'].unlocked) { this.unlockAchievement('全能指挥官'); } if (this.achievementStats.unitsLost === 0 && this.gameState === 'gameover' && !this.achievements['爱兵如子'].unlocked) { this.unlockAchievement('爱兵如子'); } if (this.achievementStats.enemyTanksDestroyed >= 3 && !this.achievements['反装甲专家'].unlocked) { this.unlockAchievement('反装甲专家'); } if (this.achievementStats.infantryVsVehicles >= 5 && !this.achievements['正义天降'].unlocked) { this.unlockAchievement('正义天降'); } if (this.achievementStats.maxUnitsAlive >= 50 && !this.achievements['人海战术'].unlocked) { this.unlockAchievement('人海战术'); } if (this.achievementStats.navalVsLandKills > 0 && this.achievementStats.landVsNavalKills > 0 && !this.achievements['海陆协同'].unlocked) { this.unlockAchievement('海陆协同'); } const allUnlocked = Object.values(this.achievements) .filter(a => a.name !== '神话守护者').every(a => a.unlocked); if (allUnlocked && !this.achievements['神话守护者'].unlocked) { this.unlockAchievement('神话守护者'); } }
+    checkLightningStrikeAchievement() { if (this.levelCompleted && this.skip === false && !this.achievements['闪电突击'].unlocked) { if (Date.now() - this.levelStartTime <= 60000/this.gameSpeedModifier) { this.unlockAchievement('闪电突击'); } } }
+    returnToDialogue() { const currentUser = sessionStorage.getItem('currentUser'); if (currentUser) { const urlParams = new URLSearchParams(window.location.search); const fromDialogue = urlParams.get('fromDialogue'); if (fromDialogue === 'true') { const tempProgress = JSON.parse(localStorage.getItem(`ShenDun_temp_progress_${currentUser}`)); this.checkChapterCompletion(tempProgress.chapter , tempProgress.scene); setTimeout(() => {window.location.href = `loading.html?target=dialogue.html&returnFromGame=true&user=${JSON.parse(currentUser).username}`;},2000); return true; } } return false; }
     placeBaseOnMap(base) { for (let y = 0; y < base.height; y++) { for (let x = 0; x < base.width; x++) { this.map.setTileType(base.gridX + x, base.gridY + y, 'base'); } } }
-    
-    getSaveData() {
-        return {
-            gameState: this.gameState,
-            gameMode: this.gameMode,
-            player: {
-                manpower: this.player.manpower,
-                units: this.player.units.map(unit => ({
-                    type: unit.type,
-                    x: unit.x,
-                    y: unit.y,
-                    hp: unit.hp
-                }))
-            },
-            ai: {
-                manpower: this.ai.manpower,
-                units: this.ai.units.map(unit => ({
-                    type: unit.type,
-                    x: unit.x,
-                    y: unit.y,
-                    hp: unit.hp
-                }))
-            },
-            playerBase: this.playerBase ? { hp: this.playerBase.hp } : null,
-            aiBase: this.aiBase ? { hp: this.aiBase.hp } : null,
-            timestamp: new Date().getTime()
-        };
-    }
-    
-    loadSaveData(saveData) {
-        console.log('加载存档:', saveData);
-    }
-    
-    skipCurrentScenario() {
-        if (this.gameMode === 'tutorial' || this.gameMode === 'annihilation' || this.gameMode === 'attack') {
-            this.aiBase.hp = 0;
-        } else if (this.gameMode === 'defend') {
-            this.playerBase.hp = 0;
-        }
-        this.gameState = 'playing';
-        this.skip = true;
-        this.updateObjectives();
-        this.checkWinConditions();
-    }
-    
-    returnToMainMenu() {
-        this.cleanup();
-        window.location.href = '../index.html';
-    }
-    
-    cleanup() {
-        cancelAnimationFrame(this.animationFrameId);
-        this.audioManager.stopBGM();
-    }
-
-    // 修改 添加如下成就监听
-    // 添加单位部署监听
-    onUnitDeployed(unitType) {
-        this.achievementStats.unitsDeployed.add(unitType);
-        this.checkAchievements();
-    }
-    // 添加单位损失监听
-    onUnitLost() {
-        this.achievementStats.unitsLost++;
-        this.checkAchievements();
-    }
-    // 添加单位摧毁监听
-    onUnitDestroyed(attacker, target) {
-        const Attackertype = attacker.stats.unitClass;
-        const Targettype = target.stats.unitClass;
-        // 记录敌方坦克摧毁
-        if (target.stats.name === '主战坦克') {
-            this.achievementStats.enemyTanksDestroyed++;
-        }
-        // 记录敌方舰船摧毁
-        if (Targettype === '海军') {
-            this.achievementStats.enemyShipsDestroyed++;
-        }
-        // 记录步兵对载具的击杀
-        if ((Targettype === '装甲' || Targettype === '炮兵')&& Attackertype === '步兵') {
-            this.achievementStats.infantryVsVehicles++;
-        }
-        // 记录海军对陆地单位的击杀
-        if ((Targettype === '装甲' || Targettype === '步兵' || Targettype === '炮兵') && Attackertype === '海军') {
-            this.achievementStats.navalVsLandKills++;
-        }
-        // 记录陆军对海军单位的击杀
-        if ((Attackertype === '装甲' || Attackertype === '步兵' || Attackertype === '炮兵') && Targettype === '海军') {
-            this.achievementStats.landVsNavalKills++;
-        }
-        this.checkAchievements();
-    }
-
-    // 更新存活单位数量
-    updateUnitCount() {
-        const aliveUnits = this.player.units.length;
-        if (aliveUnits > this.achievementStats.maxUnitsAlive) {
-            this.achievementStats.maxUnitsAlive = aliveUnits;
-            this.checkAchievements();
-        }
-    }
-    
+    getSaveData() { return { gameState: this.gameState, gameMode: this.gameMode, player: { manpower: this.player.manpower, units: this.player.units.map(unit => ({ type: unit.type, x: unit.x, y: unit.y, hp: unit.hp })) }, ai: { manpower: this.ai.manpower, units: this.ai.units.map(unit => ({ type: unit.type, x: unit.x, y: unit.y, hp: unit.hp })) }, playerBase: this.playerBase ? { hp: this.playerBase.hp } : null, aiBase: this.aiBase ? { hp: this.aiBase.hp } : null, timestamp: new Date().getTime() }; }
+    loadSaveData(saveData) { console.log('加载存档:', saveData); }
+    skipCurrentScenario() { if (this.gameMode === 'tutorial' || this.gameMode === 'annihilation' || this.gameMode === 'attack') { this.aiBase.hp = 0; } else if (this.gameMode === 'defend') { this.playerBase.hp = 0; } this.gameState = 'playing'; this.skip = true; this.updateObjectives(); this.checkWinConditions(); }
+    returnToMainMenu() { this.cleanup(); window.location.href = '../index.html'; }
+    cleanup() { cancelAnimationFrame(this.animationFrameId); this.audioManager.stopBGM(); }
+    onUnitDeployed(unitType) { this.achievementStats.unitsDeployed.add(unitType); this.checkAchievements(); }
+    onUnitLost() { this.achievementStats.unitsLost++; this.checkAchievements(); }
+    onUnitDestroyed(attacker, target) { const Attackertype = attacker.stats.unitClass; const Targettype = target.stats.unitClass; if (target.stats.name === '主战坦克') { this.achievementStats.enemyTanksDestroyed++; } if (Targettype === '海军') { this.achievementStats.enemyShipsDestroyed++; } if ((Targettype === '装甲' || Targettype === '炮兵')&& Attackertype === '步兵') { this.achievementStats.infantryVsVehicles++; } if ((Targettype === '装甲' || Targettype === '步兵' || Targettype === '炮兵') && Attackertype === '海军') { this.achievementStats.navalVsLandKills++; } if ((Attackertype === '装甲' || Attackertype === '步兵' || Attackertype === '炮兵') && Targettype === '海军') { this.achievementStats.landVsNavalKills++; } this.checkAchievements(); }
+    updateUnitCount() { const aliveUnits = this.player.units.length; if (aliveUnits > this.achievementStats.maxUnitsAlive) { this.achievementStats.maxUnitsAlive = aliveUnits; this.checkAchievements(); } }
 }
