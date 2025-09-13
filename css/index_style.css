@@ -1,176 +1,175 @@
 /* menu.css */
 /* 主菜单样式表 */
+
 /* 1. 基础样式重置 */
-*{
-    margin:0;
-    padding:0;
-    box-sizing:border-box;
-    font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif;
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
 }
 
-body{
-    height:100vh;
-    display:flex;
-    justify-content:center;
-    align-items:center;
-    background:url('../assets/backgrounds/bg.png') no-repeat center center fixed;
-    background-size:cover;
-    color:#fff;
-    position:relative;
-    overflow:hidden;
+body {
+    height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background: url('../assets/backgrounds/bg.png') no-repeat center center fixed;
+    background-size: cover;
+    color: #fff;
+    position: relative;
+    overflow: hidden; /* 确保始终没有滚动条 */
+    padding: 15px;
 }
-body::before{
-    content:'';
-    position:absolute;
-    top:0;
-    left:0;
-    width:100%;
-    height:100%;
-    background:rgba(0,0,0,.5);
-    z-index:-1;
+
+body::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, .5);
+    z-index: -1;
 }
 
 /* 2. 主容器 */
-.container{
-    width:600px;
-    padding:60px 40px;
-    background:rgba(0,0,0,.4);
-    backdrop-filter:blur(12px);
-    border-radius:20px;
-    box-shadow:0 15px 35px rgba(0,0,0,.5);
-    border:1px solid rgba(255,255,255,.15);
-    text-align:center;
-}
-
-h1{
-    font-size:50px;
-    margin-bottom:40px;
-    /* background:linear-gradient(45deg,#ff416c,#ff4b2b); */
-    background-clip:text;
-    -webkit-text-fill-color:white;
-    letter-spacing:2px;
-}
-
-/* 3. 菜单按钮 */
-.menu-btn{
-    display:block;
-    width:100%;
-    margin:16px 0;
-    padding:14px 0;
-    background:rgba(255,255,255,.1);
-    border:1px solid rgba(255,255,255,.2);
-    border-radius:10px;
-    color:#fff;
-    font-size:18px;
-    font-weight:600;
-    letter-spacing:1px;
-    cursor:pointer;
-    transition:all .3s ease;
-    text-decoration:none;
-    position:relative;
-    left:50%;   /* 水平居中 */
-    transform:translateX(-50%);
-    overflow:hidden;
-}
-.menu-btn:hover{
-    background:rgba(255,255,255,.2);
-    transform:translateX(-50%) translateY(-2px);
-    box-shadow:0 8px 20px rgba(0,0,0,.3);
-}
-.menu-btn:active{
-    transform:translateX(-50%) translateY(0);
-}
-
-.logo {
+.container {
+    width: 90%;
+    max-width: 600px;
+    padding: 60px 40px;
+    background: rgba(0, 0, 0, .4);
+    backdrop-filter: blur(12px);
+    border-radius: 20px;
+    box-shadow: 0 15px 35px rgba(0, 0, 0, .5);
+    border: 1px solid rgba(255, 255, 255, .15);
     text-align: center;
+}
+
+/* 3. LOGO 和 标题 */
+.logo {
     margin-bottom: 20px;
-    display: flex;
-    justify-content: center;
-    align-items: center;
 }
 
 #game-logo {
-    max-width: 300px;height: auto;
+    max-width: 300px;
+    width: 100%;
+    height: auto;
     filter: drop-shadow(0 2px 5px rgba(0, 0, 0, 0.3));
 }
 
-/* 4. 响应式 */
-@media(max-width:480px){
-    .container{
-        width:85%;
-        padding:40px 25px;
-    }
-    h1{font-size:28px;}
-    .menu-btn{font-size:16px;padding:12px 0;width:200%;}
-    #game-logo{max-width: 180px;padding: 8px;}
+h1 { /* 虽然当前HTML没有h1, 但保留样式以备后用 */
+    font-size: 50px;
+    margin-bottom: 40px;
+    background-clip: text;
+    -webkit-text-fill-color: white;
+    letter-spacing: 2px;
 }
 
-/* 添加加载提示样式 */
-#loading-overlay {
-    position: fixed;
-    top: 0;
-    left: 0;
+/* 4. 菜单按钮 */
+.menu-btn {
+    display: block;
     width: 100%;
-    height: 100%;
-    background: rgba(0, 0, 0, 0.7);
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    z-index: 9999;
-    color: white;
-    font-size: 24px;
-    flex-direction: column;
-    display: none;
-}
-
-.loading-spinner {
-    width: 50px;
-    height: 50px;
-    border: 5px solid rgba(255, 255, 255, 0.3);
-    border-radius: 50%;
-    border-top-color: #fff;
-    animation: spin 1s ease-in-out infinite;
-    margin-bottom: 20px;
-}
-
-@keyframes spin {
-    to { transform: rotate(360deg); }
-}
-
-/* 背景音乐控制按钮样式 */
-.music-control {
-    position: fixed;
-    bottom: 20px;
-    right: 20px;
-    width: 40px;
-    height: 40px;
-    background: rgba(0, 0, 0, 0.5);
-    border-radius: 50%;
-    display: flex;
-    justify-content: center;
-    align-items: center;
+    max-width: 400px;
+    margin: 16px auto;
+    padding: 14px 0;
+    background: rgba(255, 255, 255, .1);
+    border: 1px solid rgba(255, 255, 255, .2);
+    border-radius: 10px;
+    color: #fff;
+    font-size: 18px;
+    font-weight: 600;
+    letter-spacing: 1px;
     cursor: pointer;
-    z-index: 1000;
-    transition: background 0.3s;
+    transition: all .3s ease;
+    text-decoration: none;
+    position: relative;
+    overflow: hidden;
 }
 
-.music-control:hover {
-    background: rgba(0, 0, 0, 0.7);
+.menu-btn:hover {
+    background: rgba(255, 255, 255, .2);
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px rgba(0, 0, 0, .3);
 }
 
-.music-control i {
-    color: white;
-    font-size: 20px;
+.menu-btn:active {
+    transform: translateY(0);
 }
 
-/* 透明覆盖层样式 */
-#transparent-overlay {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: transparent;
-    z-index: 9999;
-    cursor: default;
+/* 5. 辅助元素 (加载、音乐控制等) */
+#loading-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.7); display: flex; justify-content: center; align-items: center; z-index: 9999; color: white; font-size: 24px; flex-direction: column; display: none; }
+.loading-spinner { width: 50px; height: 50px; border: 5px solid rgba(255, 255, 255, 0.3); border-radius: 50%; border-top-color: #fff; animation: spin 1s ease-in-out infinite; margin-bottom: 20px; }
+@keyframes spin { to { transform: rotate(360deg); } }
+.music-control { position: fixed; bottom: 20px; right: 20px; width: 40px; height: 40px; background: rgba(0, 0, 0, 0.5); border-radius: 50%; display: flex; justify-content: center; align-items: center; cursor: pointer; z-index: 1000; transition: background 0.3s; }
+.music-control:hover { background: rgba(0, 0, 0, 0.7); }
+.music-control i { color: white; font-size: 20px; }
+#transparent-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: transparent; z-index: 9999; cursor: default; }
+
+/* 6. 响应式设计 */
+
+/* 中等屏幕 (平板) */
+@media (max-width: 768px) {
+    .container {
+        padding: 50px 30px;
+    }
+    h1 {
+        font-size: 40px;
+        margin-bottom: 30px;
+    }
+    #game-logo {
+        max-width: 240px;
+    }
+}
+
+/* 小型屏幕 (手机竖屏) */
+@media (max-width: 480px) {
+    .container {
+        width: 100%;
+        padding: 40px 20px;
+        border-radius: 15px;
+    }
+    h1 {
+        font-size: 32px;
+        margin-bottom: 25px;
+    }
+    .menu-btn {
+        font-size: 16px;
+        padding: 12px 0;
+        margin: 12px auto;
+    }
+    #game-logo {
+        max-width: 200px;
+    }
+    .music-control {
+        bottom: 15px;
+        right: 15px;
+    }
+}
+
+/* --- 核心修改: 横屏手机 (矮屏幕) 的紧凑垂直布局 --- */
+@media (orientation: landscape) and (max-height: 500px) {
+    .container {
+        /* 大幅减少垂直内边距 */
+        padding: 20px 40px; 
+    }
+
+    .logo {
+        /* 减小 logo 下方的间距 */
+        margin-bottom: 10px;
+    }
+
+    #game-logo {
+        /* 限制logo的最大高度来节省垂直空间 */
+        max-height: 100px;
+        max-width: 200px;
+    }
+
+    .menu-btn {
+        /* 大幅减少按钮的垂直间距和内边距 */
+        margin: 8px auto;
+        padding: 8px 0;
+        font-size: 14px;
+        border-radius: 8px; /* 减小圆角 */
+    }
 }

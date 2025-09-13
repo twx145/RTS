@@ -132,11 +132,11 @@ body {
     background: rgba(255, 157, 0, 0.9);
 }
 
-/* 响应式设计 */
+/* --- 响应式设计 --- */
 @media (max-width: 768px) {
     #preview-container {
         width: 90%;
-        height: 50%;
+        height: 55%; /* 在平板尺寸上微调高度 */
     }
     
     #preview-title {
@@ -149,17 +149,27 @@ body {
     
     #loading-container {
         width: 90%;
+        bottom: 30px; /* 向上移动一点，增加底部空间 */
+    }
+
+    #skip-button {
+        bottom: 15px;
+        right: 15px;
     }
 }
 
 @media (max-width: 480px) {
     #preview-container {
         width: 95%;
-        height: 45%;
+        height: 50%; /* 在手机尺寸上再次调整高度 */
     }
     
     #preview-title {
         font-size: 1.3rem;
+    }
+
+    #preview-info {
+        padding: 15px; /* 减小内边距 */
     }
     
     #loading-container {
@@ -172,5 +182,54 @@ body {
     
     #loading-tip {
         font-size: 0.8rem;
+    }
+}
+@media (orientation: landscape) and (max-height: 450px) {
+
+    /* 1. 大幅缩小预览容器，并稍微上移，为加载条腾出空间 */
+    #preview-container {
+        width: 60%; /* 横屏时可以更窄一些 */
+        height: 70%; /* 高度也需要调整 */
+        max-width: 500px;
+        top: 45%; /* 从50%上移到45% */
+    }
+
+    /* 2. 减小预览容器内的字体和间距 */
+    #preview-info {
+        padding: 10px;
+    }
+    #preview-title {
+        font-size: 1.2rem;
+        margin-bottom: 5px;
+    }
+    #preview-description {
+        font-size: 0.8rem;
+    }
+
+    /* 3. 调整加载条容器的位置和尺寸 */
+    #loading-container {
+        bottom: 20px; /* 降低加载条位置，使其远离预览容器 */
+        width: 70%;
+        max-width: 500px;
+    }
+
+    /* 4. 缩小加载条本身和相关文字 */
+    #loading-bar {
+        height: 15px;
+        margin-bottom: 8px;
+    }
+    #loading-text {
+        font-size: 1rem;
+        margin-bottom: 5px;
+    }
+    #loading-tip {
+        font-size: 0.75rem;
+    }
+
+    /* 5. 调整跳过按钮的位置 */
+    #skip-button {
+        bottom: 10px;
+        right: 10px;
+        padding: 6px 12px;
     }
 }

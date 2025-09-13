@@ -36,6 +36,9 @@ body {
     background: rgba(0, 0, 0, 0.5);
     z-index: 2;
     position: relative;
+    /* 新增: 允许换行 */
+    flex-wrap: wrap;
+    gap: 15px;
 }
 
 #page-title {
@@ -71,23 +74,22 @@ body {
     background: rgba(255, 157, 0, 0.9);
 }
 
-/* 存档容器 */
 #save-slots-container {
     flex: 1;
     overflow-y: auto;
-    padding: 0 20px 20px;
+    padding: 20px; /* 修改: 统一内边距 */
     z-index: 2;
     position: relative;
 }
 
 .save-slots-grid {
     display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 15px;
-    max-width: 1200px;
+    /* 修改: 优化网格布局 */
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    gap: 20px; /* 修改: 增加间距 */
+    max-width: 1400px; /* 修改: 稍微增大最大宽度 */
     margin: 0 auto;
 }
-
 .save-slot {
     background: rgba(30, 30, 30, 0.8);
     border-radius: 8px;
@@ -349,6 +351,86 @@ body {
     
     .save-thumbnail {
         width: 30%;
+    }
+    
+    .save-chapter {
+        font-size: 0.85rem;
+    }
+    
+    .save-date, .save-dialog {
+        font-size: 0.7rem;
+    }
+    
+    #bottom-buttons {
+        flex-direction: column;
+        gap: 10px;
+    }
+    
+    .bottom-btn {
+        width: 100%;
+    }
+}
+
+@media (max-width: 768px) {
+    #top-section {
+        padding: 15px;
+        /* 修改: 在中等屏幕上仍然保持水平布局，但允许换行 */
+        flex-direction: row; 
+        justify-content: space-between;
+        gap: 10px;
+    }
+    
+    #page-title {
+        font-size: 1.5rem;
+    }
+    
+    .save-slots-grid {
+        /* 在手机上强制单列 */
+        grid-template-columns: 1fr;
+        gap: 12px;
+    }
+    
+    .save-slot {
+        height: auto; /* 修改: 高度自动 */
+        min-height: 120px; /* 设置最小高度 */
+        padding: 10px;
+    }
+    
+    #bottom-buttons {
+        padding: 12px 15px;
+    }
+    
+    .bottom-btn {
+        padding: 8px 16px;
+        font-size: 0.8rem;
+    }
+}
+
+@media (max-width: 480px) {
+    #top-section {
+        /* 在非常小的屏幕上才强制垂直排列 */
+        flex-direction: column;
+        align-items: center;
+    }
+    
+    #save-slots-container {
+        padding: 15px 10px; /* 调整内边距 */
+    }
+    
+    .save-slot {
+        min-height: 110px;
+    }
+    
+    .save-content {
+        /* 当屏幕太窄时，图片和信息垂直排列 */
+        flex-direction: column;
+        gap: 8px;
+    }
+    
+    .save-thumbnail {
+        width: 100%; /* 图片宽度占满 */
+        height: 80px; /* 固定图片高度 */
+        margin-right: 0;
     }
     
     .save-chapter {

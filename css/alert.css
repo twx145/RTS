@@ -63,13 +63,15 @@
     z-index: 1000;
     justify-content: center;
     align-items: center;
+    /* 新增: 增加内边距，防止模态框紧贴屏幕边缘 */
+    padding: 15px;
 }
 
 .Mmodal-content {
     background: rgba(30, 30, 30, 0.9);
     border-radius: 12px;
     padding: 25px;
-    width: 90%;
+    width: 100%; /* 修改: 宽度设为100%，由max-width控制 */
     max-width: 500px;
     backdrop-filter: blur(10px);
     border: 1px solid rgba(255, 255, 255, 0.2);
@@ -79,17 +81,23 @@
 .Mmodal-content h3 {
     color: #ff9d00;
     margin-bottom: 15px;
+    /* 新增: 响应式字号 */
+    font-size: clamp(1.2rem, 5vw, 1.5rem);
 }
 
 .Mmodal-content p {
     margin-bottom: 25px;
     color: rgba(255, 255, 255, 0.9);
+    /* 新增: 响应式字号 */
+    font-size: clamp(0.9rem, 4vw, 1rem);
 }
 
 .Mmodal-buttons {
     display: flex;
     justify-content: center;
     gap: 15px;
+    /* 新增: 允许按钮换行 */
+    flex-wrap: wrap;
 }
 
 #alert-dialog .Mmodal-content {

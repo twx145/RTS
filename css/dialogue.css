@@ -26,7 +26,7 @@ body {
 #character-container {
     position: absolute;
     width: 100%;
-    height: 75%;/*修改 调节人像位置*/
+    height: 75%;
     z-index: 2;
     display: flex;
     justify-content: space-between;
@@ -337,6 +337,134 @@ body {
     
     .choice-btn {
         padding: 10px 14px;
+        font-size: 0.9em;
+    }
+}
+@media (max-width: 768px) {
+    #dialog-box {
+        padding: 15px;
+        margin: 0 10px 60px 10px; /* 增加左右外边距 */
+    }
+    
+    #character-name {
+        font-size: 1.3em;
+    }
+    
+    #dialog-text {
+        font-size: 1em;
+    }
+    
+    .func-btn {
+        width: 45px;
+        height: 45px;
+        font-size: 1.1em;
+    }
+    
+    #save-slots {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    #choices-container {
+        width: 90%;
+        bottom: 180px;
+    }
+    
+    .choice-btn {
+        padding: 12px 16px;
+        font-size: 1em;
+    }
+}
+
+/* 手机竖屏 */
+@media (max-width: 480px) and (orientation: portrait) {
+    #character-container {
+        height: 60%; /* 降低立绘高度，给对话框更多空间 */
+        padding: 0 2%; /* 减小左右边距 */
+    }
+
+    .character {
+        height: 100%; /* 立绘占满容器高度 */
+        width: 45%; /* 调整宽度以防重叠 */
+    }
+
+    #dialog-box {
+        padding: 12px;
+        margin: 0 10px 50px 10px;
+    }
+
+    #character-name {
+        font-size: 1.1em;
+    }
+    
+    .func-btn {
+        width: 40px;
+        height: 40px;
+        font-size: 1em;
+    }
+    
+    #function-buttons {
+        bottom: 15px;
+        right: 15px;
+    }
+    
+    #save-slots {
+        grid-template-columns: 1fr; /* 单列显示存档 */
+    }
+
+    #choices-container {
+        width: 95%;
+        bottom: 160px; /* 调整选择按钮位置 */
+    }
+    
+    .choice-btn {
+        padding: 10px 14px;
+        font-size: 0.9em;
+    }
+}
+
+/* --- 核心修复: 针对矮屏幕的横屏模式 --- */
+@media (orientation: landscape) and (max-height: 500px) {
+    
+    /* 1. 降低人物立绘的高度，让他们"矮"一点 */
+    #character-container {
+        height: 65%; 
+    }
+
+    /* 2. 缩小对话框本身，并稍微降低它的位置 */
+    #dialog-box {
+        padding: 12px;
+        margin-bottom: 50px; /* 降低外边距，让它更靠近底部 */
+    }
+
+    /* 3. 减小字体大小，以适应更小的对话框 */
+    #character-name {
+        font-size: 1.1em;
+        margin-bottom: 5px;
+    }
+
+    #dialog-text {
+        font-size: 0.9em;
+        min-height: 40px; /* 减小最小高度 */
+    }
+
+    /* 4. 调整功能按钮的位置和大小 */
+    #function-buttons {
+        bottom: 10px;
+    }
+    .func-btn {
+        width: 35px;
+        height: 35px;
+        font-size: 0.9em;
+    }
+
+    /* 5. 调整选择项按钮的位置 */
+    #choices-container {
+        bottom: 120px; /* 大幅降低选择项的位置 */
+        gap: 8px; /* 减小选择项之间的间距 */
+    }
+
+    .choice-btn {
+        padding: 8px 12px;
         font-size: 0.9em;
     }
 }

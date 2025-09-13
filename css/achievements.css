@@ -12,7 +12,8 @@ body {
     background-size: cover;
     color: #fff;
     position: relative;
-    overflow: auto;
+    overflow-x: hidden; /* 修改: 防止水平滚动 */
+    overflow-y: auto;
     padding: 20px;
 }
 
@@ -46,6 +47,7 @@ body::before {
 }
 
 #game-logo {
+    width: 100%; /* 修改: 使用百分比 */
     max-width: 300px;
     height: auto;
     filter: drop-shadow(0 2px 5px rgba(0, 0, 0, 0.3));
@@ -61,18 +63,19 @@ h1 {
 
 .achievement-filters {
     display: flex;
+    flex-wrap: wrap; /* 新增: 允许换行 */
     justify-content: center;
-    gap: 15px;
+    gap: 10px; /* 修改: 减小间距 */
     margin-bottom: 30px;
 }
 
 .filter-btn {
-    padding: 10px 20px;
+    padding: 8px 16px; /* 修改: 减小内边距 */
     background: rgba(255, 255, 255, .1);
     border: 1px solid rgba(255, 255, 255, .2);
     border-radius: 8px;
     color: #fff;
-    font-size: 16px;
+    font-size: 14px; /* 修改: 减小字号 */
     cursor: pointer;
     transition: all .3s ease;
 }
@@ -366,5 +369,98 @@ h1 {
     
     .achievement-popup {
         max-width: calc(100% - 40px);
+    }
+}
+
+@media (max-width: 768px) {
+    body {
+        padding: 10px; /* 减小页面边距 */
+    }
+
+    .container {
+        width: 100%; /* 占满宽度 */
+        padding: 20px 15px; /* 调整内边距 */
+        margin: 20px auto; /* 调整外边距 */
+    }
+    
+    #game-logo {
+        max-width: 200px; /* 缩小Logo */
+    }
+
+    h1 {
+        font-size: 24px; /* 减小标题字号 */
+        margin-bottom: 20px;
+    }
+
+    .achievement-filters {
+        gap: 8px;
+    }
+
+    .filter-btn {
+        font-size: 13px;
+        padding: 6px 12px;
+    }
+    
+    .achievements-grid {
+        /* 在小屏幕上强制单列显示 */
+        grid-template-columns: 1fr;
+        gap: 15px;
+    }
+    
+    .achievement-stats {
+        flex-direction: column;
+        gap: 20px;
+    }
+
+    .stat-value {
+        font-size: 24px;
+    }
+
+    .stat-label {
+        font-size: 14px;
+    }
+
+    .stat-points-value {
+        font-size: 28px;
+    }
+    
+    .achievement-popup {
+        /* 确保弹窗不会超出屏幕 */
+        left: 10px;
+        top: 10px;
+        max-width: calc(100% - 20px);
+        transform: translateY(-120%); /* 从上方滑入 */
+    }
+
+    .achievement-popup.show {
+        transform: translateY(0);
+    }
+}
+
+@media (max-width: 480px) {
+    .achievement-card-header {
+        flex-direction: column; /* 图标和信息垂直排列 */
+        align-items: flex-start; /* 左对齐 */
+        gap: 10px;
+        margin-bottom: 10px;
+    }
+
+    .achievement-icon {
+        margin-right: 0;
+    }
+
+    .achievement-points {
+        top: 15px;
+        right: 15px;
+        padding: 3px 8px;
+        font-size: 12px;
+    }
+
+    .achievement-name {
+        font-size: 16px;
+    }
+
+    .achievement-description {
+        font-size: 13px;
     }
 }
