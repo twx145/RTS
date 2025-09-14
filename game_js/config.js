@@ -148,11 +148,11 @@ const BUILDING_TYPES = {
     // 观察塔 - 轻型防御建筑
     observation_tower: {
         name: '观察塔',
-        hp: 800,
+        hp: 200,
         width: 3,
         height: 3,
         canAttack: true,
-        attack: 75,
+        attack: 50,
         range: 6 * TILE_SIZE,
         attackSpeed: 1.5,
         canTarget: ['ground', 'amphibious'],
@@ -168,7 +168,7 @@ const BUILDING_TYPES = {
     // 桥梁控制站 - 功能性建筑
     bridge_control: {
         name: '桥梁控制站',
-        hp: 1200,
+        hp: 300,
         width: 4,
         height: 4,
         canAttack: false,
@@ -181,11 +181,11 @@ const BUILDING_TYPES = {
     // 地堡 - 防御性建筑
     bunker: {
         name: '地堡',
-        hp: 1000,
+        hp: 250,
         width: 3,
         height: 3,
         canAttack: true,
-        attack: 125,  
+        attack: 70,  
         range: 5 * TILE_SIZE,
         attackSpeed: 2.0,
         canTarget: ['ground', 'amphibious'],
@@ -201,7 +201,7 @@ const BUILDING_TYPES = {
     // 训练目标 - 训练用建筑
     training_target: {
         name: '训练目标',
-        hp: 500,
+        hp: 150,
         width: 2,
         height: 2,
         canAttack: false,
@@ -214,7 +214,7 @@ const BUILDING_TYPES = {
     // 训练障碍 - 训练用建筑
     training_barrier: {
         name: '训练障碍',
-        hp: 300,
+        hp: 100,
         width: 2,
         height: 2,
         canAttack: false,
@@ -227,7 +227,7 @@ const BUILDING_TYPES = {
     // 雷达站 - 侦查性建筑
     radar_station: {
         name: '雷达站',
-        hp: 1500,
+        hp: 400,
         width: 5,
         height: 5,
         canAttack: false,
@@ -241,7 +241,7 @@ const BUILDING_TYPES = {
     // 通信塔 - 功能性建筑
     communication_tower: {
         name: '通信塔',
-        hp: 1000,
+        hp: 300,
         width: 3,
         height: 5,
         canAttack: false,
@@ -254,7 +254,7 @@ const BUILDING_TYPES = {
     // 仓库 - 资源性建筑
     storage_depot: {
         name: '仓库',
-        hp: 1200,
+        hp: 300,
         width: 5,
         height: 5,
         canAttack: false,
@@ -267,7 +267,7 @@ const BUILDING_TYPES = {
     // 兵营 - 生产性建筑
     barracks: {
         name: '兵营',
-        hp: 1500,
+        hp: 400,
         width: 5,
         height: 5,
         canAttack: false,
@@ -280,11 +280,11 @@ const BUILDING_TYPES = {
     // 瞭望塔 - 防御性建筑
     watchtower: {
         name: '瞭望塔',
-        hp: 800,
+        hp: 300,
         width: 3,
         height: 3,
         canAttack: true,
-        attack: 150,
+        attack: 100,
         range: 7 * TILE_SIZE,
         attackSpeed: 1.8,
         canTarget: ['ground', 'amphibious'],
@@ -300,7 +300,7 @@ const BUILDING_TYPES = {
     // 军火库 - 资源性建筑
     armory: {
         name: '军火库',
-        hp: 2000,
+        hp: 500,
         width: 5,
         height: 5,
         canAttack: false,
@@ -313,7 +313,7 @@ const BUILDING_TYPES = {
     // 指挥中心 - 核心建筑
     command_center: {
         name: '指挥中心',
-        hp: 3000,
+        hp: 800,
         width: 7,
         height: 7,
         canAttack: false,
@@ -326,7 +326,7 @@ const BUILDING_TYPES = {
     // 研究实验室 - 科技性建筑
     research_lab: {
         name: '研究实验室',
-        hp: 1800,
+        hp: 400,
         width: 5,
         height: 5,
         canAttack: false,
@@ -339,7 +339,7 @@ const BUILDING_TYPES = {
     // 发电机 - 资源性建筑
     power_generator: {
         name: '发电机',
-        hp: 1200,
+        hp: 300,
         width: 3,
         height: 3,
         canAttack: false,
@@ -352,11 +352,11 @@ const BUILDING_TYPES = {
     // 守卫塔 - 防御性建筑
     guard_tower: {
         name: '守卫塔',
-        hp: 800,
+        hp: 300,
         width: 3,
         height: 3,
         canAttack: true,
-        attack: 200,
+        attack: 120,
         range: 6 * TILE_SIZE,
         attackSpeed: 1.2,
         canTarget: ['ground', 'amphibious'],
@@ -372,7 +372,7 @@ const BUILDING_TYPES = {
     // 总部 - 核心建筑
     headquarters: {
         name: '总部',
-        hp: 4000,
+        hp: 1000,
         width: 7,
         height: 7,
         canAttack: false,
@@ -385,7 +385,7 @@ const BUILDING_TYPES = {
     // 通信中心 - 功能性建筑
     communication_center: {
         name: '通信中心',
-        hp: 2000,
+        hp: 500,
         width: 5,
         height: 5,
         canAttack: false,
@@ -398,7 +398,7 @@ const BUILDING_TYPES = {
     // 摩天大楼 - 民用建筑
     skyscraper: {
         name: '摩天大楼',
-        hp: 2500,
+        hp: 500,
         width: 8,
         height: 10,
         canAttack: false,
@@ -411,7 +411,7 @@ const BUILDING_TYPES = {
     // 购物中心 - 民用建筑
     shopping_mall: {
         name: '购物中心',
-        hp: 2200,
+        hp: 500,
         width: 7,
         height: 7,
         canAttack: false,
@@ -424,7 +424,7 @@ const BUILDING_TYPES = {
     // 公寓楼 - 民用建筑
     apartment_complex: {
         name: '公寓楼',
-        hp: 2200,
+        hp: 500,
         width: 5,
         height: 5,
         canAttack: false,
@@ -437,7 +437,7 @@ const BUILDING_TYPES = {
     // 停车场 - 民用建筑
     parking_garage: {
         name: '停车场',
-        hp: 1500,
+        hp: 400,
         width: 5,
         height: 5,
         canAttack: false,
@@ -450,7 +450,7 @@ const BUILDING_TYPES = {
     // 检查点 - 防御性建筑
     checkpoint: {
         name: '检查点',
-        hp: 1000,
+        hp: 300,
         width: 3,
         height: 3,
         canAttack: true,
@@ -470,11 +470,11 @@ const BUILDING_TYPES = {
     // 控制塔 - 核心建筑
     control_tower: {
         name: '控制塔',
-        hp: 5000,
+        hp: 1500,
         width: 7,
         height: 7,
         canAttack: true,
-        attack: 250,
+        attack: 200,
         range: 10 * TILE_SIZE,
         attackSpeed: 0.8,
         canTarget: ['ground', 'air', 'amphibious'],
@@ -490,7 +490,7 @@ const BUILDING_TYPES = {
     // 能源站 - 资源性建筑
     power_station: {
         name: '能源站',
-        hp: 2000,
+        hp: 500,
         width: 5,
         height: 5,
         canAttack: false,
@@ -503,7 +503,7 @@ const BUILDING_TYPES = {
     // 雷达穹顶 - 侦查性建筑
     radar_dome: {
         name: '雷达穹顶',
-        hp: 1500,
+        hp: 400,
         width: 5,
         height: 5,
         canAttack: false,
@@ -517,7 +517,7 @@ const BUILDING_TYPES = {
     // 机库 - 生产性建筑
     hangar: {
         name: '机库',
-        hp: 1800,
+        hp: 400,
         width: 5,
         height: 5,
         canAttack: false,
@@ -530,7 +530,7 @@ const BUILDING_TYPES = {
     // 离子炮 - 超级武器
     ion_cannon: {
         name: '离子炮',
-        hp: 6000,
+        hp: 10000,
         width: 7,
         height: 7,
         canAttack: false,
@@ -543,7 +543,7 @@ const BUILDING_TYPES = {
     // 能源导管 - 功能性建筑
     power_conduit: {
         name: '能源导管',
-        hp: 1200,
+        hp: 300,
         width: 3,
         height: 3,
         canAttack: false,
@@ -556,11 +556,11 @@ const BUILDING_TYPES = {
     // 防御炮塔 - 防御性建筑
     defense_turret: {
         name: '防御炮塔',
-        hp: 1500,
+        hp: 400,
         width: 3,
         height: 3,
         canAttack: true,
-        attack: 450,
+        attack: 150,
         range: 8 * TILE_SIZE,
         attackSpeed: 1.0,
         canTarget: ['ground', 'amphibious'],
@@ -576,7 +576,7 @@ const BUILDING_TYPES = {
     // 主控制中心 - 核心建筑
     main_control: {
         name: '主控制中心',
-        hp: 3500,
+        hp: 1000,
         width: 6,
         height: 6,
         canAttack: false,
@@ -589,7 +589,7 @@ const BUILDING_TYPES = {
     // 研究中心 - 科技性建筑
     research_center: {
         name: '研究中心',
-        hp: 1800,
+        hp: 400,
         width: 4,
         height: 4,
         canAttack: false,
@@ -602,11 +602,11 @@ const BUILDING_TYPES = {
     // 导弹发射井 - 防御性建筑
     missile_silo: {
         name: '导弹发射井',
-        hp: 2200,
+        hp: 500,
         width: 3,
         height: 4,
         canAttack: true,
-        attack: 600,
+        attack: 150,
         range: 12 * TILE_SIZE,
         attackSpeed: 0.5,
         canTarget: ['ground', 'air', 'amphibious'],
@@ -623,7 +623,7 @@ const BUILDING_TYPES = {
     // 防空炮 - 防御性建筑
     aa_gun: {
         name: '防空炮',
-        hp: 1200,
+        hp: 300,
         width: 3,
         height: 3,
         canAttack: true,

@@ -211,30 +211,23 @@ class Game {
     handleMouseUp(e) { if (e.button === 2) { const pos = this.getMousePos(e); this.handleRightClick(pos.x, pos.y); return; } if (this.isDraggingMap) { this.isDraggingMap = false; this.canvas.style.cursor = 'default'; } else if (this.isDragging) { this.isDragging = false; const pos = this.getMousePos(e); if (getDistance(this.dragStart, pos) < 10) { this.handleLeftClick(pos.x, pos.y); } else { this.handleBoxSelection(); } } }
     handleLeftClick(x, y) { const worldPos = this.screenToWorld(x, y); if (this.ui.selectedUnitToDeploy) { this.tryDeployUnit(worldPos, this.ui.selectedUnitToDeploy); return; } const clickedUnit = this.player.units.find(unit => getDistance(worldPos, unit) < TILE_SIZE / 2); if (this.selectedUnits.length > 0 && !clickedUnit) { this.selectedUnits.forEach(unit => unit.setTarget(null)); this.issueGroupMoveCommand(worldPos, this.map); } else { this.selectedUnits = clickedUnit ? [clickedUnit] : []; } }
     handleRightClick(x, y) { if (this.selectedUnits.length > 0) { const worldPos = this.screenToWorld(x, y); if (this.buildingsManager) { const building = this.buildingsManager.findBuildingAt( Math.floor(worldPos.x / TILE_SIZE), Math.floor(worldPos.y / TILE_SIZE) ); if (building && !building.isDestroyed) { this.selectedUnits.forEach(unit => { unit.setTarget(building); unit.issueMoveCommand( { x: building.pixelX, y: building.pixelY }, this.map, true, true ); }); return; } } let targetEnemy = null; const allEnemies = [...this.ai.units, this.aiBase].filter(Boolean); for (const enemy of allEnemies) { const enemyPos = { x: enemy.pixelX || enemy.x, y: enemy.pixelY || enemy.y }; const clickRadius = (enemy instanceof Base) ? (enemy.width * TILE_SIZE / 2) : (enemy.stats.drawScale * TILE_SIZE / 2); if (getDistance(worldPos, enemyPos) < clickRadius) { targetEnemy = enemy;break; } } if (targetEnemy) { const targetPosition = { x: targetEnemy.pixelX || targetEnemy.x, y: targetEnemy.pixelY || targetEnemy.y }; this.selectedUnits.forEach(unit => { let targetMoveType = 'ground'; if (targetEnemy instanceof Unit) { targetMoveType = targetEnemy.stats.moveType; } if (unit.stats.canTarget.includes(targetMoveType)) { unit.setTarget(targetEnemy); unit.issueMoveCommand(targetPosition, this.map, true, true); } }); } else { this.selectedUnits.forEach(unit => unit.setTarget(null)); this.issueGroupMoveCommand(worldPos, this.map); } } }
-    
-    // --- MOBILE ADAPTATION: New method to handle a unified tap action ---
+
     handleTap(pos) {
         const worldPos = this.screenToWorld(pos.x, pos.y);
 
-        // 1. Deployment logic
         if (this.ui.selectedUnitToDeploy) {
             this.tryDeployUnit(worldPos, this.ui.selectedUnitToDeploy);
             return;
         }
-
-        // 2. Selection and Command logic
         if (this.selectedUnits.length > 0) {
-            // If units are selected, a tap issues a command (move or attack)
             this.issueCommandForSelectedUnits(worldPos); 
         } else {
-            // If no units are selected, a tap is for selecting a single unit
             const clickedUnit = this.player.units.find(unit => getDistance(worldPos, unit) < TILE_SIZE / 2);
             this.selectedUnits = clickedUnit ? [clickedUnit] : [];
         }
     }
 
     issueCommandForSelectedUnits(worldPos) {
-        // This function consolidates the attack/move logic from handleRightClick
         let targetEnemy = null;
         const allEnemies = [...this.ai.units, this.aiBase].filter(Boolean);
         for (const enemy of allEnemies) {
@@ -318,7 +311,6 @@ class Game {
             this.lastTouchCenter = currentCenter;
             this.lastTouchDistance = currentDistance;
         } else if (touches.length === 1 && this.isTouchSelectDragging) {
-            // Single-finger drag for selection box
             this.dragEnd = touches[0];
         }
     }
@@ -330,25 +322,16 @@ class Game {
             const dragDistance = getDistance(this.touchStartPos, this.dragEnd);
 
             if (tapDuration < 300 && dragDistance < 15) {
-                // It's a TAP. Now we check if it's a single or double tap.
                 const pos = this.touchStartPos;
                 const currentTime = Date.now();
                 
                 const timeSinceLastTap = currentTime - this.lastTapTime;
                 const distanceSinceLastTap = getDistance(pos, this.lastTapPos);
-
-                // --- CORE CHANGE: Double-tap logic ---
                 if (timeSinceLastTap < this.DOUBLE_TAP_THRESHOLD && distanceSinceLastTap < 30) {
-                    // This is a DOUBLE TAP, simulate a right-click
                     this.handleRightClick(pos.x, pos.y);
-                    
-                    // Reset the tap time to prevent a third tap from also being a double tap
                     this.lastTapTime = 0; 
                 } else {
-                    // This is a SINGLE TAP, simulate a left-click
                     this.handleLeftClick(pos.x, pos.y);
-                    
-                    // Record this tap's time and position for the next potential double tap
                     this.lastTapTime = currentTime;
                     this.lastTapPos = pos;
                 }

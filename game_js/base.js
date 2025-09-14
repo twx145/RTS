@@ -1,34 +1,26 @@
 class Base {
     constructor(owner, gridX, gridY) {
         this.owner = owner; // 'player' or 'ai'
-        this.gridX = gridX; // 大本营左上角的格子X坐标
-        this.gridY = gridY; // 大本营左上角的格子Y坐标
-        this.width = 3; // 3个格子宽
-        this.height = 3; // 3个格子高
+        this.gridX = gridX;
+        this.gridY = gridY;
+        this.width = 3;
+        this.height = 3;
         this.maxHp = 2500;
         this.hp = this.maxHp;
-        
-        // 计算像素中心点，用于单位寻路
         this.pixelX = (gridX + this.width / 2) * TILE_SIZE;
         this.pixelY = (gridY + this.height / 2) * TILE_SIZE;
-
-        // --- 核心新增: 为基地创建静态物理实体 ---
         this.body = this.createBody();
-        if (this.body) {
-            this.body.gameObject = this; // 添加反向引用
+        if (this.body) {this.body.gameObject = this;
             Matter.World.add(window.game.engine.world, this.body);
         }
     }
 
     createBody() {
-        const bodyWidth = this.width * TILE_SIZE;
-        const bodyHeight = this.height * TILE_SIZE;
-        
         return Matter.Bodies.rectangle(
             this.pixelX,
             this.pixelY,
-            bodyWidth,
-            bodyHeight,
+            this.width * TILE_SIZE,
+            this.height * TILE_SIZE,
             {
                 isStatic: true,
                 label: `${this.owner}_base`,
