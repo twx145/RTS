@@ -503,6 +503,7 @@ window.scriptData = {
                 "enableFogOfWar": false,
                 "aiDifficulty": "medium",
                 "gameMode": "objective",
+                "playerManpower": 60, 
                 // 在 map_chapter2 对象中添加 aiDeployments 属性
                 "aiDeployments": [
                       // 南桥防御部队 (玩家主要进攻方向)
@@ -829,6 +830,7 @@ window.scriptData = {
                 "enableFogOfWar": false,
                 "aiDifficulty": "medium",
                 "gameMode": "assassination",
+                "playerManpower": 70, 
                 // 在 map_chapter3 对象中添加 aiDeployments 属性
                 "aiDeployments": [
                     // 指挥总部外围防御
@@ -1146,6 +1148,7 @@ window.scriptData = {
                 "enableFogOfWar": false,
                 "aiDifficulty": "medium",
                 "gameMode": "objective", 
+                "playerManpower": 80, 
                 // 在 map_chapter4 对象中添加 aiDeployments 属性
                 "aiDeployments": [
                     // 能源站 1 (上方) 防御
@@ -1461,6 +1464,7 @@ window.scriptData = {
                 "enableFogOfWar": false,
                 "aiDifficulty": "medium",
                 "gameMode": "escort",
+                "playerManpower": 90, 
                 // 在 map_chapter5_1 对象中添加 aiDeployments 属性
                 "aiDeployments": [
                     // 路线前段伏击点
@@ -1626,6 +1630,7 @@ window.scriptData = {
                 "enableFogOfWar": false,
                 "aiDifficulty": "medium",
                 "gameMode": "objective",
+                "playerManpower": 100, 
                 // 在 map_chapter5_1 对象中添加 aiDeployments 属性
                 "aiDeployments": [
                     // 路线前段伏击点
