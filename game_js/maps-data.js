@@ -275,27 +275,7 @@ const MAP_DEFINITIONS = [
                     }
                 }
             }
-            
-            // 随机放置建筑
-            for (let i = 0; i < 50; i++) {
-                const blockX = Math.floor(Math.random() * 10) * 10 + 3;
-                const blockY = Math.floor(Math.random() * 8) * 10 + 3;
-                const size = Math.floor(Math.random() * 4) + 2;
-                
-                for (let y = blockY; y < blockY + size && y < h-1; y++) {
-                    for (let x = blockX; x < blockX + size && x < w-1; x++) {
-                        grid[y][x] = 'b';
-                    }
-                }
-            }
-            
-            // 中央大型建筑 - 毒蛇的指挥总部
-            for (let y = 35; y < 45; y++) {
-                for (let x = 45; x < 55; x++) {
-                    grid[y][x] = 'b';
-                }
-            }
-            
+                       
             return grid.map(row => row.join(''));
         })()
     },

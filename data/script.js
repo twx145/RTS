@@ -262,25 +262,32 @@ window.scriptData = {
                 "gameMode": "annihilation",
                 "playerManpower": 45,
                 "aiDeployments": [
-                    // 哨站内部防御
+                    // 哨站内部核心防御 (集团化)
                     { "type": "assault_infantry", "x": 32, "y": 28 },
                     { "type": "assault_infantry", "x": 32, "y": 32 },
-                    { "type": "sniper", "x": 38, "y": 32 }, // 藏在建筑后
-                    { "type": "assault_infantry", "x": 34, "y": 37 }, // 新增：兵营出口防御
-                    { "type": "main_battle_tank", "x": 28, "y": 23 }, // 新增：保护雷达站
+                    { "type": "sniper", "x": 38, "y": 32 },
+                    { "type": "assault_infantry", "x": 34, "y": 37 },
+                    { "type": "main_battle_tank", "x": 28, "y": 23 },
+                    { "type": "anti_tank_trooper", "x": 30, "y": 34 }, // 新增
+                    { "type": "assault_infantry", "x": 27, "y": 28 }, // 新增
 
-                    // 道路巡逻/防御 (加强)
+                    // 道路巡逻/防御 (重兵把守)
                     { "type": "main_battle_tank", "x": 42, "y": 30 },
+                    { "type": "main_battle_tank", "x": 40, "y": 28 }, // 新增
                     { "type": "assault_infantry", "x": 45, "y": 29 },
                     { "type": "assault_infantry", "x": 45, "y": 31 },
-                    { "type": "assault_infantry", "x": 52, "y": 30 }, // 新增：道路东侧伏兵
+                    { "type": "assault_infantry", "x": 52, "y": 30 },
+                    { "type": "anti_tank_trooper", "x": 48, "y": 30 }, // 新增
 
-                    // 外围警戒 (加强)
-                    { "type": "sniper", "x": 50, "y": 20 }, // 利用岩石掩护
-                    { "type": "sniper", "x": 15, "y": 45 }, // 新增：另一侧狙击手
+                    // 外围警戒 (多点骚扰)
+                    { "type": "sniper", "x": 50, "y": 20 },
+                    { "type": "sniper", "x": 15, "y": 45 },
                     { "type": "assault_infantry", "x": 20, "y": 40 },
                     { "type": "main_battle_tank", "x": 18, "y": 25 },
-                    { "type": "light_tank", "x": 55, "y": 45 } // 新增：右下角巡逻坦克
+                    { "type": "light_tank", "x": 55, "y": 45 },
+                    { "type": "light_tank", "x": 10, "y": 10 }, // 新增
+                    { "type": "sniper", "x": 5, "y": 55 }, // 新增
+                    { "type": "assault_infantry", "x": 55, "y": 5 } // 新增
                 ],
               }
             },
@@ -507,27 +514,36 @@ window.scriptData = {
                 // 在 map_chapter2 对象中添加 aiDeployments 属性
                 "aiDeployments": [
                       // 南桥防御部队 (玩家主要进攻方向)
+                    // 南桥防御部队 (钢铁防线)
                     { "type": "light_tank", "x": 40, "y": 36 },
                     { "type": "light_tank", "x": 43, "y": 36 },
+                    { "type": "main_battle_tank", "x": 41, "y": 37 }, // 新增
                     { "type": "anti_tank_trooper", "x": 38, "y": 35 },
                     { "type": "anti_tank_trooper", "x": 45, "y": 35 },
+                    { "type": "anti_tank_trooper", "x": 41, "y": 35 }, // 新增
                     { "type": "assault_infantry", "x": 41, "y": 34 },
-                    { "type": "sniper", "x": 35, "y": 35 }, // 新增：塔楼狙击手
-                    { "type": "assault_infantry", "x": 46, "y": 34 }, // 新增
+                    { "type": "sniper", "x": 35, "y": 35 },
+                    { "type": "assault_infantry", "x": 46, "y": 34 },
 
-                    // 北桥防御部队 (加强)
+                    // 北桥防御部队 (固若金汤)
                     { "type": "light_tank", "x": 41, "y": 16 },
+                    { "type": "main_battle_tank", "x": 41, "y": 15 }, // 新增
                     { "type": "assault_infantry", "x": 39, "y": 17 },
                     { "type": "assault_infantry", "x": 44, "y": 17 },
-                    { "type": "sniper", "x": 41, "y": 19 }, // 基地内部高点
-                    { "type": "anti_tank_trooper", "x": 45, "y": 18 }, // 新增
+                    { "type": "sniper", "x": 41, "y": 19 },
+                    { "type": "anti_tank_trooper", "x": 45, "y": 18 },
+                    { "type": "anti_tank_trooper", "x": 38, "y": 18 }, // 新增
 
-                    // 基地核心区域巡逻 (加强)
+                    // 基地核心区域巡逻 (精锐卫队)
                     { "type": "anti_tank_trooper", "x": 30, "y": 26 },
                     { "type": "assault_infantry", "x": 52, "y": 26 },
-                    { "type": "main_battle_tank", "x": 39, "y": 25 }, // 新增：核心重型坦克
-                    { "type": "assault_infantry", "x": 33, "y": 26 }, // 新增
-                    { "type": "assault_infantry", "x": 48, "y": 26 }  // 新增
+                    { "type": "main_battle_tank", "x": 39, "y": 25 },
+                    { "type": "assault_infantry", "x": 33, "y": 26 },
+                    { "type": "assault_infantry", "x": 48, "y": 26 },
+                    { "type": "sniper", "x": 36, "y": 23 }, // 新增
+                    { "type": "sniper", "x": 45, "y": 23 }, // 新增
+                    { "type": "howitzer", "x": 25, "y": 28 }, // 新增：近程炮火
+                    { "type": "howitzer", "x": 55, "y": 28 }  // 新增：近程炮火
                   ],
                 "objectives": ["destroy_building:barracks", "destroy_building:armory", "destroy_building:command_center"]
               }
@@ -834,28 +850,37 @@ window.scriptData = {
                 // 在 map_chapter3 对象中添加 aiDeployments 属性
                 "aiDeployments": [
                     // 指挥总部外围防御
+                    // 指挥总部外围防御 (移动堡垒)
                     { "type": "main_battle_tank", "x": 48, "y": 32 },
                     { "type": "main_battle_tank", "x": 42, "y": 48 },
-                    { "type": "main_battle_tank", "x": 56, "y": 38 }, // 新增
+                    { "type": "main_battle_tank", "x": 56, "y": 38 },
+                    { "type": "main_battle_tank", "x": 38, "y": 42 }, // 新增
                     { "type": "anti_tank_trooper", "x": 56, "y": 42 },
                     { "type": "anti_tank_trooper", "x": 38, "y": 38 },
-                    { "type": "sniper", "x": 44, "y": 44 }, // 新增：总部建筑内狙击手
+                    { "type": "sniper", "x": 44, "y": 44 },
+                    { "type": "assault_infantry", "x": 43, "y": 33 }, // 新增
+                    { "type": "assault_infantry", "x": 57, "y": 47 }, // 新增
 
-                    // 城市街道伏击部队 (加强)
-                    { "type": "sniper", "x": 63, "y": 23 }, // 藏在建筑群里
-                    { "type": "sniper", "x": 25, "y": 65 }, // 新增：对角线狙击手
+                    // 城市街道伏击部队 (全城皆兵)
+                    { "type": "sniper", "x": 63, "y": 23 },
+                    { "type": "sniper", "x": 25, "y": 65 },
                     { "type": "assault_infantry", "x": 23, "y": 53 },
                     { "type": "assault_infantry", "x": 24, "y": 53 },
                     { "type": "assault_infantry", "x": 73, "y": 63 },
                     { "type": "assault_infantry", "x": 74, "y": 63 },
-                    { "type": "light_tank", "x": 33, "y": 13 }, // 新增：巡逻坦克
-                    { "type": "light_tank", "x": 63, "y": 73 }, // 新增：巡逻坦克
+                    { "type": "light_tank", "x": 33, "y": 13 },
+                    { "type": "light_tank", "x": 63, "y": 73 },
+                    { "type": "anti_tank_trooper", "x": 13, "y": 13 }, // 新增
+                    { "type": "sniper", "x": 13, "y": 73 }, // 新增
+                    { "type": "assault_infantry", "x": 83, "y": 33 }, // 新增
 
-                    // 远程与空中支援 (加强)
-                    { "type": "howitzer", "x": 85, "y": 15 }, // 后方炮兵阵地
+                    // 远程与空中支援 (饱和打击)
+                    { "type": "howitzer", "x": 85, "y": 15 },
                     { "type": "howitzer", "x": 88, "y": 15 },
-                    { "type": "fighter_jet", "x": 95, "y": 75 }, // 机场待命
-                    { "type": "fighter_jet", "x": 95, "y": 70 }
+                    { "type": "howitzer", "x": 15, "y": 5 }, // 新增
+                    { "type": "fighter_jet", "x": 95, "y": 75 },
+                    { "type": "fighter_jet", "x": 95, "y": 70 },
+                    { "type": "attack_helicopter", "x": 5, "y": 5 } // 新增
                 ],
                 "targetUnit": "assault_infantry"
               }
@@ -1153,33 +1178,42 @@ window.scriptData = {
                 "aiDeployments": [
                     // 能源站 1 (上方) 防御
                     { "type": "main_battle_tank", "x": 40, "y": 22 },
+                    { "type": "main_battle_tank", "x": 35, "y": 22 }, // 新增
                     { "type": "anti_tank_trooper", "x": 36, "y": 21 },
                     { "type": "assault_infantry", "x": 44, "y": 21 },
-                    { "type": "sniper", "x": 38, "y": 24 }, // 新增
+                    { "type": "sniper", "x": 38, "y": 24 },
+                    { "type": "howitzer", "x": 40, "y": 10 }, // 新增
 
-                    // 能源站 2 (右侧) 防御 (加强)
+                    // 能源站 2 (右侧) 防御
                     { "type": "main_battle_tank", "x": 58, "y": 40 },
-                    { "type": "sniper", "x": 60, "y": 44 }, // 在雪地里
+                    { "type": "main_battle_tank", "x": 58, "y": 45 }, // 新增
+                    { "type": "sniper", "x": 60, "y": 44 },
                     { "type": "assault_infantry", "x": 56, "y": 40 },
-                    { "type": "anti_tank_trooper", "x": 55, "y": 43 }, // 新增
+                    { "type": "anti_tank_trooper", "x": 55, "y": 43 },
+                    { "type": "attack_helicopter", "x": 65, "y": 38 }, // 新增
                     
-                    // 能源站 3 (下方) 防御 (加强)
+                    // 能源站 3 (下方) 防御
                     { "type": "main_battle_tank", "x": 40, "y": 58 },
                     { "type": "anti_tank_trooper", "x": 44, "y": 59 },
+                    { "type": "anti_tank_trooper", "x": 36, "y": 62 }, // 新增
                     { "type": "assault_infantry", "x": 36, "y": 59 },
-                    { "type": "main_battle_tank", "x": 40, "y": 63 }, // 新增
+                    { "type": "main_battle_tank", "x": 40, "y": 63 },
 
-                    // 中央控制塔最终防线 (加强)
+                    // 中央控制塔最终防线
                     { "type": "howitzer", "x": 48, "y": 48 },
-                    { "type": "howitzer", "x": 32, "y": 48 }, // 新增
+                    { "type": "howitzer", "x": 32, "y": 48 },
                     { "type": "main_battle_tank", "x": 35, "y": 45 },
                     { "type": "main_battle_tank", "x": 45, "y": 35 },
-                    { "type": "assault_infantry", "x": 43, "y": 43 }, // 新增
+                    { "type": "main_battle_tank", "x": 45, "y": 45 }, // 新增
+                    { "type": "assault_infantry", "x": 43, "y": 43 },
+                    { "type": "sniper", "x": 33, "y": 33 }, // 新增
                     
-                    // 侧翼骚扰部队 (加强)
+                    // 侧翼骚扰部队
                     { "type": "amphibious_tank", "x": 20, "y": 60 },
                     { "type": "amphibious_tank", "x": 60, "y": 20 },
-                    { "type": "fighter_jet", "x": 75, "y": 5 } // 新增：空中支援
+                    { "type": "amphibious_tank", "x": 60, "y": 60 }, // 新增
+                    { "type": "fighter_jet", "x": 75, "y": 5 },
+                    { "type": "fighter_jet", "x": 5, "y": 75 } // 新增
                 ],
                 "objectives": ["destroy_building:power_station_1", "destroy_building:power_station_2", "destroy_building:power_station_3", "destroy_building:control_tower"]
               }
@@ -1467,28 +1501,35 @@ window.scriptData = {
                 "playerManpower": 90, 
                 // 在 map_chapter5_1 对象中添加 aiDeployments 属性
                 "aiDeployments": [
-                    // 路线前段伏击点
                     { "type": "light_tank", "x": 25, "y": 15 },
-                    { "type": "light_tank", "x": 22, "y": 12 }, // 新增
+                    { "type": "light_tank", "x": 22, "y": 12 },
                     { "type": "anti_tank_trooper", "x": 28, "y": 12 },
+                    { "type": "anti_tank_trooper", "x": 20, "y": 15 }, // 新增
                     { "type": "assault_infantry", "x": 22, "y": 18 },
-                    { "type": "assault_infantry", "x": 30, "y": 18 }, // 新增
+                    { "type": "assault_infantry", "x": 30, "y": 18 },
+                    { "type": "sniper", "x": 18, "y": 8 }, // 新增
 
-                    // 路线中段隘口 (加强)
+                    // 路线中段隘口 (绞肉机)
                     { "type": "main_battle_tank", "x": 40, "y": 30 },
+                    { "type": "main_battle_tank", "x": 43, "y": 28 }, // 新增
                     { "type": "anti_tank_trooper", "x": 38, "y": 33 },
                     { "type": "anti_tank_trooper", "x": 42, "y": 33 },
-                    { "type": "sniper", "x": 45, "y": 28 }, // 山地高点
-                    { "type": "howitzer", "x": 48, "y": 35 }, // 新增：远程火力封锁
-                    { "type": "attack_helicopter", "x": 35, "y": 25 }, // 新增
+                    { "type": "anti_tank_trooper", "x": 40, "y": 35 }, // 新增
+                    { "type": "sniper", "x": 45, "y": 28 },
+                    { "type": "howitzer", "x": 48, "y": 35 },
+                    { "type": "attack_helicopter", "x": 35, "y": 25 },
+                    { "type": "fighter_jet", "x": 50, "y": 20 }, // 新增
 
-                    // 接近终点时的重兵集团 (加强)
+                    // 接近终点时的重兵集团 (最终防线)
                     { "type": "main_battle_tank", "x": 55, "y": 45 },
                     { "type": "main_battle_tank", "x": 58, "y": 42 },
+                    { "type": "main_battle_tank", "x": 60, "y": 50 }, // 新增
                     { "type": "attack_helicopter", "x": 60, "y": 35 },
+                    { "type": "attack_helicopter", "x": 65, "y": 38 }, // 新增
                     { "type": "assault_infantry", "x": 53, "y": 48 },
                     { "type": "assault_infantry", "x": 53, "y": 50 },
-                    { "type": "anti_tank_trooper", "x": 62, "y": 48 } // 新增：保护终点建筑
+                    { "type": "assault_infantry", "x": 62, "y": 52 }, // 新增
+                    { "type": "anti_tank_trooper", "x": 62, "y": 48 }
                 ],
                 "escortUnit": "energy_vehicle",
                 "destination": {"x": 67, "y": 52}
@@ -1633,33 +1674,43 @@ window.scriptData = {
                 "playerManpower": 100, 
                 // 在 map_chapter5_1 对象中添加 aiDeployments 属性
                 "aiDeployments": [
-                    // 路线前段伏击点
+                    // 平台入口防御 (四面楚歌)
                     { "type": "main_battle_tank", "x": 35, "y": 28 },
                     { "type": "main_battle_tank", "x": 35, "y": 41 },
                     { "type": "main_battle_tank", "x": 28, "y": 35 },
                     { "type": "main_battle_tank", "x": 41, "y": 35 },
                     { "type": "anti_tank_trooper", "x": 28, "y": 28 },
                     { "type": "anti_tank_trooper", "x": 41, "y": 41 },
-                    { "type": "assault_infantry", "x": 30, "y": 28 }, // 新增
-                    { "type": "assault_infantry", "x": 39, "y": 41 }, // 新增
+                    { "type": "assault_infantry", "x": 30, "y": 28 },
+                    { "type": "assault_infantry", "x": 39, "y": 41 },
+                    { "type": "howitzer", "x": 20, "y": 20 }, // 新增
+                    { "type": "howitzer", "x": 49, "y": 49 }, // 新增
 
-                    // 中央区域防御 (加强)
-                    { "type": "sniper", "x": 30, "y": 30 }, // 藏在建筑后
-                    { "type": "sniper", "x": 39, "y": 30 }, // 新增
+                    // 中央区域防御 (禁区)
+                    { "type": "sniper", "x": 30, "y": 30 },
+                    { "type": "sniper", "x": 39, "y": 30 },
                     { "type": "assault_infantry", "x": 39, "y": 39 },
-                    { "type": "anti_tank_trooper", "x": 33, "y": 33 }, // 新增：中央反装甲
+                    { "type": "anti_tank_trooper", "x": 33, "y": 33 },
+                    { "type": "main_battle_tank", "x": 33, "y": 38 }, // 新增
+                    { "type": "main_battle_tank", "x": 36, "y": 33 }, // 新增
 
-                    // 海军单位 (加强)
+                    // 海军单位 (深海恐惧)
                     { "type": "destroyer", "x": 15, "y": 15 },
                     { "type": "destroyer", "x": 55, "y": 55 },
-                    { "type": "destroyer", "x": 35, "y": 10 }, // 新增
-                    { "type": "submarine", "x": 15, "y": 55 }, // 潜艇伏击
+                    { "type": "destroyer", "x": 35, "y": 10 },
+                    { "type": "destroyer", "x": 10, "y": 35 }, // 新增
+                    { "type": "submarine", "x": 15, "y": 55 },
                     { "type": "submarine", "x": 55, "y": 15 },
-                    { "type": "submarine", "x": 10, "y": 35 }, // 新增
+                    { "type": "submarine", "x": 10, "y": 35 },
+                    { "type": "submarine", "x": 35, "y": 60 }, // 新增
+                    { "type": "amphibious_tank", "x": 20, "y": 48 }, // 新增
+                    { "type": "amphibious_tank", "x": 48, "y": 20 }, // 新增
 
-                    // 空中单位 (加强)
+                    // 空中单位 (死亡之翼)
                     { "type": "fighter_jet", "x": 65, "y": 5 },
-                    { "type": "fighter_jet", "x": 5, "y": 65 } // 新增
+                    { "type": "fighter_jet", "x": 5, "y": 65 },
+                    { "type": "attack_helicopter", "x": 65, "y": 65 }, // 新增
+                    { "type": "attack_helicopter", "x": 5, "y": 5 }  // 新增
                 ],
                 "objectives": ["guide_debris:sea_trench"]
               }
