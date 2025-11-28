@@ -1668,7 +1668,7 @@ window.scriptData = {
                 "description": "进入终局混战",
                 "mapId": "map_chapter5_2",
                 "availableUnits": ["assault_infantry", "sniper", "anti_tank_trooper", "main_battle_tank", "amphibious_tank", "destroyer", "submarine", "fighter_jet"],
-                "enableFogOfWar": false,
+                "enableFogOfWar": true,
                 "aiDifficulty": "medium",
                 "gameMode": "objective",
                 "playerManpower": 100, 
