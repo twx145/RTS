@@ -8,7 +8,7 @@
 <br/><br/>
 
 <!-- BADGES -->
-[![Netlify Status](https://api.netlify.com/api/v1/badges/b5c4e9-your-id-here/deploy-status)](https://app.netlify.com/sites/rts-game1/deploys)
+[![Netlify Status](https://api.netlify.com/api/v1/badges/77d1d104-a9e3-4cb5-b786-205fb24b3225/deploy-status)](https://app.netlify.com/projects/rts-game1/deploys)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Language: TypeScript/JS](https://img.shields.io/badge/Language-JavaScript%20ES6+-f7df1e?logo=javascript&logoColor=black)](https://developer.mozilla.org/en-US/docs/Web/JavaScript)
 [![Art Style: Pixel](https://img.shields.io/badge/Art-Pixel%202D-purple)](https://developer.mozilla.org/en-US/docs/Games)
