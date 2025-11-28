@@ -1495,7 +1495,7 @@ window.scriptData = {
                 "description": "开始第五章任务",
                 "mapId": "map_chapter5_1",
                 "availableUnits": ["assault_infantry", "sniper", "anti_tank_trooper", "main_battle_tank", "light_tank", "fighter_jet", "attack_helicopter"],
-                "enableFogOfWar": false,
+                "enableFogOfWar": true,
                 "aiDifficulty": "medium",
                 "gameMode": "escort",
                 "playerManpower": 90, 
