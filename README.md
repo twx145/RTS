@@ -1,5 +1,5 @@
 ### Our RTS Game
-
+## use this link to play our newest game https://rts-game1.netlify.app/
 ```mermaid
 
 classDiagram
